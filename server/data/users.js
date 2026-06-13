@@ -13,7 +13,7 @@ const users = [
 
     {
         id: 2,
-        name: "Kavin Kumar",
+        name: "Mr Kavin Kumar",
         email: "kavin@apiit.lk",
         password: bcrypt.hashSync("123@abc", 10),
         role: "supervisor"

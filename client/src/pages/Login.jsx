@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  BookOpen, 
-  Users, 
-  GraduationCap, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
+import {
+  BookOpen,
+  Users,
+  GraduationCap,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
   LayoutDashboard,
   ShieldCheck
 } from 'lucide-react';
@@ -25,17 +25,17 @@ const Login = () => {
 
   return (
     <div className="min-h-screen w-full flex bg-slate-50 font-sans selection:bg-blue-200">
-      
+
       {/* Left Side - Branding & Info */}
       <div className="hidden lg:flex w-1/2 relative bg-slate-900 overflow-hidden">
         {/* Background Image */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop")' }}
         />
         {/* Gradient Overlay for modern enterprise look */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/95 via-blue-900/90 to-slate-900/95 mix-blend-multiply" />
-        
+
         {/* Abstract decorative shapes */}
         <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-600/20 blur-[120px]" />
         <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-cyan-500/20 blur-[120px]" />
@@ -58,7 +58,7 @@ const Login = () => {
           <div className="space-y-8 animate-[slideUp_1s_ease-out]">
             <div className="space-y-4">
               <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                Final Year Project <br/>
+                Final Year Project <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
                   Management System
                 </span>
@@ -103,9 +103,9 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-white">
         {/* Subtle ambient light for right side */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50 rounded-full blur-[100px] opacity-60 pointer-events-none" />
-        
+
         <div className="w-full max-w-md space-y-10 relative z-10">
-          
+
           {/* Mobile Header Branding (visible only on small screens) */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
             <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
@@ -123,7 +123,7 @@ const Login = () => {
           </div>
 
           {/* Microsoft SSO Button */}
-          <button 
+          <button
             type="button"
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-[0.98]"
           >
@@ -156,10 +156,10 @@ const Login = () => {
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
                     <Mail className="h-5 w-5" />
                   </div>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     required
-                    placeholder="cb000000@apiit.lk"
+                    placeholder="cb000000@students.apiit.lk"
                     className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all sm:text-sm shadow-sm"
                   />
                 </div>
@@ -176,8 +176,8 @@ const Login = () => {
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
                     <Lock className="h-5 w-5" />
                   </div>
-                  <input 
-                    type={showPassword ? "text" : "password"} 
+                  <input
+                    type={showPassword ? "text" : "password"}
                     required
                     placeholder="••••••••"
                     className="block w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all sm:text-sm shadow-sm"
@@ -193,14 +193,14 @@ const Login = () => {
               </div>
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={isLoading}
               className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden relative"
             >
               {/* Button inner gleam effect */}
               <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 group-hover:animate-[gleam_1.5s_ease-in-out_infinite]" />
-              
+
               {isLoading ? (
                 <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
@@ -237,9 +237,10 @@ const Login = () => {
 
         </div>
       </div>
-      
+
       {/* CSS logic for custom animations */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes gleam {
           0% { left: -100%; }
           100% { left: 200%; }
