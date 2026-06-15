@@ -30,12 +30,6 @@ const defaultProposalRequests = [
   { id: 'PR003', studentName: 'Emily Watson', studentNumber: 'CB006', topic: 'Predictive analytics in retail', date: '2026-06-12', status: 'Pending' },
 ];
 
-const defaultUsers = [
-  { id: 'U001', name: 'John Doe', role: 'Student', email: 'student@apiit.lk', status: 'Active' },
-  { id: 'U002', name: 'Dr. Alan Smith', role: 'Supervisor', email: 'supervisor@apiit.lk', status: 'Active' },
-  { id: 'U003', name: 'Admin User', role: 'Admin', email: 'admin@apiit.lk', status: 'Active' },
-  { id: 'U004', name: 'PM Manager', role: 'Project Manager', email: 'pm@apiit.lk', status: 'Active' },
-];
 
 const defaultBatches = [
   { id: 'B001', name: '2023-Feb', startDate: '2023-02-15', studentCount: 124, status: 'Completed' },

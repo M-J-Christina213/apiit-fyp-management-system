@@ -12,7 +12,6 @@ import {
   LayoutDashboard,
   ShieldCheck
 } from 'lucide-react';
-import { setLoggedInUser } from '../../../server/data/mockData';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,39 +28,76 @@ const Login = () => {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     setIsLoading(true);
     setError('');
 
-    setTimeout(() => {
-      setIsLoading(false);
-      const emailLower = email.toLowerCase();
+    try {
 
-      let userObj = null;
-      let targetPath = '';
+      const response = await fetch(
+        'http://localhost:5000/api/auth/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            password
+          })
+        }
+      );
 
-      if (emailLower.includes('admin')) {
-        userObj = { name: 'Admin User', role: 'Admin', email: 'admin@apiit.lk' };
-        targetPath = '/admin/dashboard';
-      } else if (emailLower.includes('pm') || emailLower.includes('manager')) {
-        userObj = { name: 'PM Manager', role: 'Project Manager', email: 'pm@apiit.lk' };
-        targetPath = '/pm/dashboard';
-      } else if (emailLower.includes('supervisor')) {
-        userObj = { name: 'Dr. Alan Smith', role: 'Supervisor', email: 'supervisor@apiit.lk' };
-        targetPath = '/supervisor/dashboard';
-      } else if (emailLower.includes('student') || emailLower.includes('cb')) {
-        userObj = { name: 'John Doe', role: 'Student', email: 'student@apiit.lk' };
-        targetPath = '/student/dashboard';
-      } else {
-        // Fallback for user ease
-        userObj = { name: 'John Doe', role: 'Student', email: emailLower };
-        targetPath = '/student/dashboard';
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.message);
+        setIsLoading(false);
+        return;
       }
 
-      setLoggedInUser(userObj);
-      navigate(targetPath);
-    }, 800);
+      const user = data.user;
+
+      localStorage.setItem(
+        'fyp_current_user',
+        JSON.stringify(user)
+      );
+
+      switch (user.role) {
+
+        case 'student':
+          navigate('/student/dashboard');
+          break;
+
+        case 'supervisor':
+          navigate('/supervisor/dashboard');
+          break;
+
+        case 'pm':
+          navigate('/pm/dashboard');
+          break;
+
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+
+        default:
+          navigate('/');
+      }
+
+    } catch (error) {
+
+      setError(
+        'Unable to connect to server'
+      );
+
+    } finally {
+
+      setIsLoading(false);
+
+    }
   };
 
   return (
@@ -270,34 +306,34 @@ const Login = () => {
 
                   <button
                     type="button"
-                    onClick={() => handleDemoClick('supervisor@apiit.lk')}
+                    onClick={() => handleDemoClick('kavin@apiit.lk')}
                     className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
                   >
                     <span className="font-bold text-slate-800">Supervisor Portal</span>
-                    <span className="text-slate-500 font-mono text-[10px]">supervisor@apiit.lk</span>
+                    <span className="text-slate-500 font-mono text-[10px]">kavin@apiit.lk</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleDemoClick('pm@apiit.lk')}
+                    onClick={() => handleDemoClick('fathima@apiit.lk')}
                     className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
                   >
                     <span className="font-bold text-slate-800">Project Manager</span>
-                    <span className="text-slate-500 font-mono text-[10px]">pm@apiit.lk</span>
+                    <span className="text-slate-500 font-mono text-[10px]">fathima@apiit.lk</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleDemoClick('admin@apiit.lk')}
+                    onClick={() => handleDemoClick('nirosha@apiit.lk')}
                     className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
                   >
                     <span className="font-bold text-slate-800">Admin Control</span>
-                    <span className="text-slate-500 font-mono text-[10px]">admin@apiit.lk</span>
+                    <span className="text-slate-500 font-mono text-[10px]">nirosha@apiit.lk</span>
                   </button>
                 </div>
 
                 <div className="text-[11px] text-slate-500 border-t border-slate-200 pt-2 flex justify-between">
-                  <span>Pass: <strong className="font-semibold text-slate-700">demo123</strong></span>
+                  <span>Pass: <strong className="font-semibold text-slate-700">123@abc</strong></span>
                   <span className="text-slate-400">Click a portal to pre-fill</span>
                 </div>
               </div>

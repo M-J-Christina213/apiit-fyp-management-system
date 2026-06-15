@@ -21,8 +21,8 @@ const users = [
 
     {
         id: 3,
-        name: "Ms Fatima",
-        email: "fatima@apiit.lk",
+        name: "Ms Fathima",
+        email: "fathima@apiit.lk",
         password: bcrypt.hashSync("123@abc", 10),
         role: "pm"
     },
