@@ -1,12 +1,16 @@
 export const getLoggedInUser = () => {
-    const user = localStorage.getItem("user");
+    const user = localStorage.getItem("fyp_current_user");
+
     return user ? JSON.parse(user) : null;
 };
 
 export const setLoggedInUser = (user) => {
     if (user) {
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem(
+            "fyp_current_user",
+            JSON.stringify(user)
+        );
     } else {
-        localStorage.removeItem("user");
+        localStorage.removeItem("fyp_current_user");
     }
 };

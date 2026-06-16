@@ -24,7 +24,7 @@ const Login = () => {
 
   const handleDemoClick = (demoEmail) => {
     setEmail(demoEmail);
-    setPassword('demo123');
+    setPassword('123@abc');
     setError('');
   };
 
@@ -297,7 +297,7 @@ const Login = () => {
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <button
                     type="button"
-                    onClick={() => handleDemoClick('student@apiit.lk')}
+                    onClick={() => handleDemoClick('CB014416@students.apiit.lk')}
                     className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
                   >
                     <span className="font-bold text-slate-800">Student Portal</span>

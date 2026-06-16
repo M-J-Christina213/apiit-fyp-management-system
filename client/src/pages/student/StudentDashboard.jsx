@@ -17,6 +17,13 @@ import {
   Bell
 } from 'lucide-react';
 
+import {
+  getSupervisors,
+  getStudents,
+  getProposalRequests,
+  getLoggedInUser
+} from "../../services/api.js";
+
 const StudentDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -36,18 +43,32 @@ const StudentDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    setSupervisors(getSupervisors());
-    setStudents(getStudents());
-    setProposals(getProposalRequests());
+    const loadData = async () => {
+      try {
+        const [supRes, stuRes, propRes] = await Promise.all([
+          getSupervisors(),
+          getStudents(),
+          getProposalRequests()
+        ]);
 
-    const loggedIn = getLoggedInUser();
-    if (loggedIn) {
-      setCurrentUser(loggedIn);
-    }
+        setSupervisors(supRes.data);
+        setStudents(stuRes.data);
+        setProposals(propRes.data);
+
+        const loggedIn = getLoggedInUser();
+        if (loggedIn) {
+          setCurrentUser(loggedIn);
+        }
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      }
+    };
+
+    loadData();
   }, [path]);
 
   // Find current student record
-  const currentStudent = students.find(
+  const currentStudent = students?.find(
     s => s.email === currentUser?.email
   ) || {
     id: 'CB014416',
