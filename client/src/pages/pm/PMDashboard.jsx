@@ -2,16 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
 import DataTable from '../../components/common/DataTable';
-import {
-  getStudents,
-  saveStudents,
-  getSupervisors,
-  saveSupervisors,
-  getBatches,
-  saveBatches,
-  getProposalRequests,
-  getStats
-} from '../../../../server/data/mockData';
+
 import {
   Users,
   GraduationCap,
@@ -279,8 +270,8 @@ const PMDashboard = () => {
           header: 'Status',
           render: (row) => (
             <span className={`px-2 py-0.5 rounded text-xs font-bold border ${row.status === 'Completed' ? 'bg-slate-100 text-slate-700 border-slate-200' :
-                row.status === 'Ongoing' ? 'bg-green-50 text-green-700 border-green-200' :
-                  'bg-blue-50 text-blue-700 border-blue-200'
+              row.status === 'Ongoing' ? 'bg-green-50 text-green-700 border-green-200' :
+                'bg-blue-50 text-blue-700 border-blue-200'
               }`}>
               {row.status}
             </span>

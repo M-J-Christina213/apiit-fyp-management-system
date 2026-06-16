@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
 import DataTable from '../../components/common/DataTable';
-import {
-  getSupervisors,
-  getStudents,
-  getProposalRequests,
-  saveProposalRequests,
-  saveStudents,
-  getLoggedInUser
-} from '../../../../server/data/mockData';
+
 import {
   Target,
   UserCheck,

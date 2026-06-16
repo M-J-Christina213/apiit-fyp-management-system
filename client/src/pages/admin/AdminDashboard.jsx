@@ -2,13 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
 import DataTable from '../../components/common/DataTable';
-import {
-  getUsers,
-  saveUsers,
-  getStats,
-  getStudents,
-  getSupervisors
-} from '../../../../server/data/mockData';
+
 import {
   Users,
   GraduationCap,
@@ -147,9 +141,9 @@ const AdminDashboard = () => {
       header: 'Role',
       render: (row) => (
         <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${row.role === 'Admin' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
-            row.role === 'Supervisor' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-              row.role === 'Project Manager' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                'bg-slate-50 text-slate-700 border border-slate-200'
+          row.role === 'Supervisor' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+            row.role === 'Project Manager' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+              'bg-slate-50 text-slate-700 border border-slate-200'
           }`}>
           {row.role}
         </span>

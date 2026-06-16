@@ -2,16 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
 import DataTable from '../../components/common/DataTable';
-import {
-  getStudents,
-  saveStudents,
-  getSupervisors,
-  saveSupervisors,
-  getProposalRequests,
-  saveProposalRequests,
-  getLoggedInUser,
-  getStats
-} from '../../../../server/data/mockData';
+
 import {
   Users,
   UserPlus,
@@ -55,14 +46,16 @@ const SupervisorDashboard = () => {
   }, [path]);
 
   // Retrieve Dr Alan Smith profile record
-  const supervisorRecord = supervisors.find(s => s.id === 'S001') || {
-    id: 'S001',
-    title: 'Dr.',
-    name: 'Alan Smith',
-    email: 'asmith@apiit.lk',
-    expertise: 'Artificial Intelligence, Machine Learning',
-    interests: 'Deep Learning, NLP',
-    slots: 2,
+  const supervisorRecord = supervisors.find(
+    s => s.email === currentUser?.email
+  ) || {
+    id: 'SUP001',
+    title: 'Mr.',
+    name: 'Kavin Kumar',
+    email: 'kavin@apiit.lk',
+    expertise: 'Artificial Intelligence, Machine Learning, Software Engineering',
+    interests: 'Generative AI, Full Stack Development, IOT',
+    slots: 3,
     status: 'Available'
   };
 
@@ -75,7 +68,9 @@ const SupervisorDashboard = () => {
   }, [supervisors]);
 
   // Filter current supervisor's students
-  const myStudents = students.filter(s => s.supervisor && s.supervisor.includes(supervisorRecord.name));
+  const myStudents = students.filter(
+    s => s.supervisor === `${supervisorRecord.title} ${supervisorRecord.name}`
+  );
 
   // Proposal request evaluation actions
   const handleProposalAction = (proposalId, status) => {
@@ -141,8 +136,8 @@ const SupervisorDashboard = () => {
       header: 'Status',
       render: (row) => (
         <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${row.status === 'Approved' ? 'bg-green-50 text-green-700 border border-green-200' :
-            row.status === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
-              'bg-amber-50 text-amber-700 border border-amber-200'
+          row.status === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
+            'bg-amber-50 text-amber-700 border border-amber-200'
           }`}>
           {row.status}
         </span>
@@ -413,7 +408,7 @@ const SupervisorDashboard = () => {
     // ---------------- NOTIFICATIONS TAB ----------------
     if (path === '/supervisor/notifications') {
       const activeNotifications = [
-        { id: 1, type: 'Proposal', title: 'New Proposal Assigned', message: `Student Fiona Gallagher has submitted a research proposal draft on "Distributed Ledger Databases" nominating you as supervisor.`, date: '2026-06-12' },
+        { id: 1, type: 'Proposal', title: 'New Proposal Assigned', message: `Student Christina Wanigasekara has submitted a research proposal draft on "Distributed Ledger Databases" nominating you as supervisor.`, date: '2026-06-12' },
         { id: 2, type: 'Milestone', title: 'Batch 2024-Feb Update', message: 'Evaluation Rubric v2.1 has been published. Please align progress report grading accordingly.', date: '2026-06-10' }
       ];
 
