@@ -1,12 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+
 import Login from './pages/Login';
 import DashboardLayout from './components/layouts/DashboardLayout';
 import StudentDashboard from './pages/student/StudentDashboard';
 import SupervisorDashboard from './pages/supervisor/SupervisorDashboard';
 import PMDashboard from './pages/pm/PMDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import { getLoggedInUser } from '../../server/data/mockData';
+
+import { getLoggedInUser } from './utils/auth';
+
 import {
   LayoutDashboard,
   Users,
@@ -17,6 +20,10 @@ import {
   UserCheck,
   Shield
 } from 'lucide-react';
+
+/* ===========================
+   Sidebar Links
+=========================== */
 
 const studentLinks = [
   { path: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -50,42 +57,90 @@ const adminLinks = [
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-// Route guards
+/* ===========================
+   Protected Route
+=========================== */
+
 const ProtectedRoute = ({ allowedRole }) => {
   const user = getLoggedInUser();
+
   if (!user) {
     return <Navigate to="/" replace />;
   }
+
   if (user.role !== allowedRole) {
-    if (user.role === 'Student') return <Navigate to="/student/dashboard" replace />;
-    if (user.role === 'Supervisor') return <Navigate to="/supervisor/dashboard" replace />;
-    if (user.role === 'Project Manager') return <Navigate to="/pm/dashboard" replace />;
-    if (user.role === 'Admin') return <Navigate to="/admin/dashboard" replace />;
-    return <Navigate to="/" replace />;
+    switch (user.role) {
+      case 'student':
+        return <Navigate to="/student/dashboard" replace />;
+
+      case 'supervisor':
+        return <Navigate to="/supervisor/dashboard" replace />;
+
+      case 'pm':
+        return <Navigate to="/pm/dashboard" replace />;
+
+      case 'admin':
+        return <Navigate to="/admin/dashboard" replace />;
+
+      default:
+        return <Navigate to="/" replace />;
+    }
   }
+
   return <Outlet />;
 };
 
+/* ===========================
+   Login Route
+=========================== */
+
 const LoginRoute = () => {
   const user = getLoggedInUser();
+
   if (user) {
-    if (user.role === 'Student') return <Navigate to="/student/dashboard" replace />;
-    if (user.role === 'Supervisor') return <Navigate to="/supervisor/dashboard" replace />;
-    if (user.role === 'Project Manager') return <Navigate to="/pm/dashboard" replace />;
-    if (user.role === 'Admin') return <Navigate to="/admin/dashboard" replace />;
+    switch (user.role) {
+      case 'student':
+        return <Navigate to="/student/dashboard" replace />;
+
+      case 'supervisor':
+        return <Navigate to="/supervisor/dashboard" replace />;
+
+      case 'pm':
+        return <Navigate to="/pm/dashboard" replace />;
+
+      case 'admin':
+        return <Navigate to="/admin/dashboard" replace />;
+
+      default:
+        break;
+    }
   }
+
   return <Login />;
 };
+
+/* ===========================
+   App
+=========================== */
 
 function App() {
   return (
     <Router>
       <Routes>
+
+        {/* Login */}
         <Route path="/" element={<LoginRoute />} />
 
-        {/* Student Routes */}
-        <Route element={<ProtectedRoute allowedRole="Student" />}>
-          <Route element={<DashboardLayout links={studentLinks} title="Student Portal" />}>
+        {/* Student */}
+        <Route element={<ProtectedRoute allowedRole="student" />}>
+          <Route
+            element={
+              <DashboardLayout
+                links={studentLinks}
+                title="Student Portal"
+              />
+            }
+          >
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/supervisors" element={<StudentDashboard />} />
             <Route path="/student/proposal" element={<StudentDashboard />} />
@@ -95,9 +150,16 @@ function App() {
           </Route>
         </Route>
 
-        {/* Supervisor Routes */}
-        <Route element={<ProtectedRoute allowedRole="Supervisor" />}>
-          <Route element={<DashboardLayout links={supervisorLinks} title="Supervisor Portal" />}>
+        {/* Supervisor */}
+        <Route element={<ProtectedRoute allowedRole="supervisor" />}>
+          <Route
+            element={
+              <DashboardLayout
+                links={supervisorLinks}
+                title="Supervisor Portal"
+              />
+            }
+          >
             <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
             <Route path="/supervisor/requests" element={<SupervisorDashboard />} />
             <Route path="/supervisor/students" element={<SupervisorDashboard />} />
@@ -107,9 +169,16 @@ function App() {
           </Route>
         </Route>
 
-        {/* PM Routes */}
-        <Route element={<ProtectedRoute allowedRole="Project Manager" />}>
-          <Route element={<DashboardLayout links={pmLinks} title="Project Manager Portal" />}>
+        {/* Project Manager */}
+        <Route element={<ProtectedRoute allowedRole="pm" />}>
+          <Route
+            element={
+              <DashboardLayout
+                links={pmLinks}
+                title="Project Manager Portal"
+              />
+            }
+          >
             <Route path="/pm/dashboard" element={<PMDashboard />} />
             <Route path="/pm/batches" element={<PMDashboard />} />
             <Route path="/pm/students" element={<PMDashboard />} />
@@ -120,9 +189,16 @@ function App() {
           </Route>
         </Route>
 
-        {/* Admin Routes */}
-        <Route element={<ProtectedRoute allowedRole="Admin" />}>
-          <Route element={<DashboardLayout links={adminLinks} title="Admin Portal" />}>
+        {/* Admin */}
+        <Route element={<ProtectedRoute allowedRole="admin" />}>
+          <Route
+            element={
+              <DashboardLayout
+                links={adminLinks}
+                title="Admin Portal"
+              />
+            }
+          >
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminDashboard />} />
             <Route path="/admin/roles" element={<AdminDashboard />} />
@@ -133,6 +209,7 @@ function App() {
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </Router>
   );

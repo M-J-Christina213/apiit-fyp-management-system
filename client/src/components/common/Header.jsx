@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Bell, User, LogOut, Menu } from 'lucide-react';
-import { getLoggedInUser, setLoggedInUser } from '../../../../server/data/mockData';
+import { Search, Bell, LogOut, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getLoggedInUser, setLoggedInUser } from '../../utils/auth';
 
 const Header = ({ title, onMenuToggle }) => {
   const user = getLoggedInUser() || { name: 'Guest User', role: 'Student', email: 'guest@apiit.lk' };
@@ -13,9 +13,27 @@ const Header = ({ title, onMenuToggle }) => {
     navigate('/');
   };
 
+  const getLoggedInUser = () => {
+    const user = localStorage.getItem('fyp_current_user');
+    return user ? JSON.parse(user) : null;
+  };
+
+  const setLoggedInUser = (user) => {
+    if (user) {
+      localStorage.setItem(
+        'fyp_current_user',
+        JSON.stringify(user)
+      );
+    } else {
+      localStorage.removeItem(
+        'fyp_current_user'
+      );
+    }
+  };
+
   const mockNotifications = [
     { id: 1, text: "New proposal submission draft by Jane Roe", time: "2 hours ago" },
-    { id: 2, text: "Dr. Alan Smith approved ML topic proposal", time: "1 day ago" },
+    { id: 2, text: "Dr. Kalasuriya approved ML topic proposal", time: "1 day ago" },
     { id: 3, text: "Reminder: Batch 2024-Feb report due next week", time: "3 days ago" }
   ];
 

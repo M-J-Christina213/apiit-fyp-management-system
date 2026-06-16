@@ -47,13 +47,16 @@ const StudentDashboard = () => {
   }, [path]);
 
   // Find current student record
-  const currentStudent = students.find(s => s.email === currentUser?.email) || students[0] || {
-    id: 'CB001',
-    name: 'John Doe',
+  const currentStudent = students.find(
+    s => s.email === currentUser?.email
+  ) || {
+    id: 'CB014416',
+    name: 'Christina Wanigasekara',
+    email: 'CB014416@students.apiit.lk',
     batch: '2024-Feb',
     status: 'Proposal Pending',
-    topic: 'AI in Healthcare',
-    supervisor: 'Dr. Alan Smith'
+    topic: 'AI Powered FYP Management System',
+    supervisor: 'Mr. Kavin Kumar'
   };
 
   // Find student's proposal request
@@ -161,8 +164,15 @@ const StudentDashboard = () => {
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-800">Student Portal</h1>
-            <span className="text-sm text-slate-500 font-medium">Batch: {currentStudent.batch}</span>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">
+                Welcome, Christina Wanigasekara
+              </h1>
+
+              <p className="text-sm text-slate-500">
+                Student ID: CB014416
+              </p>
+            </div>
           </div>
 
           {/* Cards */}

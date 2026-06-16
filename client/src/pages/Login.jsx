@@ -301,7 +301,7 @@ const Login = () => {
                     className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
                   >
                     <span className="font-bold text-slate-800">Student Portal</span>
-                    <span className="text-slate-500 font-mono text-[10px]">student@apiit.lk</span>
+                    <span className="text-slate-500 font-mono text-[10px]">CB014416@students.apiit.lk</span>
                   </button>
 
                   <button

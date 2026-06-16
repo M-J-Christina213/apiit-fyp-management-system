@@ -1,15 +1,17 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut, GraduationCap } from 'lucide-react';
-import { setLoggedInUser } from '../../../../server/data/mockData';
+import { setLoggedInUser } from '../../utils/auth';
 
 const Sidebar = ({ links, closeSidebar }) => {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
     if (closeSidebar) closeSidebar();
+
     setLoggedInUser(null);
-    navigate('/');
+
+    navigate("/");
   };
 
   return (
@@ -31,7 +33,7 @@ const Sidebar = ({ links, closeSidebar }) => {
             onClick={() => closeSidebar && closeSidebar()}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded transition-all text-sm font-medium border ${isActive
-                ? 'bg-navy-850 text-white border-navy-700 shadow-sm'
+                ? 'bg-navy-800 text-white border-navy-700 shadow-sm'
                 : 'border-transparent hover:bg-navy-800 hover:text-white'
               }`
             }
