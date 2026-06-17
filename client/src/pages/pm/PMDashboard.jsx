@@ -16,6 +16,13 @@ import {
   FileText
 } from 'lucide-react';
 
+import {
+  getStudents,
+  getSupervisors,
+  getProposalRequests,
+  getBatches
+} from "../../services/api";
+
 const PMDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,7 +32,7 @@ const PMDashboard = () => {
   const [supervisors, setSupervisors] = useState([]);
   const [batches, setBatches] = useState([]);
   const [stats, setStats] = useState({});
-
+  const [proposals, setProposals] = useState([]);
   // Modals state
   const [showAddBatch, setShowAddBatch] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -41,39 +48,29 @@ const PMDashboard = () => {
   const [allocSuccess, setAllocSuccess] = useState(false);
 
   useEffect(() => {
-    setStudents(getStudents());
-    setSupervisors(getSupervisors());
-    setBatches(getBatches());
-    setStats(getStats());
-  }, [path]);
+    const loadData = async () => {
+      try {
 
-  // Quick Action: Add Batch
-  const handleAddBatchSubmit = (e) => {
-    e.preventDefault();
-    if (!newBatchName || !newBatchDate || !newBatchCount) return;
+        const [stuRes, supRes, propRes, batchRes] =
+          await Promise.all([
+            getStudents(),
+            getSupervisors(),
+            getProposalRequests(),
+            getBatches()
+          ]);
 
-    const newBatch = {
-      id: 'B' + String(batches.length + 1).padStart(3, '0'),
-      name: newBatchName,
-      startDate: newBatchDate,
-      studentCount: parseInt(newBatchCount) || 0,
-      status: 'Upcoming'
+        setStudents(stuRes.data);
+        setSupervisors(supRes.data);
+        setBatches(batchRes.data);
+        setProposals(propRes.data);
+
+      } catch (error) {
+        console.error("Failed to load PM dashboard data:", error);
+      }
     };
 
-    const updatedBatches = [...batches, newBatch];
-    saveBatches(updatedBatches);
-    setBatches(updatedBatches);
-
-    // Clear forms
-    setNewBatchName('');
-    setNewBatchDate('');
-    setNewBatchCount('');
-    setShowAddBatch(false);
-
-    // Update stats
-    setStats(getStats());
-    alert(`Batch "${newBatch.name}" added successfully.`);
-  };
+    loadData();
+  }, [path]);
 
   // Quick Action: Import Students
   const handleImportStudents = () => {

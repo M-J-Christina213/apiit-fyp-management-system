@@ -10,6 +10,7 @@ export const getStudents = () => API.get("/students");
 export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>
     API.post("/proposals", proposalData);
+export const getBatches = () => API.get("/batches");
 
 // LOGIN USER
 export const getLoggedInUser = () => {
