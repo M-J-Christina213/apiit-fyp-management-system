@@ -19,6 +19,15 @@ import {
   Save
 } from 'lucide-react';
 
+import {
+  getStudents,
+  getSupervisors,
+  getUsers,
+  getStats,
+  createUser
+} from "../../services/api";
+
+
 const AdminDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,47 +59,109 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    setUsers(getUsers());
-    setStudents(getStudents());
-    setSupervisors(getSupervisors());
-    setStats(getStats());
+    const loadData = async () => {
+      try {
 
-    // Load settings from localStorage
-    const savedMaint = localStorage.getItem('setting_maint');
-    if (savedMaint) setMaintMode(JSON.parse(savedMaint));
-    const savedSso = localStorage.getItem('setting_sso');
-    if (savedSso) setSsoMandatory(JSON.parse(savedSso));
-    const savedSlots = localStorage.getItem('setting_slots');
-    if (savedSlots) setMaxSlots(JSON.parse(savedSlots));
-    const savedProp = localStorage.getItem('setting_proposal');
-    if (savedProp) setProposalRequired(JSON.parse(savedProp));
-  }, [path]);
+        const [
+          usersRes,
+          studentsRes,
+          supervisorsRes
+        ] = await Promise.all([
+          getUsers(),
+          getStudents(),
+          getSupervisors()
+        ]);
 
-  // Action: Add User
-  const handleAddUserSubmit = (e) => {
-    e.preventDefault();
-    if (!newUserName || !newUserEmail) return;
+        setUsers(usersRes.data);
+        setStudents(studentsRes.data);
+        setSupervisors(supervisorsRes.data);
 
-    const newUser = {
-      id: 'U' + String(users.length + 1).padStart(3, '0'),
-      name: newUserName,
-      role: newUserRole,
-      email: newUserEmail.toLowerCase(),
-      status: 'Active'
+        setStats({
+          totalUsers:
+            usersRes.data.length,
+
+          totalStudents:
+            studentsRes.data.length,
+
+          totalSupervisors:
+            supervisorsRes.data.length
+        });
+
+      } catch (error) {
+        console.error(
+          "Failed to load admin dashboard data:",
+          error
+        );
+      }
     };
 
-    const updatedUsers = [...users, newUser];
-    saveUsers(updatedUsers);
-    setUsers(updatedUsers);
+    loadData();
 
-    // Clear forms
-    setNewUserName('');
-    setNewUserEmail('');
-    setNewUserRole('Student');
-    setShowAddUser(false);
-    setStats(getStats());
+    const savedMaint =
+      localStorage.getItem("setting_maint");
 
-    alert(`Account for ${newUser.name} created successfully.`);
+    if (savedMaint)
+      setMaintMode(JSON.parse(savedMaint));
+
+    const savedSso =
+      localStorage.getItem("setting_sso");
+
+    if (savedSso)
+      setSsoMandatory(JSON.parse(savedSso));
+
+    const savedSlots =
+      localStorage.getItem("setting_slots");
+
+    if (savedSlots)
+      setMaxSlots(JSON.parse(savedSlots));
+
+    const savedProp =
+      localStorage.getItem("setting_proposal");
+
+    if (savedProp)
+      setProposalRequired(JSON.parse(savedProp));
+
+  }, [path]);
+
+
+  // Action: Add User
+  const handleAddUserSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!newUserName || !newUserEmail)
+      return;
+
+    try {
+
+      const response =
+        await createUser({
+          name: newUserName,
+          email: newUserEmail,
+          role: newUserRole
+        });
+
+      setUsers([
+        ...users,
+        response.data
+      ]);
+
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserRole('Student');
+      setShowAddUser(false);
+
+      alert(
+        `Account for ${newUserName} created successfully.`
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Failed to create user:",
+        error
+      );
+
+    }
   };
 
   // Action: Toggle Status

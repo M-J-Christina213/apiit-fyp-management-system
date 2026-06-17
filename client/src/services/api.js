@@ -11,6 +11,17 @@ export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>
     API.post("/proposals", proposalData);
 export const getBatches = () => API.get("/batches");
+// USERS
+export const getUsers = () =>
+    API.get("/users");
+
+// STATS
+export const getStats = () =>
+    API.get("/stats");
+
+// CREATE USER
+export const createUser = (userData) =>
+    API.post("/users", userData);
 
 // LOGIN USER
 export const getLoggedInUser = () => {

@@ -6,6 +6,7 @@ const supervisorsRoute = require("./routes/supervisors");
 const studentsRoute = require("./routes/students");
 const proposalsRoute = require("./routes/proposals");
 const batchesRoute = require("./routes/batches");
+const usersRoute = require("./routes/users");
 const app = express();
 
 app.use(cors());
@@ -17,6 +18,7 @@ app.use("/api/supervisors", supervisorsRoute);
 app.use("/api/students", studentsRoute);
 app.use("/api/proposals", proposalsRoute);
 app.use("/api/batches", batchesRoute);
+app.use("/api/users", usersRoute);
 
 const PORT = 5000;
 
