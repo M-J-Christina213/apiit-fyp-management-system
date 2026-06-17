@@ -45,7 +45,7 @@ const SupervisorDashboard = () => {
     setProposals(getProposalRequests());
   }, [path]);
 
-  // Retrieve Dr Alan Smith profile record
+
   const supervisorRecord = supervisors.find(
     s => s.email === currentUser?.email
   ) || {

@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const authRoutes = require("./routes/authRoutes");
 const supervisorsRoute = require("./routes/supervisors");
-const studentsRoute = require("./routes/student");
+const studentsRoute = require("./routes/students");
 const proposalsRoute = require("./routes/proposals");
 
 const app = express();
