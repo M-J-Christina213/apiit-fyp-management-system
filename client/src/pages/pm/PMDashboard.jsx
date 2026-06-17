@@ -13,16 +13,17 @@ import {
   FileSpreadsheet,
   X,
   CheckCircle,
+  FileText,
+  Upload
 } from 'lucide-react';
-
-import * as XLSX from "xlsx";
 
 import {
   getStudents,
   getSupervisors,
   getProposalRequests,
   getBatches,
-  createBatch
+  createBatch,
+  updateBatchStage
 } from "../../services/api";
 
 const PMDashboard = () => {
@@ -33,33 +34,79 @@ const PMDashboard = () => {
   const [students, setStudents] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [stats, setStats] = useState({});
-  const [proposals, setProposals] = useState([]);
 
+  const [proposals, setProposals] = useState([]);
+  // Modals state
   const [showAddBatch, setShowAddBatch] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
+  // Form states
   const [newBatchName, setNewBatchName] = useState('');
   const [newBatchDate, setNewBatchDate] = useState('');
   const [newBatchCount, setNewBatchCount] = useState('');
 
-  // NEW: student input options
-  const [batchStudentsText, setBatchStudentsText] = useState('');
-  const [batchFile, setBatchFile] = useState(null);
-
+  // Allocation state
   const [allocStudentId, setAllocStudentId] = useState('');
   const [allocSupervisorId, setAllocSupervisorId] = useState('');
   const [allocSuccess, setAllocSuccess] = useState(false);
 
+  const [selectedBatch, setSelectedBatch] = useState(null);
+
+  const [batchStudentsText, setBatchStudentsText] = useState('');
+  const [batchFile, setBatchFile] = useState(null);
+
+
+
+  const getNextStage = (current) => {
+    switch (current) {
+      case "Proposal":
+        return "Midpoint";
+      case "Midpoint":
+        return "Final";
+      case "Final":
+        return "Completed";
+      default:
+        return "Completed";
+    }
+  };
+
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    availableSupervisors: 0,
+    unassignedStudents: 0,
+    pendingProposals: 0
+  });
+
+  const advanceBatchStage = async (batchId) => {
+    const batch = batches.find(b => b.id === batchId);
+    if (!batch) return;
+
+    const nextStage = getNextStage(batch.stage);
+
+    try {
+      await updateBatchStage(batchId, nextStage);
+      const updated = batches.map(b =>
+        b.id === batchId
+          ? { ...b, stage: nextStage }
+          : b
+      );
+      setBatches(updated);
+    } catch (error) {
+      console.error("Failed to advance stage:", error);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [stuRes, supRes, propRes, batchRes] = await Promise.all([
-          getStudents(),
-          getSupervisors(),
-          getProposalRequests(),
-          getBatches()
-        ]);
+
+        const [stuRes, supRes, propRes, batchRes] =
+          await Promise.all([
+            getStudents(),
+            getSupervisors(),
+            getProposalRequests(),
+            getBatches()
+          ]);
 
         setStudents(stuRes.data);
         setSupervisors(supRes.data);
@@ -74,85 +121,75 @@ const PMDashboard = () => {
     loadData();
   }, [path]);
 
-  // -----------------------------
-  // IMPORT DEMO STUDENTS
-  // -----------------------------
+  // Quick Action: Import Students
   const handleImportStudents = () => {
     const imported = [
-      {
-        id: 'CB008',
-        name: 'Gary Neville',
-        batch: '2024-Sep',
-        status: 'Unassigned',
-        email: 'cb008@students.lk',
-        topic: 'Cybersecurity AI',
-        supervisor: null
-      },
-      {
-        id: 'CB009',
-        name: 'Harry Kane',
-        batch: '2024-Feb',
-        status: 'Unassigned',
-        email: 'cb009@students.lk',
-        topic: 'Code Analysis AI',
-        supervisor: null
-      }
+      { id: 'CB008', name: 'Gary Neville', batch: '2024-Sep', status: 'Unassigned', email: 'cb008@students.apiit.lk', topic: 'Predictive Cybersecurity', supervisor: null },
+      { id: 'CB009', name: 'Harry Kane', batch: '2024-Feb', status: 'Unassigned', email: 'cb009@students.apiit.lk', topic: 'Automated Code Review Systems', supervisor: null }
     ];
 
-    const updated = [...students, ...imported];
-    setStudents(updated);
+    const updatedStudents = [...students, ...imported];
+    setStudents(updatedStudents);
 
     setShowImport(false);
-    alert("Demo students imported successfully");
+
+    alert("Imported 2 new students successfully: Gary Neville (CB008), Harry Kane (CB009).");
   };
 
-  // -----------------------------
-  // EXPORT / REPORT
-  // -----------------------------
+  // Quick Action: Export Excel
   const handleExportExcel = () => {
-    alert("Exporting Excel...");
+    alert("Exporting student allocation records to fyp_allocations_export.xlsx...");
   };
 
+  // Quick Action: Generate Report
   const handleGenerateReport = () => {
-    alert("Generating report...");
+    alert("Generating FYP Supervisor Allocation Status Report (PDF)...");
   };
 
-  // -----------------------------
-  // ALLOCATION
-  // -----------------------------
+  // Interactive Allocation
   const handleAllocateSubmit = (e) => {
     e.preventDefault();
+    if (!allocStudentId || !allocSupervisorId) {
+      alert("Please select both a student and a supervisor.");
+      return;
+    }
 
     const student = students.find(s => s.id === allocStudentId);
     const supervisor = supervisors.find(s => s.id === allocSupervisorId);
 
     if (!student || !supervisor) return;
 
+    // Update student
     const updatedStudents = students.map(s =>
       s.id === student.id
-        ? { ...s, supervisor: supervisor.name, status: 'Assigned' }
+        ? { ...s, supervisor: `${supervisor.title} ${supervisor.name}`, status: 'Assigned' }
         : s
     );
+    saveStudents(updatedStudents);
+    setStudents(updatedStudents);
 
+    // Update supervisor slots
     const updatedSupervisors = supervisors.map(s =>
       s.id === supervisor.id
-        ? { ...s, slots: Math.max(0, s.slots - 1) }
+        ? { ...s, slots: Math.max(0, s.slots - 1), status: Math.max(0, s.slots - 1) === 0 ? 'Full' : 'Available' }
         : s
     );
 
-    setStudents(updatedStudents);
     setSupervisors(updatedSupervisors);
 
     setAllocSuccess(true);
     setAllocStudentId('');
     setAllocSupervisorId('');
 
-    setTimeout(() => setAllocSuccess(false), 1500);
+    // Refresh page data
+    setTimeout(() => {
+      setStudents(getStudents());
+      setSupervisors(getSupervisors());
+
+      setAllocSuccess(false);
+    }, 1500);
   };
 
-  // -----------------------------
-  // FIXED: CREATE BATCH (WITH STUDENTS)
-  // -----------------------------
   const handleAddBatchSubmit = async (e) => {
     e.preventDefault();
 
@@ -195,7 +232,6 @@ const PMDashboard = () => {
 
       setBatches([...batches, response.data]);
 
-      // reset
       setShowAddBatch(false);
       setNewBatchName('');
       setNewBatchDate('');
@@ -206,141 +242,617 @@ const PMDashboard = () => {
       alert("Batch created successfully with students!");
 
     } catch (error) {
-      console.error("Batch creation failed:", error);
+      console.error(error);
     }
   };
 
-  // -----------------------------
-  // NEW: UPDATE BATCH STAGE
-  // -----------------------------
-  const updateBatchStage = (batchId, newStage) => {
-    const updated = batches.map(b =>
-      b.id === batchId ? { ...b, stage: newStage } : b
-    );
-    setBatches(updated);
-  };
-
-  // -----------------------------
-  // TABLES
-  // -----------------------------
+  // Columns Definitions
   const supervisorPoolColumns = [
     { header: 'Title', accessor: 'title' },
     { header: 'Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
-    { header: 'Expertise', accessor: 'expertise' },
+    { header: 'Expertise Areas', accessor: 'expertise' },
+    { header: 'Research Interests', accessor: 'interests' },
     {
-      header: 'Slots',
+      header: 'Available Slots',
       render: (row) => (
-        <span className={row.slots > 0 ? 'text-green-600' : 'text-red-500'}>
-          {row.slots}
+        <span className={`font-semibold ${row.availableSlots > 0 ? 'text-green-600' : 'text-red-500'}`}>
+          {row.availableSlots}
         </span>
       )
-    }
-  ];
-
-  const studentColumns = [
-    { header: 'Batch', accessor: 'batch' },
-    { header: 'Student', accessor: 'name' },
-    { header: 'ID', accessor: 'id' },
-    { header: 'Supervisor', render: (r) => r.supervisor || '-' }
-  ];
-
-  const batchColumns = [
-    { header: 'ID', accessor: 'id' },
-    { header: 'Intake', accessor: 'intake' },
-    { header: 'Start Date', accessor: 'startDate' },
-    { header: 'Students', accessor: 'studentCount' },
-    { header: 'Stage', accessor: 'stage' },
+    },
     {
-      header: 'Actions',
-      render: (batch) => (
-        <div className="flex gap-2">
-          <button onClick={() => updateBatchStage(batch.id, "Proposal")}>Proposal</button>
-          <button onClick={() => updateBatchStage(batch.id, "Midpoint")}>Mid</button>
-          <button onClick={() => updateBatchStage(batch.id, "Final")}>Final</button>
-          <button onClick={() => updateBatchStage(batch.id, "Completed")}>Done</button>
-        </div>
+      header: 'Status',
+      render: (row) => (
+        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${row.status === 'Available' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+          }`}>
+          {row.status}
+        </span>
       )
-    }
+    },
   ];
 
-  // -----------------------------
-  // UI
-  // -----------------------------
-  return (
-    <>
-      <div className="p-6 space-y-6">
+  const studentAllocationColumns = [
+    { header: 'Batch', accessor: 'batch' },
+    { header: 'Student Name', accessor: 'name' },
+    { header: 'Student Number', accessor: 'id' },
+    { header: 'Tentative Topic', render: (row) => row.topic || '-' },
+    { header: 'Assigned Supervisor', render: (row) => row.supervisor || '-' },
+    {
+      header: 'Allocation Status',
+      render: (row) => (
+        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${row.supervisor ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+          }`}>
+          {row.supervisor ? 'Assigned' : 'Unassigned'}
+        </span>
+      )
+    },
+  ];
 
-        {/* HEADER */}
-        <div className="flex justify-between">
-          <h1 className="text-xl font-bold">PM Dashboard</h1>
+  const renderContent = () => {
+    // ---------------- PM DASHBOARD TAB ----------------
+    if (path === '/pm/dashboard' || path === '/pm') {
+      return (
+        <div className="space-y-6">
+          {/* Quick Actions Header */}
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <h1 className="text-2xl font-bold text-slate-800">Project Manager Workspace</h1>
 
-          <div className="flex gap-2">
-            <button onClick={() => setShowAddBatch(true)}>Add Batch</button>
-            <button onClick={() => setShowImport(true)}>Import Students</button>
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                onClick={() => setShowAddBatch(true)}
+                className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors text-xs font-bold select-none"
+              >
+                <Plus className="h-4 w-4 text-slate-500" /> Add Batch
+              </button>
+
+              <button
+                onClick={() => setShowImport(true)}
+                className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors text-xs font-bold select-none"
+              >
+                <Download className="h-4 w-4 text-slate-500" /> Import Students
+              </button>
+
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors text-xs font-bold select-none"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-slate-500" /> Export Excel
+              </button>
+
+              <button
+                onClick={handleGenerateReport}
+                className="flex items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors text-xs font-bold shadow-sm select-none"
+              >
+                <FileCheck className="h-4 w-4" /> Generate Report
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* BATCH TABLE */}
-        <div className="bg-white p-4 rounded border">
-          <DataTable columns={batchColumns} data={batches} />
-        </div>
+          {/* Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <DashboardCard title="Total Students" value={stats.totalStudents || 0} icon={GraduationCap} />
+            <DashboardCard title="Available Supervisors" value={stats.availableSupervisors || 0} icon={Users} />
+            <DashboardCard title="Unassigned Students" value={stats.unassignedStudents || 0} icon={Layers} />
+            <DashboardCard title="Pending Proposals" value={stats.pendingProposals || 0} icon={FileCheck} />
+          </div>
 
-        {/* STUDENTS */}
-        <div className="bg-white p-4 rounded border">
-          <DataTable columns={studentColumns} data={students} />
-        </div>
-      </div>
-
-      {/* ---------------- MODAL: ADD BATCH ---------------- */}
-      {showAddBatch && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <form onSubmit={handleAddBatchSubmit} className="bg-white p-6 rounded w-[500px] space-y-3">
-
-            <input placeholder="Intake"
-              value={newBatchName}
-              onChange={(e) => setNewBatchName(e.target.value)} />
-
-            <input type="date"
-              value={newBatchDate}
-              onChange={(e) => setNewBatchDate(e.target.value)} />
-
-            <input type="number"
-              placeholder="Student Count"
-              value={newBatchCount}
-              onChange={(e) => setNewBatchCount(e.target.value)} />
-
-            {/* TEXT INPUT */}
-            <textarea
-              placeholder="CB001, John"
-              value={batchStudentsText}
-              onChange={(e) => setBatchStudentsText(e.target.value)}
-            />
-
-            {/* FILE INPUT */}
-            <input
-              type="file"
-              accept=".xlsx"
-              onChange={(e) => setBatchFile(e.target.files[0])}
-            />
-
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowAddBatch(false)}>Cancel</button>
-              <button type="submit">Create</button>
+          <div className="space-y-6">
+            {/* Table 1: Supervisor Pool */}
+            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-[#0C2340]">Supervisor Pool</h3>
+                <button onClick={() => navigate('/pm/supervisors')} className="text-xs font-bold text-navy-600 hover:text-navy-800">View All Supervisors</button>
+              </div>
+              <DataTable columns={supervisorPoolColumns} data={supervisors} />
             </div>
 
-          </form>
+            {/* Table 2: Student Allocation Status */}
+            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-[#0C2340]">Student Allocation Status</h3>
+                <button onClick={() => navigate('/pm/students')} className="text-xs font-bold text-navy-600 hover:text-navy-800">View All Students</button>
+              </div>
+              <DataTable columns={studentAllocationColumns} data={students} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ---------------- BATCHES TAB ----------------
+    if (path === '/pm/batches') {
+      const batchColumns = [
+        { header: "Batch ID", accessor: "id" },
+        { header: "Intake", accessor: "intake" },
+        { header: "Start Date", accessor: "startDate" },
+        { header: "Students", accessor: "studentCount" },
+
+        {
+          header: "Stage",
+          render: (row) => {
+            const colors = {
+              Proposal: "bg-blue-50 text-blue-700 border-blue-200",
+              Midpoint: "bg-orange-50 text-orange-700 border-orange-200",
+              Final: "bg-purple-50 text-purple-700 border-purple-200",
+              Completed: "bg-green-50 text-green-700 border-green-200"
+            };
+            const colorClass = colors[row.stage] || "bg-slate-50 text-slate-700 border-slate-200";
+            return (
+              <span className={`px-2.5 py-1 text-xs rounded-full border font-bold ${colorClass}`}>
+                {row.stage}
+              </span>
+            );
+          }
+        },
+
+        {
+          header: "Actions",
+          render: (row) => (
+            <div className="flex gap-2">
+
+              {/* SINGLE STAGE BUTTON */}
+              <button
+                onClick={() => advanceBatchStage(row.id)}
+                disabled={row.stage === 'Completed'}
+                className="px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                Advance Stage
+              </button>
+
+              {/* VIEW STUDENTS */}
+              <button
+                onClick={() => setSelectedBatch(row)}
+                className="px-3 py-1.5 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors font-medium text-slate-700 shadow-sm"
+              >
+                View Students
+              </button>
+
+            </div>
+          )
+        }
+      ];
+
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-slate-800">Academic Batches</h1>
+              <p className="text-sm text-slate-500">Manage intake groups and student assignment cycles</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAddBatch(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded font-bold text-sm shadow-md transition-all hover:shadow-lg"
+              >
+                <Plus className="h-4 w-4" /> Add Batch
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <DataTable columns={batchColumns} data={batches} />
+          </div>
+
+          {selectedBatch && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded shadow-sm border border-slate-200">
+                    <Users className="h-5 w-5 text-navy-700" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">
+                      Students in {selectedBatch.intake} ({selectedBatch.id})
+                    </h3>
+                    <p className="text-xs text-slate-500">Currently in {selectedBatch.stage} stage</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedBatch(null)}
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-0">
+                {selectedBatch.students && selectedBatch.students.length > 0 ? (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                        <th className="px-6 py-3 font-semibold">No</th>
+                        <th className="px-6 py-3 font-semibold">Name</th>
+                        <th className="px-6 py-3 font-semibold">Student Number</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {selectedBatch.students.map((s, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors text-sm">
+                          <td className="px-6 py-3 text-slate-500 font-medium">{idx + 1}</td>
+                          <td className="px-6 py-3 font-semibold text-slate-800">{s.name}</td>
+                          <td className="px-6 py-3 font-mono text-slate-600">{s.studentNo}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-8 text-center space-y-3">
+                    <div className="mx-auto w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                      <Users className="h-5 w-5 text-slate-300" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">No students found in this batch.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ---------------- STUDENTS LIST TAB ----------------
+    if (path === '/pm/students') {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Final Year Students List</h1>
+            <p className="text-sm text-slate-500">Track and filter overall FYP milestones and supervisor matches.</p>
+          </div>
+
+          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
+            <DataTable columns={studentAllocationColumns} data={students} />
+          </div>
+        </div>
+      );
+    }
+
+    // ---------------- SUPERVISORS POOL TAB ----------------
+    if (path === '/pm/supervisors') {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Faculty Supervisor Pool</h1>
+            <p className="text-sm text-slate-500">Monitor active supervisor capacities and expertise fields.</p>
+          </div>
+
+          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
+            <DataTable columns={supervisorPoolColumns} data={supervisors} />
+          </div>
+        </div>
+      );
+    }
+
+    // ---------------- SUPERVISOR ALLOCATION WORKSPACE TAB ----------------
+    if (path === '/pm/allocation') {
+      const unassignedStudents = students.filter(s => s.supervisor === null);
+      const availableSupervisors = supervisors.filter(s => s.slots > 0);
+
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Supervisor Allocation Workspace</h1>
+            <p className="text-sm text-slate-500">Manually match unassigned final year students with available faculty supervisors.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white p-6 rounded border border-slate-200 shadow-sm">
+              {allocSuccess ? (
+                <div className="text-center p-6 space-y-3">
+                  <div className="mx-auto h-12 w-12 rounded bg-green-50 flex items-center justify-center text-green-600 border border-green-100">
+                    <CheckCircle className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-800">Allocation Confirmed</h3>
+                  <p className="text-sm text-slate-500">Student and Supervisor record updated successfully. Syncing statistics...</p>
+                </div>
+              ) : (
+                <form onSubmit={handleAllocateSubmit} className="space-y-5">
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Manual Assignment Form</h3>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Select Unassigned Student *</label>
+                    <select
+                      required
+                      value={allocStudentId}
+                      onChange={(e) => setAllocStudentId(e.target.value)}
+                      className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
+                    >
+                      <option value="">-- Choose unassigned student --</option>
+                      {unassignedStudents.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.id}) - {s.topic || 'No topic proposed'}
+                        </option>
+                      ))}
+                      {unassignedStudents.length === 0 && (
+                        <option disabled>All students allocated</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Select Available Supervisor *</label>
+                    <select
+                      required
+                      value={allocSupervisorId}
+                      onChange={(e) => setAllocSupervisorId(e.target.value)}
+                      className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
+                    >
+                      <option value="">-- Choose available supervisor --</option>
+                      {availableSupervisors.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.title} {s.name} ({s.slots} slots available) - {s.expertise.split(',')[0]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={unassignedStudents.length === 0}
+                      className="px-5 py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Allocate Supervisor
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Unassigned Students quick panel */}
+            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm space-y-4">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Unassigned Students Pool ({unassignedStudents.length})</h3>
+              <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                {unassignedStudents.map((s) => (
+                  <div key={s.id} className="py-2.5 flex justify-between items-start text-xs font-medium">
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-slate-800">{s.name}</p>
+                      <p className="text-slate-400 font-mono">{s.id}</p>
+                    </div>
+                    <button
+                      onClick={() => setAllocStudentId(s.id)}
+                      className="text-navy-600 hover:text-navy-950 underline font-bold"
+                    >
+                      Select
+                    </button>
+                  </div>
+                ))}
+                {unassignedStudents.length === 0 && (
+                  <p className="text-xs text-slate-400 py-4 text-center">All students assigned to supervisor!</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ---------------- REPORTS TAB ----------------
+    if (path === '/pm/reports') {
+      const reports = [
+        { title: "FYP Student Supervisor Allocation Audit Log", format: "Excel Spreadsheet", size: "320 KB", date: "2026-06-13" },
+        { title: "Active Supervisor Capacity & Slot Distribution Analysis", format: "PDF Document", size: "1.4 MB", date: "2026-06-10" },
+        { title: "Interim Milestone Proposal Status Progression Report", format: "PDF Document", size: "890 KB", date: "2026-06-05" },
+      ];
+
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Management Reports</h1>
+            <p className="text-sm text-slate-500">Download system audit audits and capacity logs.</p>
+          </div>
+
+          <div className="bg-white rounded border border-slate-200 shadow-sm divide-y divide-slate-200">
+            {reports.map((rep, idx) => (
+              <div key={idx} className="p-4 md:p-5 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-800">{rep.title}</h4>
+                  <div className="flex gap-4 text-xs text-slate-500 font-medium">
+                    <span>Format: {rep.format}</span>
+                    <span>•</span>
+                    <span>Size: {rep.size}</span>
+                    <span>•</span>
+                    <span>Generated: {rep.date}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => alert(`Downloading: ${rep.title}`)}
+                  className="flex items-center gap-1 px-3 py-1.5 border border-slate-300 hover:border-navy-900 rounded text-xs font-bold bg-white"
+                >
+                  <Download className="h-4 w-4" /> Download
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <>
+      {renderContent()}
+
+      {/* Add Batch Modal */}
+      {showAddBatch && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-navy-50 rounded-lg text-navy-700">
+                  <Layers className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Create New Batch</h3>
+                  <p className="text-xs text-slate-500">Set up a new student intake</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAddBatch(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6">
+              <form id="add-batch-form" onSubmit={handleAddBatchSubmit} className="space-y-6">
+
+                {/* Batch Details Section */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Batch Details</h4>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Batch Intake *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 2025-Sep"
+                        value={newBatchName}
+                        onChange={(e) => setNewBatchName(e.target.value)}
+                        className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Start Date *</label>
+                      <input
+                        type="date"
+                        required
+                        value={newBatchDate}
+                        onChange={(e) => setNewBatchDate(e.target.value)}
+                        className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Student Count *</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      placeholder="e.g. 120"
+                      value={newBatchCount}
+                      onChange={(e) => setNewBatchCount(e.target.value)}
+                      className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Import Section */}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-end">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Import Students</h4>
+                    <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Optional</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5">
+                    {/* Option 1 */}
+                    <div className="space-y-2 relative">
+                      <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-slate-400" /> Option 1: Paste Text
+                      </label>
+                      <textarea
+                        placeholder="Format: CB001, John Doe&#10;CB002, Jane Smith"
+                        value={batchStudentsText}
+                        onChange={(e) => setBatchStudentsText(e.target.value)}
+                        className="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono text-slate-600 placeholder-slate-400 focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white resize-none"
+                      />
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative flex items-center py-2">
+                      <div className="flex-grow border-t border-slate-200"></div>
+                      <span className="flex-shrink-0 mx-4 text-xs font-medium text-slate-400">OR</span>
+                      <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    {/* Option 2 */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                        <FileSpreadsheet className="h-4 w-4 text-slate-400" /> Option 2: Excel Upload
+                      </label>
+                      <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 bg-slate-50 text-center hover:bg-slate-100 transition-colors cursor-pointer relative group">
+                        <input
+                          type="file"
+                          accept=".xlsx, .xls, .csv"
+                          onChange={(e) => setBatchFile(e.target.files[0])}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2 group-hover:text-navy-600 transition-colors" />
+                        <p className="text-sm font-medium text-slate-700">
+                          {batchFile ? batchFile.name : "Click or drag .xlsx file here"}
+                        </p>
+                        {!batchFile && <p className="text-xs text-slate-500 mt-1">Headers: StudentNo, Name</p>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddBatch(false)}
+                className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg text-sm font-semibold text-slate-700 transition-all shadow-sm hover:shadow"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="add-batch-form"
+                className="px-5 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+              >
+                Create Batch
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ---------------- IMPORT MODAL ---------------- */}
+      {/* Import Students Modal */}
       {showImport && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded">
-            <p>Import demo students?</p>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded border border-slate-200 shadow-xl max-w-md w-full overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Import Student Pool</h3>
+              <button onClick={() => setShowImport(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-            <button onClick={handleImportStudents}>Import</button>
-            <button onClick={() => setShowImport(false)}>Close</button>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1 text-center py-4 border border-dashed border-slate-200 rounded">
+                <FileSpreadsheet className="h-10 w-10 mx-auto text-slate-400" />
+                <p className="text-xs text-slate-600 font-bold mt-2">Select Student List CSV/XLSX</p>
+                <p className="text-[10px] text-slate-400">Must include: ID, Name, Batch, Email, Tentative Topic</p>
+              </div>
+
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Clicking "Import Demo Records" will automatically inject 2 unassigned students (Gary Neville, Harry Kane) into the system for mock allocation demonstrations.
+              </p>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowImport(false)}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded text-sm font-semibold text-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImportStudents}
+                  className="px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors"
+                >
+                  Import Demo Records
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

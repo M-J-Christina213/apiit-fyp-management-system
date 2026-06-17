@@ -1,0 +1,19 @@
+[
+  {
+    "id": "B001",
+    "intake": "2025-March",
+    "startDate": "2026-06-15",
+    "stage": "Completed",
+    "studentCount": "70",
+    "students": [
+      {
+        "studentNo": "CB015416",
+        "name": "Jethuni Wanigasekara"
+      },
+      {
+        "studentNo": "CB013452",
+        "name": "Hilsara Premachandran"
+      }
+    ]
+  }
+]
