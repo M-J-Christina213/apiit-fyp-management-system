@@ -23,8 +23,11 @@ import {
   getProposalRequests,
   getBatches,
   createBatch,
-  updateBatchStage
+  updateBatchStage,
+  uploadSupervisors
 } from "../../services/api";
+
+import * as XLSX from 'xlsx';
 
 const PMDashboard = () => {
   const location = useLocation();
@@ -511,16 +514,189 @@ const PMDashboard = () => {
 
     // ---------------- SUPERVISORS POOL TAB ----------------
     if (path === '/pm/supervisors') {
+      const supervisorPoolPageColumns = [
+        { header: 'Title', accessor: 'title' },
+        { header: 'Name', accessor: 'name' },
+        { header: 'Email', accessor: 'email' },
+        {
+          header: 'Areas of Expertise',
+          render: (row) => {
+            if (!row.expertise) return <span className="text-xs text-slate-400 italic">Not Updated</span>;
+            return (
+              <div className="flex flex-wrap gap-1">
+                {row.expertise.split(',').map((exp, idx) => (
+                  <span key={idx} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs border border-blue-100">
+                    {exp.trim()}
+                  </span>
+                ))}
+              </div>
+            );
+          }
+        },
+        {
+          header: 'Research Interests',
+          render: (row) => {
+            if (!row.interests) return <span className="text-xs text-slate-400 italic">Not Updated</span>;
+            return (
+              <div className="flex flex-wrap gap-1">
+                {row.interests.split(',').map((int, idx) => (
+                  <span key={idx} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs border border-purple-100">
+                    {int.trim()}
+                  </span>
+                ))}
+              </div>
+            );
+          }
+        },
+        {
+          header: 'Preferred Supervision Slots',
+          render: (row) => (
+            <span className="font-semibold text-slate-700 text-sm">
+              {row.preferredSlots !== undefined ? row.preferredSlots : 3}
+            </span>
+          )
+        },
+        {
+          header: 'Additional Information',
+          render: (row) => (
+            <span className="text-xs text-slate-600">
+              {row.additionalInfo || '-'}
+            </span>
+          )
+        },
+        {
+          header: 'Status',
+          render: (row) => {
+            const slots = row.preferredSlots !== undefined ? row.preferredSlots : 3;
+            if (slots > 0) {
+              return (
+                <span className="px-2 py-0.5 rounded text-xs font-bold border bg-green-50 text-green-700 border-green-200">
+                  Available
+                </span>
+              );
+            }
+            return (
+              <span className="px-2 py-0.5 rounded text-xs font-bold border bg-red-50 text-red-700 border-red-200">
+                Unavailable
+              </span>
+            );
+          }
+        }
+      ];
+
+      const handleSupervisorUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data);
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(sheet);
+
+          // Map to supervisor records
+          const newSupervisors = json.map((row, index) => ({
+            id: `S${String(index + 1).padStart(3, '0')}`,
+            title: row.Title || '',
+            name: row.Name || '',
+            email: row.Email || '',
+            expertise: '',
+            interests: '',
+            preferredSlots: 3,
+            allocatedSlots: 0,
+            availableSlots: 3,
+            status: 'Available',
+            additionalInfo: ''
+          }));
+
+          // Replace old imported list
+          await uploadSupervisors(newSupervisors);
+          
+          // Re-fetch to auto synchronize
+          const res = await getSupervisors();
+          setSupervisors(res.data);
+          
+          alert(`Successfully imported ${newSupervisors.length} supervisors.`);
+          e.target.value = null; // reset input
+        } catch (error) {
+          console.error("Error importing supervisors:", error);
+          alert("Failed to import supervisors. Please check file format.");
+        }
+      };
+
+      const handleExportSupervisorPool = () => {
+        // Build export data
+        const exportData = supervisors.map(s => ({
+          Title: s.title,
+          Name: s.name,
+          Email: s.email,
+          "Areas of Expertise": s.expertise || 'Not Updated',
+          "Research Interests": s.interests || 'Not Updated',
+          "Preferred Supervision Slots": s.preferredSlots !== undefined ? s.preferredSlots : 3,
+          "Additional Information": s.additionalInfo || '-',
+          Status: (s.preferredSlots !== undefined ? s.preferredSlots : 3) > 0 ? 'Available' : 'Unavailable'
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        XLSX.utils.book_append_sheet(wb, ws, "Supervisor Pool");
+        XLSX.writeFile(wb, "supervisor_pool_export.xlsx");
+      };
+
       return (
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Faculty Supervisor Pool</h1>
-            <p className="text-sm text-slate-500">Monitor active supervisor capacities and expertise fields.</p>
+          {/* Section 1 - Upload Supervisor List */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div className="space-y-2 max-w-xl">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Upload className="h-5 w-5 text-navy-700" />
+                Supervisor List Upload
+              </h2>
+              <p className="text-sm text-slate-500">
+                Upload the latest supervisor list provided by the faculty administration. Accepted formats: .xlsx, .xls, .csv.
+                Expected columns: Title, Name, Email.
+              </p>
+              <div className="text-xs font-semibold text-slate-600 bg-slate-50 p-2 rounded inline-block mt-2">
+                Supervisors Imported: {supervisors.length} | Last Uploaded: {new Date().toLocaleDateString()}
+              </div>
+            </div>
+            <div className="shrink-0 relative group">
+              <input 
+                type="file" 
+                accept=".xlsx, .xls, .csv" 
+                onChange={handleSupervisorUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <button className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Choose Excel File
+              </button>
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-            <DataTable columns={supervisorPoolColumns} data={supervisors} />
+          {/* Section 2 - Supervisor Pool Table */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <div className="space-y-1">
+                <h1 className="text-xl font-bold text-slate-800">Faculty Supervisor Pool</h1>
+                <p className="text-sm text-slate-500">View available supervisors and their supervision capacities.</p>
+              </div>
+              
+              {/* Section 4 - Export Supervisor Pool */}
+              <button 
+                onClick={handleExportSupervisorPool}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 transition-colors text-sm font-bold shadow-sm"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-green-600" /> Export Supervisor Pool
+              </button>
+            </div>
+
+            <div className="p-0">
+              <DataTable columns={supervisorPoolPageColumns} data={supervisors} />
+            </div>
           </div>
+          
+          {/* Future: Assessor Pool */}
+          {/* Future: Assessor Allocation */}
         </div>
       );
     }

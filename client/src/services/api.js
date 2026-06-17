@@ -6,6 +6,7 @@ const API = axios.create({
 
 // GET DATA
 export const getSupervisors = () => API.get("/supervisors");
+export const uploadSupervisors = (data) => API.post("/supervisors/upload", data);
 export const getStudents = () => API.get("/students");
 export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>
