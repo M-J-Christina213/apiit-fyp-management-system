@@ -23,6 +23,9 @@ export const getStats = () =>
 export const createUser = (userData) =>
     API.post("/users", userData);
 
+// BATCHES
+
+export const createBatch = (batchData) => API.post("/batches", batchData);
 // LOGIN USER
 export const getLoggedInUser = () => {
     return JSON.parse(localStorage.getItem("fyp_current_user"));
