@@ -155,8 +155,8 @@ const PMDashboard = () => {
     {
       header: 'Available Slots',
       render: (row) => (
-        <span className={`font-semibold ${row.slots > 0 ? 'text-green-600' : 'text-red-500'}`}>
-          {row.slots}
+        <span className={`font-semibold ${row.availableSlots > 0 ? 'text-green-600' : 'text-red-500'}`}>
+          {row.availableSlots}
         </span>
       )
     },

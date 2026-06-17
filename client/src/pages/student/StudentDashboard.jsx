@@ -81,46 +81,42 @@ const StudentDashboard = () => {
   };
 
   // Find student's proposal request
-  const myProposalRequest = proposals.find(p => p.studentNumber === currentStudent.id);
+  const myProposalRequest = proposals.find(
+    p => p.studentId === currentStudent.id
+  );
 
-  // Proposal Submission Handler
-  const handleProposalSubmit = (e) => {
+  const handleProposalSubmit = async (e) => {
     e.preventDefault();
+
     if (!selectedSupervisorId || !topic || !abstract) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    const selectedSupervisor = supervisors.find(s => s.id === selectedSupervisorId);
+    try {
+      const selectedSupervisor = supervisors.find(
+        s => s.id === selectedSupervisorId
+      );
 
-    // Create new request
-    const newRequest = {
-      id: 'PR' + String(proposals.length + 1).padStart(3, '0'),
-      studentName: currentStudent.name,
-      studentNumber: currentStudent.id,
-      topic: topic,
-      date: new Date().toISOString().split('T')[0],
-      status: 'Pending',
-      supervisorName: selectedSupervisor ? selectedSupervisor.name : 'Unknown'
-    };
+      await createProposal({
+        studentId: currentStudent.id,
+        studentName: currentStudent.name,
+        supervisor: selectedSupervisor?.name,
+        topic,
+        status: "Pending",
+        submittedDate: new Date().toISOString().split("T")[0]
+      });
 
-    const updatedProposals = [...proposals, newRequest];
-    saveProposalRequests(updatedProposals);
-    setProposals(updatedProposals);
+      setFormSubmitted(true);
 
-    // Update student topic & status
-    const updatedStudents = students.map(s =>
-      s.id === currentStudent.id
-        ? { ...s, topic: topic, status: 'Proposal Pending', supervisor: selectedSupervisor ? `${selectedSupervisor.title} ${selectedSupervisor.name}` : null }
-        : s
-    );
-    saveStudents(updatedStudents);
-    setStudents(updatedStudents);
+      setTopic("");
+      setAbstract("");
+      setFileName("");
 
-    setFormSubmitted(true);
-    setTopic('');
-    setAbstract('');
-    setFileName('');
+    } catch (error) {
+      console.error(error);
+      alert("Failed to submit proposal");
+    }
   };
 
   const handleFileChange = (e) => {
@@ -140,8 +136,8 @@ const StudentDashboard = () => {
     {
       header: 'Available Slots',
       render: (row) => (
-        <span className={`font-semibold ${row.slots > 0 ? 'text-green-600' : 'text-red-500'}`}>
-          {row.slots} {row.slots === 1 ? 'slot' : 'slots'}
+        <span className={`font-semibold ${row.availableSlots > 0 ? 'text-green-600' : 'text-red-500'}`}>
+          {row.availableSlots} {row.availableSlots === 1 ? 'slot' : 'slots'}
         </span>
       )
     },
@@ -153,7 +149,7 @@ const StudentDashboard = () => {
             setSelectedSupervisorId(row.id);
             navigate('/student/proposal');
           }}
-          disabled={row.slots === 0}
+          disabled={row.availableSlots === 0}
           className="px-3 py-1 bg-navy-900 hover:bg-navy-950 text-white text-xs font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Select for Proposal
@@ -213,7 +209,11 @@ const StudentDashboard = () => {
             <DashboardCard
               title="Proposal Status"
               value={myProposalRequest ? myProposalRequest.status : (currentStudent.status === 'Assigned' ? 'Approved' : 'Draft')}
-              subtitle={myProposalRequest ? `Submitted on ${myProposalRequest.date}` : 'Not submitted yet'}
+              subtitle={
+                myProposalRequest
+                  ? `Submitted on ${myProposalRequest.submittedDate}`
+                  : 'Not submitted yet'
+              }
               icon={FileText}
             />
             <DashboardCard
@@ -361,8 +361,12 @@ const StudentDashboard = () => {
                     >
                       <option value="">-- Choose an available supervisor --</option>
                       {supervisors.map((s) => (
-                        <option key={s.id} value={s.id} disabled={s.slots === 0}>
-                          {s.title} {s.name} ({s.slots} {s.slots === 1 ? 'slot' : 'slots'} available) - {s.expertise.split(',')[0]}
+                        <option
+                          key={s.id}
+                          value={s.id}
+                          disabled={s.availableSlots === 0}
+                        >
+                          {s.title} {s.name} ({s.availableSlots} {s.availableSlots === 1 ? 'slot' : 'slots'} available) - {s.expertise.split(',')[0]}
                         </option>
                       ))}
                     </select>

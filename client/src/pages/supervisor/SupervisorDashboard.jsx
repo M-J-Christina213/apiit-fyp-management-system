@@ -18,6 +18,13 @@ import {
   Edit2
 } from 'lucide-react';
 
+import {
+  getSupervisors,
+  getStudents,
+  getProposalRequests,
+  getLoggedInUser
+} from "../../services/api.js";
+
 const SupervisorDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,28 +42,54 @@ const SupervisorDashboard = () => {
   const [slots, setSlots] = useState(0);
 
   useEffect(() => {
-    const activeUser = getLoggedInUser();
-    if (activeUser) {
-      setCurrentUser(activeUser);
-    }
 
-    setStudents(getStudents());
-    setSupervisors(getSupervisors());
-    setProposals(getProposalRequests());
+    const loadData = async () => {
+
+      try {
+
+        const [stuRes, supRes, propRes] =
+          await Promise.all([
+            getStudents(),
+            getSupervisors(),
+            getProposalRequests()
+          ]);
+
+        setStudents(stuRes.data);
+        setSupervisors(supRes.data);
+        setProposals(propRes.data);
+
+        const activeUser = getLoggedInUser();
+
+        if (activeUser) {
+          setCurrentUser(activeUser);
+        }
+
+      } catch (err) {
+        console.error(err);
+      }
+
+    };
+
+    loadData();
+
   }, [path]);
 
 
-  const supervisorRecord = supervisors.find(
-    s => s.email === currentUser?.email
-  ) || {
-    id: 'SUP001',
-    title: 'Mr.',
-    name: 'Kavin Kumar',
-    email: 'kavin@apiit.lk',
-    expertise: 'Artificial Intelligence, Machine Learning, Software Engineering',
-    interests: 'Generative AI, Full Stack Development, IOT',
+  const supervisorRecord = Array.isArray(supervisors)
+    ? supervisors.find(
+      s => s.email === currentUser?.email
+    )
+    : null;
+
+  const currentSupervisor = supervisorRecord || {
+    id: "SUP001",
+    title: "Mr.",
+    name: "Kavin Kumar",
+    email: "kavin@apiit.lk",
+    expertise: "Artificial Intelligence, Machine Learning, Software Engineering",
+    interests: "Generative AI, Full Stack Development, IOT",
     slots: 3,
-    status: 'Available'
+    status: "Available"
   };
 
   useEffect(() => {
@@ -191,7 +224,7 @@ const SupervisorDashboard = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-slate-800">Supervisor Dashboard</h1>
-            <span className="text-sm text-slate-500 font-medium">{supervisorRecord.title} {supervisorRecord.name}</span>
+            <span className="text-sm text-slate-500 font-medium">{currentSupervisor.title} {currentSupervisor.name}</span>
           </div>
 
           {/* Cards */}
@@ -204,7 +237,7 @@ const SupervisorDashboard = () => {
             />
             <DashboardCard
               title="Available Slots"
-              value={supervisorRecord.slots}
+              value={currentSupervisor.slots}
               subtitle="Remaining match capacity"
               icon={UserPlus}
             />

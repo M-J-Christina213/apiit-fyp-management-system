@@ -8,8 +8,10 @@ const API = axios.create({
 export const getSupervisors = () => API.get("/supervisors");
 export const getStudents = () => API.get("/students");
 export const getProposalRequests = () => API.get("/proposals");
+export const createProposal = (proposalData) =>
+    API.post("/proposals", proposalData);
 
-// MOCK (keep login local for now)
+// LOGIN USER
 export const getLoggedInUser = () => {
     return JSON.parse(localStorage.getItem("fyp_current_user"));
 };
