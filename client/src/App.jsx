@@ -18,7 +18,8 @@ import {
   Settings,
   Layers,
   UserCheck,
-  Shield
+  Shield,
+  FileCheck
 } from 'lucide-react';
 
 /* ===========================
@@ -47,6 +48,7 @@ const pmLinks = [
   { path: '/pm/students', label: 'Students', icon: Users },
   { path: '/pm/supervisors', label: 'Supervisors', icon: UserCheck },
   { path: '/pm/allocation', label: 'Supervisor Allocation', icon: Shield },
+  { path: '/pm/assessors', label: 'Assessor Allocation', icon: FileCheck },
   { path: '/pm/reports', label: 'Reports', icon: FileText },
 ];
 
@@ -184,6 +186,7 @@ function App() {
             <Route path="/pm/students" element={<PMDashboard />} />
             <Route path="/pm/supervisors" element={<PMDashboard />} />
             <Route path="/pm/allocation" element={<PMDashboard />} />
+            <Route path="/pm/assessors" element={<PMDashboard />} />
             <Route path="/pm/reports" element={<PMDashboard />} />
             <Route path="/pm/*" element={<Navigate to="/pm/dashboard" replace />} />
           </Route>

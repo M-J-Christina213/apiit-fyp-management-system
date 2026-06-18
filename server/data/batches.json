@@ -15,5 +15,279 @@
         "name": "Hilsara Premachandran"
       }
     ]
+  },
+  {
+    "id": "B002",
+    "intake": "2026-July",
+    "startDate": "2026-07-30",
+    "stage": "Midpoint",
+    "studentCount": "40",
+    "students": [
+      {
+        "studentNo": "Batch Code",
+        "name": "Student Name",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "COM2621",
+        "name": "Christina Anne Perera",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "COM2621",
+        "name": "Nuwan Dilshan Jayasinghe",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "COM2621",
+        "name": "Kavindi Sewwandi Fernando",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "COM2621",
+        "name": "Mohamed Rizwan Ahamed",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "COM2621",
+        "name": "Shalini Krishanthi Rajendran",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CYS2621",
+        "name": "Pasindu Lakshan",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CYS2621",
+        "name": "Tharushi Madubhashini Weerasinghe",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CYS2621",
+        "name": "S. Thivya Lakshika",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CYS2621",
+        "name": "Yasith Senuka Bandara",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CYS2621",
+        "name": "Mohamed Faizal Niyas",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "SE2622",
+        "name": "Don Nethmi Amanda Koralage",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "SE2622",
+        "name": "Ahamed Rifan",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "SE2622",
+        "name": "Kethmi Udeshika Abeyrathne",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "SE2622",
+        "name": "Arulanantham Tharshan Kumaravel",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "SE2622",
+        "name": "Liam Joseph Fernando Perera",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      }
+    ]
+  },
+  {
+    "id": "B003",
+    "intake": "2026-Oct",
+    "startDate": "2026-11-10",
+    "stage": "Proposal",
+    "studentCount": "30",
+    "students": [
+      {
+        "batchCode": "Batch Code",
+        "studentNo": "Student Name",
+        "name": "Student No",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2621",
+        "studentNo": "Christina Anne Perera",
+        "name": "CB012341",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2621",
+        "studentNo": "Nuwan Dilshan Jayasinghe",
+        "name": "CB012342",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2621",
+        "studentNo": "Kavindi Sewwandi Fernando",
+        "name": "CB012343",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2621",
+        "studentNo": "Mohamed Rizwan Ahamed",
+        "name": "CB012344",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2621",
+        "studentNo": "Shalini Krishanthi Rajendran",
+        "name": "CB012345",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2621",
+        "studentNo": "Pasindu Lakshan",
+        "name": "CB012346",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2621",
+        "studentNo": "Tharushi Madubhashini Weerasinghe",
+        "name": "CB012347",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2621",
+        "studentNo": "S. Thivya Lakshika",
+        "name": "CB012348",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2621",
+        "studentNo": "Yasith Senuka Bandara",
+        "name": "CB012349",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2621",
+        "studentNo": "Mohamed Faizal Niyas",
+        "name": "CB012350",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SE2622",
+        "studentNo": "Don Nethmi Amanda Koralage",
+        "name": "CB012351",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SE2622",
+        "studentNo": "Ahamed Rifan",
+        "name": "CB012352",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SE2622",
+        "studentNo": "Kethmi Udeshika Abeyrathne",
+        "name": "CB012353",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SE2622",
+        "studentNo": "Arulanantham Tharshan Kumaravel",
+        "name": "CB012354",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SE2622",
+        "studentNo": "Liam Joseph Fernando Perera",
+        "name": "CB012355",
+        "intake": "2026-Oct",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      }
+    ]
   }
 ]

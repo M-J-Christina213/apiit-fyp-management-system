@@ -14,6 +14,7 @@ import {
   X,
   CheckCircle,
   FileText,
+  Shield,
   Upload
 } from 'lucide-react';
 
@@ -36,6 +37,7 @@ const PMDashboard = () => {
 
   const [students, setStudents] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
+  const [assessors, setAssessors] = useState([]);
   const [batches, setBatches] = useState([]);
 
   const [proposals, setProposals] = useState([]);
@@ -51,13 +53,18 @@ const PMDashboard = () => {
   // Allocation state
   const [allocStudentId, setAllocStudentId] = useState('');
   const [allocSupervisorId, setAllocSupervisorId] = useState('');
+  const [allocAssessorId, setAllocAssessorId] = useState('');
   const [allocSuccess, setAllocSuccess] = useState(false);
+  const [assessorAllocSuccess, setAssessorAllocSuccess] = useState(false);
 
   const [selectedBatch, setSelectedBatch] = useState(null);
 
   const [batchStudentsText, setBatchStudentsText] = useState('');
   const [batchFile, setBatchFile] = useState(null);
-  const [registryBatchFilter, setRegistryBatchFilter] = useState('All');
+  
+  // Filtering states
+  const [selectedIntake, setSelectedIntake] = useState('All');
+  const [selectedBatchCode, setSelectedBatchCode] = useState('All');
 
 
 
@@ -78,8 +85,21 @@ const PMDashboard = () => {
     totalStudents: 0,
     availableSupervisors: 0,
     unassignedStudents: 0,
-    pendingProposals: 0
+    pendingProposals: 0,
+    confirmedSupervisors: 0,
+    pmAssignedStudents: 0
   });
+
+  useEffect(() => {
+    setStats(prev => ({
+      ...prev,
+      totalStudents: students.length,
+      availableSupervisors: supervisors.filter(s => (s.slots !== undefined ? s.slots : 3) > 0).length,
+      unassignedStudents: students.filter(s => s.supervisorConfirmationStatus === "Pending").length,
+      confirmedSupervisors: students.filter(s => s.supervisorConfirmationStatus === "Confirmed").length,
+      pmAssignedStudents: students.filter(s => s.supervisorAssignedBy === "PM").length
+    }));
+  }, [students, supervisors]);
 
   const advanceBatchStage = async (batchId) => {
     const batch = batches.find(b => b.id === batchId);
@@ -112,7 +132,14 @@ const PMDashboard = () => {
             getBatches()
           ]);
 
-        setStudents(stuRes.data);
+        const mappedStudents = stuRes.data.map(s => ({
+          ...s,
+          supervisorConfirmationStatus: s.supervisor ? "Confirmed" : "Pending",
+          supervisorAssignedBy: "",
+          assessorAssigned: false,
+          assessor: ""
+        }));
+        setStudents(mappedStudents);
         setSupervisors(supRes.data);
         setBatches(batchRes.data);
         setProposals(propRes.data);
@@ -166,16 +193,21 @@ const PMDashboard = () => {
     // Update student
     const updatedStudents = students.map(s =>
       s.id === student.id
-        ? { ...s, supervisor: `${supervisor.title} ${supervisor.name}`, status: 'Assigned' }
+        ? {
+          ...s,
+          supervisor: `${supervisor.title || ''} ${supervisor.name}`.trim(),
+          supervisorConfirmationStatus: "Confirmed",
+          supervisorAssignedBy: "PM"
+        }
         : s
     );
-    saveStudents(updatedStudents);
+
     setStudents(updatedStudents);
 
     // Update supervisor slots
     const updatedSupervisors = supervisors.map(s =>
       s.id === supervisor.id
-        ? { ...s, slots: Math.max(0, s.slots - 1), status: Math.max(0, s.slots - 1) === 0 ? 'Full' : 'Available' }
+        ? { ...s, slots: Math.max(0, (s.slots !== undefined ? s.slots : s.availableSlots || 0) - 1) }
         : s
     );
 
@@ -185,11 +217,7 @@ const PMDashboard = () => {
     setAllocStudentId('');
     setAllocSupervisorId('');
 
-    // Refresh page data
     setTimeout(() => {
-      setStudents(getStudents());
-      setSupervisors(getSupervisors());
-
       setAllocSuccess(false);
     }, 1500);
   };
@@ -205,9 +233,18 @@ const PMDashboard = () => {
         parsedStudents = batchStudentsText
           .split("\n")
           .map(line => {
-            const [studentNo, name] = line.split(",").map(s => s.trim());
-            if (!studentNo || !name) return null;
-            return { studentNo, name, topic: "", supervisor: "", assessor: "" };
+            const parts = line.split(",").map(s => s.trim());
+            if (parts.length < 3) return null;
+            // Format: BatchCode, StudentNo, Name
+            return { 
+              batchCode: parts[0],
+              studentNo: parts[1], 
+              name: parts[2], 
+              intake: newBatchName,
+              topic: "", 
+              supervisor: "", 
+              assessor: "" 
+            };
           })
           .filter(Boolean);
       }
@@ -220,8 +257,10 @@ const PMDashboard = () => {
         const json = XLSX.utils.sheet_to_json(sheet);
 
         parsedStudents = json.map(row => ({
-          studentNo: row.studentNo || row.StudentNo || row.ID,
-          name: row.name || row.Name,
+          studentNo: row.studentNo || row.StudentNo || row["Student No"] || row.ID,
+          name: row.name || row.Name || row["Student Name"],
+          batchCode: row.batchCode || row.BatchCode || row["Batch Code"],
+          intake: row.intake || row.Intake || row["Batch Intake"] || newBatchName,
           topic: "",
           supervisor: "",
           assessor: ""
@@ -337,11 +376,10 @@ const PMDashboard = () => {
           </div>
 
           {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            <DashboardCard title="Total Students" value={stats.totalStudents || 0} icon={GraduationCap} />
-            <DashboardCard title="Available Supervisors" value={stats.availableSupervisors || 0} icon={Users} />
-            <DashboardCard title="Unassigned Students" value={stats.unassignedStudents || 0} icon={Layers} />
-            <DashboardCard title="Pending Proposals" value={stats.pendingProposals || 0} icon={FileCheck} />
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">
+            <DashboardCard title="Awaiting Supervisor Confirmation" value={stats.unassignedStudents || 0} icon={Users} />
+            <DashboardCard title="Confirmed Supervisors" value={stats.confirmedSupervisors || 0} icon={CheckCircle} />
+            <DashboardCard title="Manually Assigned By PM" value={stats.pmAssignedStudents || 0} icon={Shield} />
           </div>
 
           <div className="space-y-6">
@@ -369,56 +407,15 @@ const PMDashboard = () => {
 
     // ---------------- BATCHES TAB ----------------
     if (path === '/pm/batches') {
-      const batchColumns = [
-        { header: "Batch ID", accessor: "id" },
-        { header: "Intake", accessor: "intake" },
-        { header: "Start Date", accessor: "startDate" },
-        { header: "Students", accessor: "studentCount" },
-
-        {
-          header: "Stage",
-          render: (row) => {
-            const colors = {
-              Proposal: "bg-blue-50 text-blue-700 border-blue-200",
-              Midpoint: "bg-orange-50 text-orange-700 border-orange-200",
-              Final: "bg-purple-50 text-purple-700 border-purple-200",
-              Completed: "bg-green-50 text-green-700 border-green-200"
-            };
-            const colorClass = colors[row.stage] || "bg-slate-50 text-slate-700 border-slate-200";
-            return (
-              <span className={`px-2.5 py-1 text-xs rounded-full border font-bold ${colorClass}`}>
-                {row.stage}
-              </span>
-            );
-          }
-        },
-
-        {
-          header: "Actions",
-          render: (row) => (
-            <div className="flex gap-2">
-
-              {/* SINGLE STAGE BUTTON */}
-              <button
-                onClick={() => advanceBatchStage(row.id)}
-                disabled={row.stage === 'Completed'}
-                className="px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              >
-                Advance Stage
-              </button>
-
-              {/* VIEW STUDENTS */}
-              <button
-                onClick={() => setSelectedBatch(row)}
-                className="px-3 py-1.5 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors font-medium text-slate-700 shadow-sm"
-              >
-                View Students
-              </button>
-
-            </div>
-          )
-        }
-      ];
+      const intakeSummaries = batches.map(b => {
+        const intakeStudents = students.filter(s => s.intake === b.intake || s.batch === b.intake);
+        const uniqueCodes = [...new Set(intakeStudents.map(s => s.batchCode).filter(Boolean))];
+        return {
+          ...b,
+          actualStudentCount: intakeStudents.length,
+          batchCodes: uniqueCodes
+        };
+      });
 
       return (
         <div className="space-y-6">
@@ -433,115 +430,154 @@ const PMDashboard = () => {
                 onClick={() => setShowAddBatch(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded font-bold text-sm shadow-md transition-all hover:shadow-lg"
               >
-                <Plus className="h-4 w-4" /> Add Batch
+                <Plus className="h-4 w-4" /> Add Intake
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <DataTable columns={batchColumns} data={batches} />
-          </div>
-
-          {selectedBatch && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
-              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded shadow-sm border border-slate-200">
-                    <Users className="h-5 w-5 text-navy-700" />
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {intakeSummaries.map((summary, idx) => (
+              <div key={idx} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-slate-800">
-                      Students in {selectedBatch.intake} ({selectedBatch.id})
-                    </h3>
-                    <p className="text-xs text-slate-500">Currently in {selectedBatch.stage} stage</p>
+                    <h3 className="text-lg font-bold text-navy-900">{summary.intake}</h3>
+                    <p className="text-sm text-slate-500">Started: {summary.startDate || 'N/A'}</p>
                   </div>
+                  <span className={`px-2.5 py-1 text-xs rounded-full border font-bold bg-slate-50 text-slate-700 border-slate-200`}>
+                    {summary.stage || 'Proposal'}
+                  </span>
+                </div>
+                
+                <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-600">Students:</span>
+                  <span className="text-base font-bold text-slate-800">{summary.actualStudentCount > 0 ? summary.actualStudentCount : summary.studentCount}</span>
                 </div>
 
-                <button
-                  onClick={() => setSelectedBatch(null)}
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="p-0">
-                {selectedBatch.students && selectedBatch.students.length > 0 ? (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
-                        <th className="px-6 py-3 font-semibold">No</th>
-                        <th className="px-6 py-3 font-semibold">Name</th>
-                        <th className="px-6 py-3 font-semibold">Student Number</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {selectedBatch.students.map((s, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors text-sm">
-                          <td className="px-6 py-3 text-slate-500 font-medium">{idx + 1}</td>
-                          <td className="px-6 py-3 font-semibold text-slate-800">{s.name}</td>
-                          <td className="px-6 py-3 font-mono text-slate-600">{s.studentNo}</td>
-                        </tr>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Batch Codes</span>
+                  {summary.batchCodes.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {summary.batchCodes.map(code => (
+                        <span key={code} className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-bold">
+                          {code}
+                        </span>
                       ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="p-8 text-center space-y-3">
-                    <div className="mx-auto w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
-                      <Users className="h-5 w-5 text-slate-300" />
                     </div>
-                    <p className="text-sm font-medium text-slate-500">No students found in this batch.</p>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">No batch codes found</p>
+                  )}
+                </div>
+
+                <div className="pt-4 flex gap-2">
+                  <button
+                    onClick={() => advanceBatchStage(summary.id)}
+                    disabled={summary.stage === 'Completed'}
+                    className="flex-1 px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    Advance Stage
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       );
     }
 
+
+    // ---------------- COMMON FILTERING LOGIC ----------------
+    const uniqueIntakes = [...new Set(students.map(s => s.intake || s.batch).filter(Boolean))];
+    const dynamicBatchCodes = selectedIntake === 'All' 
+      ? [...new Set(students.map(s => s.batchCode).filter(Boolean))]
+      : [...new Set(students.filter(s => (s.intake || s.batch) === selectedIntake).map(s => s.batchCode).filter(Boolean))];
+
+    const FilterControls = () => (
+      <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-slate-700">Intake:</span>
+          <select
+            value={selectedIntake}
+            onChange={(e) => {
+              setSelectedIntake(e.target.value);
+              setSelectedBatchCode('All'); // Reset batch code when intake changes
+            }}
+            className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
+          >
+            <option value="All">All Intakes</option>
+            {uniqueIntakes.map(i => (
+              <option key={i} value={i}>{i}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-slate-700">Batch Code:</span>
+          <select
+            value={selectedBatchCode}
+            onChange={(e) => setSelectedBatchCode(e.target.value)}
+            className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
+            disabled={selectedIntake !== 'All' && dynamicBatchCodes.length === 0}
+          >
+            <option value="All">All Batch Codes</option>
+            {dynamicBatchCodes.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+
+    const applyFilters = (record) => {
+      const recordIntake = record.intake || record.batch;
+      const intakeMatch = selectedIntake === 'All' || recordIntake === selectedIntake;
+      const batchCodeMatch = selectedBatchCode === 'All' || record.batchCode === selectedBatchCode;
+      return intakeMatch && batchCodeMatch;
+    };
+
     // ---------------- STUDENTS LIST TAB ----------------
     if (path === '/pm/students') {
-      const allAllocationRecords = batches.flatMap(b => 
-        (b.students || []).map(s => ({
-          batchIntake: b.intake,
-          batchCode: b.id,
-          name: s.name,
-          studentNo: s.studentNo,
-          topic: s.topic || "",
-          supervisor: s.supervisor || "",
-          assessor: s.assessor || ""
-        }))
-      );
+      const allAllocationRecords = students.map(s => ({
+        intake: s.intake || s.batch || '-',
+        batchCode: s.batchCode || '-',
+        name: s.name,
+        studentNo: s.id || s.studentNo,
+        topic: s.topic || "",
+        supervisor: s.supervisor || "",
+        supervisorConfirmationStatus: s.supervisorConfirmationStatus || "Pending",
+        assessor: s.assessor || ""
+      }));
 
-      const filteredRecords = registryBatchFilter === 'All' 
-        ? allAllocationRecords 
-        : allAllocationRecords.filter(r => r.batchIntake === registryBatchFilter);
-
-      const uniqueBatches = [...new Set(batches.map(b => b.intake))];
+      const filteredRecords = allAllocationRecords.filter(applyFilters);
 
       const allocationColumns = [
-        { header: 'Batch Intake', accessor: 'batchIntake' },
-        { header: 'Batch Code', render: (row) => row.batchCode || '-' },
+        { header: 'Batch Intake', accessor: 'intake' },
+        { header: 'Batch Code', accessor: 'batchCode' },
         { header: 'Student Name', accessor: 'name' },
         { header: 'Student Number', accessor: 'studentNo' },
         { header: 'Tentative Topic', render: (row) => row.topic || '-' },
         { header: 'Supervisor', render: (row) => row.supervisor || '-' },
+        {
+          header: 'Supervisor Confirmation Status',
+          render: (row) => (
+            <span className={`px-2 py-0.5 rounded text-xs font-bold border ${row.supervisorConfirmationStatus === 'Confirmed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+              {row.supervisorConfirmationStatus}
+            </span>
+          )
+        },
         { header: 'Assessor', render: (row) => row.assessor || '-' }
       ];
 
       const handleExportAllocationRegistry = () => {
         const wb = XLSX.utils.book_new();
         const exportData = filteredRecords.map(r => ({
-          "Batch Intake": r.batchIntake,
-          "Batch Code": r.batchCode || '-',
+          "Batch Intake": r.intake,
+          "Batch Code": r.batchCode,
           "Student Name": r.name,
           "Student Number": r.studentNo,
           "Tentative Topic": r.topic || '-',
           "Supervisor": r.supervisor || '-',
           "Assessor": r.assessor || '-'
         }));
-        
+
         const ws = XLSX.utils.json_to_sheet(exportData);
         XLSX.utils.book_append_sheet(wb, ws, "Allocation Registry");
         XLSX.writeFile(wb, "fyp_student_allocation_registry.xlsx");
@@ -554,7 +590,7 @@ const PMDashboard = () => {
               <h1 className="text-2xl font-bold text-slate-800">FYP Student Allocation Registry</h1>
               <p className="text-sm text-slate-500">Monitor student projects, supervisor assignments and assessor allocations across all batches.</p>
             </div>
-            <button 
+            <button
               onClick={handleExportAllocationRegistry}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 transition-colors text-sm font-bold shadow-sm whitespace-nowrap"
             >
@@ -564,19 +600,7 @@ const PMDashboard = () => {
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-slate-700">Filter by Batch:</span>
-                <select
-                  value={registryBatchFilter}
-                  onChange={(e) => setRegistryBatchFilter(e.target.value)}
-                  className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
-                >
-                  <option value="All">All Batches</option>
-                  {uniqueBatches.map(b => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </select>
-              </div>
+              <FilterControls />
               <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
                 Total Records: {filteredRecords.length}
               </div>
@@ -688,11 +712,11 @@ const PMDashboard = () => {
 
           // Replace old imported list
           await uploadSupervisors(newSupervisors);
-          
+
           // Re-fetch to auto synchronize
           const res = await getSupervisors();
           setSupervisors(res.data);
-          
+
           alert(`Successfully imported ${newSupervisors.length} supervisors.`);
           e.target.value = null; // reset input
         } catch (error) {
@@ -738,9 +762,9 @@ const PMDashboard = () => {
               </div>
             </div>
             <div className="shrink-0 relative group">
-              <input 
-                type="file" 
-                accept=".xlsx, .xls, .csv" 
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
                 onChange={handleSupervisorUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
@@ -757,9 +781,9 @@ const PMDashboard = () => {
                 <h1 className="text-xl font-bold text-slate-800">Faculty Supervisor Pool</h1>
                 <p className="text-sm text-slate-500">View available supervisors and their supervision capacities.</p>
               </div>
-              
+
               {/* Section 4 - Export Supervisor Pool */}
-              <button 
+              <button
                 onClick={handleExportSupervisorPool}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 transition-colors text-sm font-bold shadow-sm"
               >
@@ -771,113 +795,363 @@ const PMDashboard = () => {
               <DataTable columns={supervisorPoolPageColumns} data={supervisors} />
             </div>
           </div>
-          
+
           {/* Future: Assessor Pool */}
           {/* Future: Assessor Allocation */}
         </div>
       );
     }
 
-    // ---------------- SUPERVISOR ALLOCATION WORKSPACE TAB ----------------
+    // ---------------- SUPERVISOR ALLOCATION WORKSPACE TAB (Unresolved Cases) ----------------
     if (path === '/pm/allocation') {
-      const unassignedStudents = students.filter(s => s.supervisor === null);
-      const availableSupervisors = supervisors.filter(s => s.slots > 0);
+      const unresolvedStudents = students.filter(s => s.supervisorConfirmationStatus === 'Pending' && applyFilters(s));
+      const availableSupervisors = supervisors.filter(s => (s.slots !== undefined ? s.slots : s.availableSlots || 0) > 0);
+
+      const allocationColumns = [
+        { header: 'Batch Intake', render: (row) => row.intake || row.batch || '-' },
+        { header: 'Batch Code', accessor: 'batchCode' },
+        { header: 'Student Name', accessor: 'name' },
+        { header: 'Student Number', accessor: 'id' },
+        { header: 'Project Topic', render: (row) => row.topic || '-' },
+        { header: 'Requested Supervisor', render: (row) => row.requestedSupervisor || '-' },
+        {
+          header: 'Current Status',
+          render: (row) => (
+            <span className="px-2 py-0.5 rounded text-xs font-bold border bg-amber-50 text-amber-700 border-amber-200">
+              Pending
+            </span>
+          )
+        },
+        {
+          header: 'Action',
+          render: (row) => (
+            <button
+              onClick={() => setAllocStudentId(row.id)}
+              className="px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium shadow-sm"
+            >
+              Resolve
+            </button>
+          )
+        }
+      ];
+
+      const selectedStudent = allocStudentId ? students.find(s => s.id === allocStudentId) : null;
+
+      // Mock reasons
+      const reasons = ["Awaiting Review", "Rejected", "Supervisor Full", "No Response"];
+      const mockReason = selectedStudent ? reasons[Math.abs(selectedStudent.id.charCodeAt(selectedStudent.id.length - 1)) % reasons.length] : "";
+
+      // Simple recommendation engine
+      const getRecommendations = (topic) => {
+        if (!topic) return availableSupervisors.slice(0, 3);
+        const lowerTopic = topic.toLowerCase();
+        const scored = availableSupervisors.map(s => {
+          let score = 0;
+          if (s.expertise && s.expertise.toLowerCase().split(',').some(kw => lowerTopic.includes(kw.trim()))) score += 2;
+          if (s.interests && s.interests.toLowerCase().split(',').some(kw => lowerTopic.includes(kw.trim()))) score += 1;
+          return { supervisor: s, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        return scored.map(s => s.supervisor).slice(0, 3);
+      };
+
+      const recommendedSupervisors = selectedStudent ? getRecommendations(selectedStudent.topic) : [];
 
       return (
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Supervisor Allocation Workspace</h1>
-            <p className="text-sm text-slate-500">Manually match unassigned final year students with available faculty supervisors.</p>
+            <h1 className="text-2xl font-bold text-slate-800">Unresolved Supervisor Allocations</h1>
+            <p className="text-sm text-slate-500">Manage students who do not have a confirmed supervisor yet.</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white p-6 rounded border border-slate-200 shadow-sm">
-              {allocSuccess ? (
-                <div className="text-center p-6 space-y-3">
-                  <div className="mx-auto h-12 w-12 rounded bg-green-50 flex items-center justify-center text-green-600 border border-green-100">
+          {!selectedStudent ? (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 className="font-bold text-slate-800">Pending Supervisor Cases ({unresolvedStudents.length})</h3>
+                <FilterControls />
+              </div>
+              <div className="p-0">
+                <DataTable columns={allocationColumns} data={unresolvedStudents} />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Resolve Panel */}
+              <div className="lg:col-span-2 bg-white p-6 rounded border border-slate-200 shadow-sm space-y-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Resolve Case: {selectedStudent.name}</h3>
+                    <p className="text-sm text-slate-500">{selectedStudent.id} • {selectedStudent.batch}</p>
+                  </div>
+                  <button onClick={() => setAllocStudentId('')} className="text-sm font-bold text-navy-600 hover:text-navy-900">
+                    Back to List
+                  </button>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                  <div>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Project Topic</span>
+                    <p className="text-sm font-medium text-slate-800">{selectedStudent.topic || 'No topic proposed'}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Requested Supervisor</span>
+                      <p className="text-sm font-medium text-slate-800">{selectedStudent.requestedSupervisor || 'None'}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Reason Still Pending</span>
+                      <span className="px-2 py-0.5 rounded text-xs font-bold border bg-red-50 text-red-700 border-red-200 inline-block">
+                        {mockReason}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {allocSuccess ? (
+                  <div className="text-center p-6 space-y-3 border border-green-200 bg-green-50 rounded-lg">
+                    <div className="mx-auto h-12 w-12 rounded bg-green-100 flex items-center justify-center text-green-600 border border-green-200">
+                      <CheckCircle className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-bold text-green-800">Allocation Confirmed</h3>
+                    <p className="text-sm text-green-700">Student is now locked with PM Assignment. Returning to list...</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleAllocateSubmit} className="space-y-5 border-t border-slate-100 pt-5">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Manual Assignment *</label>
+                      <select
+                        required
+                        value={allocSupervisorId}
+                        onChange={(e) => setAllocSupervisorId(e.target.value)}
+                        className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
+                      >
+                        <option value="">-- Choose supervisor to resolve case --</option>
+                        {availableSupervisors.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.title} {s.name} ({(s.slots !== undefined ? s.slots : s.availableSlots || 0)} slots) - {s.expertise ? s.expertise.split(',')[0] : 'No expertise'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        className="px-5 py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors shadow-md"
+                      >
+                        Force Allocate Supervisor
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Recommendations Panel */}
+              <div className="bg-white p-5 rounded border border-slate-200 shadow-sm space-y-4 h-fit">
+                <h3 className="text-sm font-bold text-slate-800">Recommended Supervisors</h3>
+                <p className="text-xs text-slate-500">Based on research interests & expertise</p>
+                <div className="space-y-3">
+                  {recommendedSupervisors.map((s) => (
+                    <div key={s.id} className="p-3 border border-slate-200 rounded bg-slate-50 flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">{s.title} {s.name}</p>
+                        <p className="text-xs text-slate-500 truncate max-w-[140px]">{s.expertise || s.interests || 'General'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAllocSupervisorId(s.id)}
+                        className="text-xs font-bold text-navy-600 hover:text-navy-900"
+                      >
+                        Select
+                      </button>
+                    </div>
+                  ))}
+                  {recommendedSupervisors.length === 0 && (
+                    <p className="text-xs text-slate-400">No specific recommendations.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ---------------- ASSESSOR ALLOCATION WORKSPACE TAB ----------------
+    if (path === '/pm/assessors') {
+      const assessorEligibleStudents = students.filter(s => s.supervisorConfirmationStatus === 'Confirmed' && !s.assessorAssigned && applyFilters(s));
+
+      const assessorTableColumns = [
+        { header: 'Batch Intake', render: (row) => row.intake || row.batch || '-' },
+        { header: 'Batch Code', accessor: 'batchCode' },
+        { header: 'Student Name', accessor: 'name' },
+        { header: 'Student Number', accessor: 'id' },
+        { header: 'Project Topic', render: (row) => row.topic || '-' },
+        { header: 'Confirmed Supervisor', render: (row) => row.supervisor || '-' },
+        { header: 'Assigned Assessor', render: (row) => row.assessor || '-' },
+        {
+          header: 'Action',
+          render: (row) => (
+            <button
+              onClick={() => setAllocStudentId(row.id)}
+              className="px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium shadow-sm"
+            >
+              Assign Assessor
+            </button>
+          )
+        }
+      ];
+
+      const selectedStudentForAssessor = allocStudentId ? students.find(s => s.id === allocStudentId) : null;
+
+      const handleAssessorAllocateSubmit = (e) => {
+        e.preventDefault();
+        if (!allocStudentId || !allocAssessorId) return;
+
+        const student = students.find(s => s.id === allocStudentId);
+        const assessor = assessors.find(a => a.id === allocAssessorId);
+
+        if (!student || !assessor) return;
+
+        const updatedStudents = students.map(s =>
+          s.id === student.id
+            ? {
+              ...s,
+              assessor: `${assessor.Title || ''} ${assessor.Name}`.trim(),
+              assessorAssigned: true
+            }
+            : s
+        );
+
+        setStudents(updatedStudents);
+        setAssessorAllocSuccess(true);
+        setAllocStudentId('');
+        setAllocAssessorId('');
+
+        setTimeout(() => setAssessorAllocSuccess(false), 1500);
+      };
+
+      const handleAssessorUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data);
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(sheet);
+
+          const newAssessors = json.map((row, index) => ({
+            id: `A${String(index + 1).padStart(3, '0')}`,
+            Title: row.Title || '',
+            Name: row.Name || '',
+            Email: row.Email || ''
+          }));
+
+          setAssessors(newAssessors);
+          alert(`Successfully imported ${newAssessors.length} assessors.`);
+          e.target.value = null;
+        } catch (error) {
+          console.error("Error importing assessors:", error);
+          alert("Failed to import assessors. Please check file format.");
+        }
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Assessor Allocation</h1>
+            <p className="text-sm text-slate-500">Assign assessors to students with confirmed supervisors.</p>
+          </div>
+
+          {/* Assessor Upload Section */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div className="space-y-2 max-w-xl">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Upload className="h-5 w-5 text-navy-700" />
+                Assessor Pool Upload
+              </h2>
+              <p className="text-sm text-slate-500">
+                Upload the assessor list. Expected columns: Title, Name, Email.
+              </p>
+              <div className="text-xs font-semibold text-slate-600 bg-slate-50 p-2 rounded inline-block mt-2">
+                Assessors Imported: {assessors.length}
+              </div>
+            </div>
+            <div className="shrink-0 relative group">
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleAssessorUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <button className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Choose Excel File
+              </button>
+            </div>
+          </div>
+
+          {!selectedStudentForAssessor ? (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 className="font-bold text-slate-800">Eligible Students ({assessorEligibleStudents.length})</h3>
+                <FilterControls />
+              </div>
+              <div className="p-0">
+                <DataTable columns={assessorTableColumns} data={assessorEligibleStudents} />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 max-w-2xl">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Assign Assessor for: {selectedStudentForAssessor.name}</h3>
+                  <p className="text-sm text-slate-500">{selectedStudentForAssessor.id} • {selectedStudentForAssessor.topic}</p>
+                </div>
+                <button onClick={() => setAllocStudentId('')} className="text-sm font-bold text-navy-600 hover:text-navy-900">
+                  Cancel
+                </button>
+              </div>
+
+              {assessorAllocSuccess ? (
+                <div className="text-center p-6 space-y-3 border border-green-200 bg-green-50 rounded-lg">
+                  <div className="mx-auto h-12 w-12 rounded bg-green-100 flex items-center justify-center text-green-600 border border-green-200">
                     <CheckCircle className="h-6 w-6" />
                   </div>
-                  <h3 className="font-bold text-slate-800">Allocation Confirmed</h3>
-                  <p className="text-sm text-slate-500">Student and Supervisor record updated successfully. Syncing statistics...</p>
+                  <h3 className="font-bold text-green-800">Assessor Assigned</h3>
                 </div>
               ) : (
-                <form onSubmit={handleAllocateSubmit} className="space-y-5">
-                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Manual Assignment Form</h3>
-
+                <form onSubmit={handleAssessorAllocateSubmit} className="space-y-5">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Select Unassigned Student *</label>
+                    <label className="text-sm font-semibold text-slate-700">Select Assessor *</label>
                     <select
                       required
-                      value={allocStudentId}
-                      onChange={(e) => setAllocStudentId(e.target.value)}
+                      value={allocAssessorId}
+                      onChange={(e) => setAllocAssessorId(e.target.value)}
                       className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
                     >
-                      <option value="">-- Choose unassigned student --</option>
-                      {unassignedStudents.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.id}) - {s.topic || 'No topic proposed'}
+                      <option value="">-- Choose assessor --</option>
+                      {assessors.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.Title} {a.Name}
                         </option>
                       ))}
-                      {unassignedStudents.length === 0 && (
-                        <option disabled>All students allocated</option>
+                      {assessors.length === 0 && (
+                        <option disabled>Please upload assessors first</option>
                       )}
                     </select>
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Select Available Supervisor *</label>
-                    <select
-                      required
-                      value={allocSupervisorId}
-                      onChange={(e) => setAllocSupervisorId(e.target.value)}
-                      className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                    >
-                      <option value="">-- Choose available supervisor --</option>
-                      {availableSupervisors.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.title} {s.name} ({s.slots} slots available) - {s.expertise.split(',')[0]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={unassignedStudents.length === 0}
-                      className="px-5 py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Allocate Supervisor
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={assessors.length === 0}
+                    className="px-5 py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors disabled:opacity-50"
+                  >
+                    Confirm Assignment
+                  </button>
                 </form>
               )}
             </div>
-
-            {/* Unassigned Students quick panel */}
-            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Unassigned Students Pool ({unassignedStudents.length})</h3>
-              <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                {unassignedStudents.map((s) => (
-                  <div key={s.id} className="py-2.5 flex justify-between items-start text-xs font-medium">
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-slate-800">{s.name}</p>
-                      <p className="text-slate-400 font-mono">{s.id}</p>
-                    </div>
-                    <button
-                      onClick={() => setAllocStudentId(s.id)}
-                      className="text-navy-600 hover:text-navy-950 underline font-bold"
-                    >
-                      Select
-                    </button>
-                  </div>
-                ))}
-                {unassignedStudents.length === 0 && (
-                  <p className="text-xs text-slate-400 py-4 text-center">All students assigned to supervisor!</p>
-                )}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       );
     }
