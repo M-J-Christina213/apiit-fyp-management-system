@@ -57,6 +57,7 @@ const PMDashboard = () => {
 
   const [batchStudentsText, setBatchStudentsText] = useState('');
   const [batchFile, setBatchFile] = useState(null);
+  const [registryBatchFilter, setRegistryBatchFilter] = useState('All');
 
 
 
@@ -206,7 +207,7 @@ const PMDashboard = () => {
           .map(line => {
             const [studentNo, name] = line.split(",").map(s => s.trim());
             if (!studentNo || !name) return null;
-            return { studentNo, name };
+            return { studentNo, name, topic: "", supervisor: "", assessor: "" };
           })
           .filter(Boolean);
       }
@@ -220,7 +221,10 @@ const PMDashboard = () => {
 
         parsedStudents = json.map(row => ({
           studentNo: row.studentNo || row.StudentNo || row.ID,
-          name: row.name || row.Name
+          name: row.name || row.Name,
+          topic: "",
+          supervisor: "",
+          assessor: ""
         }));
       }
 
@@ -498,15 +502,88 @@ const PMDashboard = () => {
 
     // ---------------- STUDENTS LIST TAB ----------------
     if (path === '/pm/students') {
+      const allAllocationRecords = batches.flatMap(b => 
+        (b.students || []).map(s => ({
+          batchIntake: b.intake,
+          batchCode: b.id,
+          name: s.name,
+          studentNo: s.studentNo,
+          topic: s.topic || "",
+          supervisor: s.supervisor || "",
+          assessor: s.assessor || ""
+        }))
+      );
+
+      const filteredRecords = registryBatchFilter === 'All' 
+        ? allAllocationRecords 
+        : allAllocationRecords.filter(r => r.batchIntake === registryBatchFilter);
+
+      const uniqueBatches = [...new Set(batches.map(b => b.intake))];
+
+      const allocationColumns = [
+        { header: 'Batch Intake', accessor: 'batchIntake' },
+        { header: 'Batch Code', render: (row) => row.batchCode || '-' },
+        { header: 'Student Name', accessor: 'name' },
+        { header: 'Student Number', accessor: 'studentNo' },
+        { header: 'Tentative Topic', render: (row) => row.topic || '-' },
+        { header: 'Supervisor', render: (row) => row.supervisor || '-' },
+        { header: 'Assessor', render: (row) => row.assessor || '-' }
+      ];
+
+      const handleExportAllocationRegistry = () => {
+        const wb = XLSX.utils.book_new();
+        const exportData = filteredRecords.map(r => ({
+          "Batch Intake": r.batchIntake,
+          "Batch Code": r.batchCode || '-',
+          "Student Name": r.name,
+          "Student Number": r.studentNo,
+          "Tentative Topic": r.topic || '-',
+          "Supervisor": r.supervisor || '-',
+          "Assessor": r.assessor || '-'
+        }));
+        
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        XLSX.utils.book_append_sheet(wb, ws, "Allocation Registry");
+        XLSX.writeFile(wb, "fyp_student_allocation_registry.xlsx");
+      };
+
       return (
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Final Year Students List</h1>
-            <p className="text-sm text-slate-500">Track and filter overall FYP milestones and supervisor matches.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-slate-800">FYP Student Allocation Registry</h1>
+              <p className="text-sm text-slate-500">Monitor student projects, supervisor assignments and assessor allocations across all batches.</p>
+            </div>
+            <button 
+              onClick={handleExportAllocationRegistry}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 transition-colors text-sm font-bold shadow-sm whitespace-nowrap"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-green-600" /> Export Allocation Registry
+            </button>
           </div>
 
-          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-            <DataTable columns={studentAllocationColumns} data={students} />
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-slate-700">Filter by Batch:</span>
+                <select
+                  value={registryBatchFilter}
+                  onChange={(e) => setRegistryBatchFilter(e.target.value)}
+                  className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
+                >
+                  <option value="All">All Batches</option>
+                  {uniqueBatches.map(b => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+                Total Records: {filteredRecords.length}
+              </div>
+            </div>
+            <div className="p-0">
+              <DataTable columns={allocationColumns} data={filteredRecords} />
+            </div>
           </div>
         </div>
       );
