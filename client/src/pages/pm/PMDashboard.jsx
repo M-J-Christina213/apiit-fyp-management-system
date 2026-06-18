@@ -214,11 +214,11 @@ const PMDashboard = () => {
     setSupervisors(updatedSupervisors);
 
     setAllocSuccess(true);
-    setAllocStudentId('');
-    setAllocSupervisorId('');
 
     setTimeout(() => {
       setAllocSuccess(false);
+      setAllocStudentId('');
+      setAllocSupervisorId('');
     }, 1500);
   };
 
@@ -277,6 +277,20 @@ const PMDashboard = () => {
       });
 
       setBatches([...batches, response.data]);
+
+      // Add to global students state with default fields
+      const newGlobalStudents = parsedStudents.map(s => ({
+        id: s.studentNo,
+        name: s.name,
+        batchCode: s.batchCode || '-',
+        intake: s.intake || newBatchName,
+        topic: s.topic || "",
+        supervisor: s.supervisor || "",
+        supervisorConfirmationStatus: "Pending",
+        assessor: s.assessor || "",
+        assessorAssigned: false
+      }));
+      setStudents(prev => [...prev, ...newGlobalStudents]);
 
       setShowAddBatch(false);
       setNewBatchName('');
@@ -443,9 +457,20 @@ const PMDashboard = () => {
                     <h3 className="text-lg font-bold text-navy-900">{summary.intake}</h3>
                     <p className="text-sm text-slate-500">Started: {summary.startDate || 'N/A'}</p>
                   </div>
-                  <span className={`px-2.5 py-1 text-xs rounded-full border font-bold bg-slate-50 text-slate-700 border-slate-200`}>
-                    {summary.stage || 'Proposal'}
-                  </span>
+                  {(() => {
+                    const stage = summary.stage || 'Proposal';
+                    const colors = {
+                      Proposal: "bg-blue-50 text-blue-700 border-blue-200",
+                      Midpoint: "bg-orange-50 text-orange-700 border-orange-200",
+                      Final: "bg-purple-50 text-purple-700 border-purple-200",
+                      Completed: "bg-green-50 text-green-700 border-green-200"
+                    };
+                    return (
+                      <span className={`px-2.5 py-1 text-xs rounded-full border font-bold ${colors[stage] || 'bg-slate-50 text-slate-700 border-slate-200'}`}>
+                        {stage}
+                      </span>
+                    );
+                  })()}
                 </div>
                 
                 <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
@@ -476,10 +501,84 @@ const PMDashboard = () => {
                   >
                     Advance Stage
                   </button>
+                  <button
+                    onClick={() => setSelectedBatch(summary)}
+                    className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors font-medium text-slate-700 shadow-sm"
+                  >
+                    View Students
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+
+          {selectedBatch && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 mt-6">
+              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded shadow-sm border border-slate-200">
+                    <Users className="h-5 w-5 text-navy-700" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">
+                      Students in {selectedBatch.intake} ({selectedBatch.id})
+                    </h3>
+                    <p className="text-xs text-slate-500">Currently in {selectedBatch.stage} stage</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedBatch(null)}
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-0">
+                {(() => {
+                  const batchStudents = students.filter(s => (s.intake || s.batch) === selectedBatch.intake);
+                  if (batchStudents.length > 0) {
+                    return (
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50/50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                            <th className="px-6 py-3 font-semibold">No</th>
+                            <th className="px-6 py-3 font-semibold">Batch Code</th>
+                            <th className="px-6 py-3 font-semibold">Name</th>
+                            <th className="px-6 py-3 font-semibold">Student Number</th>
+                            <th className="px-6 py-3 font-semibold">Supervisor</th>
+                            <th className="px-6 py-3 font-semibold">Assessor</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {batchStudents.map((s, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors text-sm">
+                              <td className="px-6 py-3 text-slate-500 font-medium">{idx + 1}</td>
+                              <td className="px-6 py-3 font-semibold text-slate-800">{s.batchCode || '-'}</td>
+                              <td className="px-6 py-3 font-semibold text-slate-800">{s.name}</td>
+                              <td className="px-6 py-3 font-mono text-slate-600">{s.id || s.studentNo}</td>
+                              <td className="px-6 py-3 text-slate-600">{s.supervisor || '-'}</td>
+                              <td className="px-6 py-3 text-slate-600">{s.assessor || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    );
+                  } else {
+                    return (
+                      <div className="p-8 text-center space-y-3">
+                        <div className="mx-auto w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                          <Users className="h-5 w-5 text-slate-300" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-500">No students found in this batch.</p>
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -813,9 +912,8 @@ const PMDashboard = () => {
         { header: 'Student Name', accessor: 'name' },
         { header: 'Student Number', accessor: 'id' },
         { header: 'Project Topic', render: (row) => row.topic || '-' },
-        { header: 'Requested Supervisor', render: (row) => row.requestedSupervisor || '-' },
         {
-          header: 'Current Status',
+          header: 'Supervisor Status',
           render: (row) => (
             <span className="px-2 py-0.5 rounded text-xs font-bold border bg-amber-50 text-amber-700 border-amber-200">
               Pending
@@ -895,8 +993,8 @@ const PMDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Requested Supervisor</span>
-                      <p className="text-sm font-medium text-slate-800">{selectedStudent.requestedSupervisor || 'None'}</p>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Current Status</span>
+                      <p className="text-sm font-medium text-slate-800">{selectedStudent.supervisorConfirmationStatus || 'Pending'}</p>
                     </div>
                     <div>
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Reason Still Pending</span>
@@ -1025,10 +1123,12 @@ const PMDashboard = () => {
 
         setStudents(updatedStudents);
         setAssessorAllocSuccess(true);
-        setAllocStudentId('');
-        setAllocAssessorId('');
 
-        setTimeout(() => setAssessorAllocSuccess(false), 1500);
+        setTimeout(() => {
+          setAssessorAllocSuccess(false);
+          setAllocStudentId('');
+          setAllocAssessorId('');
+        }, 1500);
       };
 
       const handleAssessorUpload = async (e) => {
