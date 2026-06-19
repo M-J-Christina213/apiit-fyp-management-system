@@ -289,5 +289,761 @@
         "assessor": ""
       }
     ]
+  },
+  {
+    "id": "B004",
+    "intake": "2025-sep",
+    "startDate": "2026-06-09",
+    "stage": "Proposal",
+    "studentCount": "40",
+    "students": [
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014321",
+        "name": "Nethmi Perera",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014322",
+        "name": "Kavindu Fernando",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014318",
+        "name": "Tharushi Jayasinghe",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014329",
+        "name": "Dinuka Amarasinghe",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014335",
+        "name": "Hansika Liyanage",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015401",
+        "name": "Sandun Wickramasinghe",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015402",
+        "name": "Maleesha Kumari",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015398",
+        "name": "Pasindu De Silva",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015410",
+        "name": "Dilshani Herath",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015415",
+        "name": "Ravindu Bandara",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013901",
+        "name": "Thisara Nuwan",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013905",
+        "name": "Anushka Rajapaksha",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013912",
+        "name": "Kavisha Madushani",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013918",
+        "name": "Chathura Silva",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013925",
+        "name": "Ishara Kumari",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB016101",
+        "name": "Shenali Fernando",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB016205",
+        "name": "Lakshan Perera",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB016309",
+        "name": "Gimhani Wickramasinghe",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB016412",
+        "name": "Umesh Rodrigo",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB016520",
+        "name": "Navodi Fernando",
+        "intake": "2025-sep",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      }
+    ]
+  },
+  {
+    "id": "B005",
+    "intake": "2026-March",
+    "startDate": "2026-06-03",
+    "stage": "Proposal",
+    "studentCount": "30",
+    "students": [
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014321",
+        "name": "Nethmi Perera",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014322",
+        "name": "Kavindu Fernando",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014318",
+        "name": "Tharushi Jayasinghe",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014329",
+        "name": "Dinuka Amarasinghe",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014335",
+        "name": "Hansika Liyanage",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015401",
+        "name": "Sandun Wickramasinghe",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015402",
+        "name": "Maleesha Kumari",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015398",
+        "name": "Pasindu De Silva",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015410",
+        "name": "Dilshani Herath",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015415",
+        "name": "Ravindu Bandara",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013901",
+        "name": "Thisara Nuwan",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013905",
+        "name": "Anushka Rajapaksha",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013912",
+        "name": "Kavisha Madushani",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013918",
+        "name": "Chathura Silva",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013925",
+        "name": "Ishara Kumari",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB016101",
+        "name": "Shenali Fernando",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB016205",
+        "name": "Lakshan Perera",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB016309",
+        "name": "Gimhani Wickramasinghe",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB016412",
+        "name": "Umesh Rodrigo",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB016520",
+        "name": "Navodi Fernando",
+        "intake": "2026-March",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      }
+    ]
+  },
+  {
+    "id": "B006",
+    "intake": "2027-feb",
+    "startDate": "2027-07-19",
+    "stage": "Proposal",
+    "studentCount": "50",
+    "students": [
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014321",
+        "name": "Nethmi Perera",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014322",
+        "name": "Kavindu Fernando",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014318",
+        "name": "Tharushi Jayasinghe",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014329",
+        "name": "Dinuka Amarasinghe",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB014335",
+        "name": "Hansika Liyanage",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015401",
+        "name": "Sandun Wickramasinghe",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015402",
+        "name": "Maleesha Kumari",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015398",
+        "name": "Pasindu De Silva",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015410",
+        "name": "Dilshani Herath",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB015415",
+        "name": "Ravindu Bandara",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013901",
+        "name": "Thisara Nuwan",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013905",
+        "name": "Anushka Rajapaksha",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013912",
+        "name": "Kavisha Madushani",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013918",
+        "name": "Chathura Silva",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB013925",
+        "name": "Ishara Kumari",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB016101",
+        "name": "Shenali Fernando",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB016205",
+        "name": "Lakshan Perera",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "COM2461",
+        "studentNo": "CB016309",
+        "name": "Gimhani Wickramasinghe",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "SENG2462",
+        "studentNo": "CB016412",
+        "name": "Umesh Rodrigo",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "batchCode": "CYS2461",
+        "studentNo": "CB016520",
+        "name": "Navodi Fernando",
+        "intake": "2027-feb",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      }
+    ]
+  },
+  {
+    "id": "B007",
+    "intake": "2027-july",
+    "startDate": "2027-06-19",
+    "stage": "Proposal",
+    "studentCount": "40",
+    "students": [
+      {
+        "studentNo": "CB014321",
+        "name": "Nethmi Perera",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB014322",
+        "name": "Kavindu Fernando",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB014318",
+        "name": "Tharushi Jayasinghe",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB014329",
+        "name": "Dinuka Amarasinghe",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB014335",
+        "name": "Hansika Liyanage",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB015401",
+        "name": "Sandun Wickramasinghe",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB015402",
+        "name": "Maleesha Kumari",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB015398",
+        "name": "Pasindu De Silva",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB015410",
+        "name": "Dilshani Herath",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB015415",
+        "name": "Ravindu Bandara",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB013901",
+        "name": "Thisara Nuwan",
+        "batchCode": "COM2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB013905",
+        "name": "Anushka Rajapaksha",
+        "batchCode": "COM2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB013912",
+        "name": "Kavisha Madushani",
+        "batchCode": "COM2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB013918",
+        "name": "Chathura Silva",
+        "batchCode": "COM2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB013925",
+        "name": "Ishara Kumari",
+        "batchCode": "COM2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB016101",
+        "name": "Shenali Fernando",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB016205",
+        "name": "Lakshan Perera",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB016309",
+        "name": "Gimhani Wickramasinghe",
+        "batchCode": "COM2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB016412",
+        "name": "Umesh Rodrigo",
+        "batchCode": "SENG2462",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      },
+      {
+        "studentNo": "CB016520",
+        "name": "Navodi Fernando",
+        "batchCode": "CYS2461",
+        "intake": "2027-july",
+        "topic": "",
+        "supervisor": "",
+        "assessor": ""
+      }
+    ]
   }
 ]

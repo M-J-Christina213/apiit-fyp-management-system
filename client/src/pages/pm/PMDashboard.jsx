@@ -61,7 +61,7 @@ const PMDashboard = () => {
 
   const [batchStudentsText, setBatchStudentsText] = useState('');
   const [batchFile, setBatchFile] = useState(null);
-  
+
   // Filtering states
   const [selectedIntake, setSelectedIntake] = useState('All');
   const [selectedBatchCode, setSelectedBatchCode] = useState('All');
@@ -132,13 +132,17 @@ const PMDashboard = () => {
             getBatches()
           ]);
 
-        const mappedStudents = stuRes.data.map(s => ({
-          ...s,
-          supervisorConfirmationStatus: s.supervisor ? "Confirmed" : "Pending",
-          supervisorAssignedBy: "",
-          assessorAssigned: false,
-          assessor: ""
-        }));
+        const mappedStudents = stuRes.data.map(s => {
+          const matchingBatch = batchRes.data.find(b => b.intake === (s.intake || s.batch));
+          return {
+            ...s,
+            batchId: s.batchId || matchingBatch?.id,
+            supervisorConfirmationStatus: s.supervisor ? "Confirmed" : "Pending",
+            supervisorAssignedBy: "",
+            assessorAssigned: false,
+            assessor: ""
+          };
+        });
         setStudents(mappedStudents);
         setSupervisors(supRes.data);
         setBatches(batchRes.data);
@@ -236,14 +240,14 @@ const PMDashboard = () => {
             const parts = line.split(",").map(s => s.trim());
             if (parts.length < 3) return null;
             // Format: BatchCode, StudentNo, Name
-            return { 
+            return {
               batchCode: parts[0],
-              studentNo: parts[1], 
-              name: parts[2], 
+              studentNo: parts[1],
+              name: parts[2],
               intake: newBatchName,
-              topic: "", 
-              supervisor: "", 
-              assessor: "" 
+              topic: "",
+              supervisor: "",
+              assessor: ""
             };
           })
           .filter(Boolean);
@@ -276,21 +280,35 @@ const PMDashboard = () => {
         students: parsedStudents
       });
 
-      setBatches([...batches, response.data]);
+      const batchId = response.data.id;
 
-      // Add to global students state with default fields
-      const newGlobalStudents = parsedStudents.map(s => ({
+      const normalizedStudents = parsedStudents.map(s => ({
         id: s.studentNo,
-        name: s.name,
-        batchCode: s.batchCode || '-',
-        intake: s.intake || newBatchName,
-        topic: s.topic || "",
-        supervisor: s.supervisor || "",
+        name: s.name ? s.name.trim() : "",
+        batchCode: s.batchCode ? s.batchCode.trim() : "-",
+        intake: newBatchName,
+        batchId: batchId,
+        topic: "",
+        supervisor: "",
+        assessor: "",
         supervisorConfirmationStatus: "Pending",
-        assessor: s.assessor || "",
         assessorAssigned: false
       }));
-      setStudents(prev => [...prev, ...newGlobalStudents]);
+
+      // 1. Update batch
+      setBatches(prev => [...prev, { ...response.data, studentIds: normalizedStudents.map(s => s.id) }]);
+
+      // 2. Update global student registry
+      setStudents(prev => {
+        const existingIds = new Set(prev.map(x => x.id));
+        const merged = [...prev];
+
+        normalizedStudents.forEach(s => {
+          if (!existingIds.has(s.id)) merged.push(s);
+        });
+
+        return merged;
+      });
 
       setShowAddBatch(false);
       setNewBatchName('');
@@ -348,6 +366,8 @@ const PMDashboard = () => {
       )
     },
   ];
+
+  const getStudentsByBatch = (batchId) => students.filter(s => s.batchId === batchId);
 
   const renderContent = () => {
     // ---------------- PM DASHBOARD TAB ----------------
@@ -422,7 +442,7 @@ const PMDashboard = () => {
     // ---------------- BATCHES TAB ----------------
     if (path === '/pm/batches') {
       const intakeSummaries = batches.map(b => {
-        const intakeStudents = students.filter(s => s.intake === b.intake || s.batch === b.intake);
+        const intakeStudents = getStudentsByBatch(b.id);
         const uniqueCodes = [...new Set(intakeStudents.map(s => s.batchCode).filter(Boolean))];
         return {
           ...b,
@@ -472,7 +492,7 @@ const PMDashboard = () => {
                     );
                   })()}
                 </div>
-                
+
                 <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-sm font-semibold text-slate-600">Students:</span>
                   <span className="text-base font-bold text-slate-800">{summary.actualStudentCount > 0 ? summary.actualStudentCount : summary.studentCount}</span>
@@ -537,7 +557,7 @@ const PMDashboard = () => {
 
               <div className="p-0">
                 {(() => {
-                  const batchStudents = students.filter(s => (s.intake || s.batch) === selectedBatch.intake);
+                  const batchStudents = getStudentsByBatch(selectedBatch.id);
                   if (batchStudents.length > 0) {
                     return (
                       <table className="w-full text-left border-collapse">
@@ -584,11 +604,16 @@ const PMDashboard = () => {
     }
 
 
+
+
     // ---------------- COMMON FILTERING LOGIC ----------------
-    const uniqueIntakes = [...new Set(students.map(s => s.intake || s.batch).filter(Boolean))];
-    const dynamicBatchCodes = selectedIntake === 'All' 
+    // Get intake directly from batches joined on batchId
+    const getStudentIntake = (s) => batches.find(b => b.id === s.batchId)?.intake || s.intake || s.batch;
+
+    const uniqueIntakes = [...new Set(students.map(getStudentIntake).filter(Boolean))];
+    const dynamicBatchCodes = selectedIntake === 'All'
       ? [...new Set(students.map(s => s.batchCode).filter(Boolean))]
-      : [...new Set(students.filter(s => (s.intake || s.batch) === selectedIntake).map(s => s.batchCode).filter(Boolean))];
+      : [...new Set(students.filter(s => getStudentIntake(s) === selectedIntake).map(s => s.batchCode).filter(Boolean))];
 
     const FilterControls = () => (
       <div className="flex flex-wrap gap-4 items-center">
@@ -626,7 +651,8 @@ const PMDashboard = () => {
     );
 
     const applyFilters = (record) => {
-      const recordIntake = record.intake || record.batch;
+      const recordBatch = batches.find(b => b.id === record.batchId);
+      const recordIntake = recordBatch?.intake || record.intake || record.batch || '-';
       const intakeMatch = selectedIntake === 'All' || recordIntake === selectedIntake;
       const batchCodeMatch = selectedBatchCode === 'All' || record.batchCode === selectedBatchCode;
       return intakeMatch && batchCodeMatch;
@@ -635,7 +661,8 @@ const PMDashboard = () => {
     // ---------------- STUDENTS LIST TAB ----------------
     if (path === '/pm/students') {
       const allAllocationRecords = students.map(s => ({
-        intake: s.intake || s.batch || '-',
+        intake: getStudentIntake(s) || '-',
+        batchId: s.batchId,
         batchCode: s.batchCode || '-',
         name: s.name,
         studentNo: s.id || s.studentNo,
@@ -907,7 +934,7 @@ const PMDashboard = () => {
       const availableSupervisors = supervisors.filter(s => (s.slots !== undefined ? s.slots : s.availableSlots || 0) > 0);
 
       const allocationColumns = [
-        { header: 'Batch Intake', render: (row) => row.intake || row.batch || '-' },
+        { header: 'Batch Intake', render: (row) => batches.find(b => b.id === row.batchId)?.intake || row.intake || row.batch || '-' },
         { header: 'Batch Code', accessor: 'batchCode' },
         { header: 'Student Name', accessor: 'name' },
         { header: 'Student Number', accessor: 'id' },
@@ -1080,7 +1107,7 @@ const PMDashboard = () => {
       const assessorEligibleStudents = students.filter(s => s.supervisorConfirmationStatus === 'Confirmed' && !s.assessorAssigned && applyFilters(s));
 
       const assessorTableColumns = [
-        { header: 'Batch Intake', render: (row) => row.intake || row.batch || '-' },
+        { header: 'Batch Intake', render: (row) => batches.find(b => b.id === row.batchId)?.intake || row.intake || row.batch || '-' },
         { header: 'Batch Code', accessor: 'batchCode' },
         { header: 'Student Name', accessor: 'name' },
         { header: 'Student Number', accessor: 'id' },

@@ -31,6 +31,7 @@ const studentLinks = [
   { path: '/student/supervisors', label: 'Supervisors', icon: Users },
   { path: '/student/proposal', label: 'Proposal Submission', icon: FileText },
   { path: '/student/templates', label: 'Templates', icon: Layers },
+  { path: '/student/logsheets', label: 'Logsheets', icon: FileText },
   { path: '/student/notifications', label: 'Notifications', icon: Bell },
 ];
 
@@ -147,6 +148,7 @@ function App() {
             <Route path="/student/supervisors" element={<StudentDashboard />} />
             <Route path="/student/proposal" element={<StudentDashboard />} />
             <Route path="/student/templates" element={<StudentDashboard />} />
+            <Route path="/student/logsheets" element={<StudentDashboard />} />
             <Route path="/student/notifications" element={<StudentDashboard />} />
             <Route path="/student/*" element={<Navigate to="/student/dashboard" replace />} />
           </Route>
