@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model assessors {
+  id                  Int                   @id @default(autoincrement())
+  title               String?               @db.VarChar(20)
+  name                String                @db.VarChar(100)
+  email               String                @unique @db.VarChar(100)
+  expertise           String?
+  research_interests  String?
+  student_fyp_records student_fyp_records[]
+}
+
+model batches {
+  id             Int        @id @default(autoincrement())
+  batch_code     String     @unique @db.VarChar(20)
+  batch_intake   String     @db.VarChar(50)
+  start_fyp_date DateTime   @db.Date
+  stage          String?    @default("Proposal") @db.VarChar(20)
+  created_at     DateTime?  @default(now()) @db.Timestamp(6)
+  students       students[]
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  title      String?   @db.VarChar(255)
+  message    String?
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model proposal_requests {
+  id               Int          @id @default(autoincrement())
+  student_id       Int?
+  supervisor_id    Int?
+  proposed_topic   String?
+  proposal_pdf     String?      @db.VarChar(255)
+  status           String?      @default("Pending") @db.VarChar(30)
+  rejection_reason String?
+  submitted_at     DateTime?    @default(now()) @db.Timestamp(6)
+  students         students?    @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supervisors      supervisors? @relation(fields: [supervisor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model student_fyp_records {
+  id                             Int          @id @default(autoincrement())
+  student_id                     Int?
+  tentative_topic                String?
+  supervisor_id                  Int?
+  supervisor_confirmation_status String?      @default("Pending") @db.VarChar(30)
+  assessor_id                    Int?
+  assessors                      assessors?   @relation(fields: [assessor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  students                       students?    @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supervisors                    supervisors? @relation(fields: [supervisor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model students {
+  id                  Int                   @id @default(autoincrement())
+  batch_id            Int?
+  student_name        String                @db.VarChar(100)
+  cb_no               String                @unique @db.VarChar(20)
+  proposal_requests   proposal_requests[]
+  student_fyp_records student_fyp_records[]
+  batches             batches?              @relation(fields: [batch_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model supervisors {
+  id                          Int                   @id @default(autoincrement())
+  title                       String?               @db.VarChar(20)
+  name                        String                @db.VarChar(100)
+  email                       String                @unique @db.VarChar(100)
+  supervisor_type             String                @db.VarChar(20)
+  expertise                   String?
+  research_interests          String?
+  preferred_supervision_slots Int
+  proposal_requests           proposal_requests[]
+  student_fyp_records         student_fyp_records[]
+}
+
+model templates {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(150)
+  file_path   String    @db.VarChar(255)
+  uploaded_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model users {
+  id            Int             @id @default(autoincrement())
+  email         String          @unique @db.VarChar(150)
+  password      String?         @db.VarChar(255)
+  role          String          @db.VarChar(20)
+  is_active     Boolean?        @default(true)
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  notifications notifications[]
+}
