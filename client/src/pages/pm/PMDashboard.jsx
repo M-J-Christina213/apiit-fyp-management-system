@@ -65,6 +65,11 @@ const PMDashboard = () => {
   // Filtering states
   const [selectedIntake, setSelectedIntake] = useState('All');
   const [selectedBatchCode, setSelectedBatchCode] = useState('All');
+  const [searchName, setSearchName] = useState('');
+  const [searchCbNo, setSearchCbNo] = useState('');
+  const [searchSupervisor, setSearchSupervisor] = useState('');
+  const [searchAssessor, setSearchAssessor] = useState('');
+  const [searchStatus, setSearchStatus] = useState('All');
 
 
 
@@ -123,24 +128,37 @@ const PMDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        let studentParams = {};
+        if (path === '/pm/students') {
+          studentParams = {
+            name: searchName || 'All',
+            cbNo: searchCbNo || 'All',
+            batchIntake: selectedIntake,
+            batchCode: selectedBatchCode,
+            supervisorName: searchSupervisor || 'All',
+            allocationStatus: searchStatus,
+            assessorName: searchAssessor || 'All'
+          };
+        } else if (path === '/pm/allocation') {
+          studentParams = { allocationStatus: 'Pending' };
+        } else if (path === '/pm/assessors') {
+          studentParams = { allocationStatus: 'Confirmed' };
+        }
 
         const [stuRes, supRes, propRes, batchRes] =
           await Promise.all([
-            getStudents(),
+            getStudents(studentParams),
             getSupervisors(),
             getProposalRequests(),
             getBatches()
           ]);
 
         const mappedStudents = stuRes.data.map(s => {
-          const matchingBatch = batchRes.data.find(b => b.intake === (s.intake || s.batch));
           return {
             ...s,
-            batchId: s.batchId || matchingBatch?.id,
-            supervisorConfirmationStatus: s.supervisor ? "Confirmed" : "Pending",
+            supervisorConfirmationStatus: s.supervisorConfirmationStatus || "Pending",
             supervisorAssignedBy: "",
-            assessorAssigned: false,
-            assessor: ""
+            assessorAssigned: !!s.assessor
           };
         });
         setStudents(mappedStudents);
@@ -154,21 +172,12 @@ const PMDashboard = () => {
     };
 
     loadData();
-  }, [path]);
+  }, [path, selectedIntake, selectedBatchCode, searchName, searchCbNo, searchSupervisor, searchAssessor, searchStatus]);
 
   // Quick Action: Import Students
   const handleImportStudents = () => {
-    const imported = [
-      { id: 'CB008', name: 'Gary Neville', batch: '2024-Sep', status: 'Unassigned', email: 'cb008@students.apiit.lk', topic: 'Predictive Cybersecurity', supervisor: null },
-      { id: 'CB009', name: 'Harry Kane', batch: '2024-Feb', status: 'Unassigned', email: 'cb009@students.apiit.lk', topic: 'Automated Code Review Systems', supervisor: null }
-    ];
-
-    const updatedStudents = [...students, ...imported];
-    setStudents(updatedStudents);
-
+    alert("Please use the Batch Upload feature to add students.");
     setShowImport(false);
-
-    alert("Imported 2 new students successfully: Gary Neville (CB008), Harry Kane (CB009).");
   };
 
   // Quick Action: Export Excel
@@ -448,11 +457,10 @@ const PMDashboard = () => {
     if (path === '/pm/batches') {
       const intakeSummaries = batches.map(b => {
         const intakeStudents = getStudentsByBatch(b.id);
-        const uniqueCodes = [...new Set(intakeStudents.map(s => s.batchCode).filter(Boolean))];
         return {
           ...b,
           actualStudentCount: intakeStudents.length,
-          batchCodes: uniqueCodes
+          batchCodes: b.batchCode ? [b.batchCode] : []
         };
       });
 
@@ -621,46 +629,64 @@ const PMDashboard = () => {
       : [...new Set(students.filter(s => getStudentIntake(s) === selectedIntake).map(s => s.batchCode).filter(Boolean))];
 
     const FilterControls = () => (
-      <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-slate-700">Intake:</span>
-          <select
-            value={selectedIntake}
-            onChange={(e) => {
-              setSelectedIntake(e.target.value);
-              setSelectedBatchCode('All'); // Reset batch code when intake changes
-            }}
-            className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
-          >
-            <option value="All">All Intakes</option>
-            {uniqueIntakes.map(i => (
-              <option key={i} value={i}>{i}</option>
-            ))}
-          </select>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-700">Intake:</span>
+            <select
+              value={selectedIntake}
+              onChange={(e) => {
+                setSelectedIntake(e.target.value);
+                setSelectedBatchCode('All'); // Reset batch code when intake changes
+              }}
+              className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
+            >
+              <option value="All">All Intakes</option>
+              {uniqueIntakes.map(i => (
+                <option key={i} value={i}>{i}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-700">Batch Code:</span>
+            <select
+              value={selectedBatchCode}
+              onChange={(e) => setSelectedBatchCode(e.target.value)}
+              className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
+              disabled={selectedIntake !== 'All' && dynamicBatchCodes.length === 0}
+            >
+              <option value="All">All Batch Codes</option>
+              {dynamicBatchCodes.map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-700">Status:</span>
+            <select
+              value={searchStatus}
+              onChange={(e) => setSearchStatus(e.target.value)}
+              className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-slate-700">Batch Code:</span>
-          <select
-            value={selectedBatchCode}
-            onChange={(e) => setSelectedBatchCode(e.target.value)}
-            className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900"
-            disabled={selectedIntake !== 'All' && dynamicBatchCodes.length === 0}
-          >
-            <option value="All">All Batch Codes</option>
-            {dynamicBatchCodes.map(b => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+        <div className="flex flex-wrap gap-4 items-center">
+          <input type="text" placeholder="Student Name" value={searchName} onChange={e => setSearchName(e.target.value)} className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900" />
+          <input type="text" placeholder="CB Number" value={searchCbNo} onChange={e => setSearchCbNo(e.target.value)} className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900" />
+          <input type="text" placeholder="Supervisor Name" value={searchSupervisor} onChange={e => setSearchSupervisor(e.target.value)} className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900" />
+          <input type="text" placeholder="Assessor Name" value={searchAssessor} onChange={e => setSearchAssessor(e.target.value)} className="p-2 bg-white border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-navy-900" />
         </div>
       </div>
     );
 
     const applyFilters = (record) => {
-      const recordBatch = batches.find(b => b.id === record.batchId);
-      const recordIntake = recordBatch?.intake || record.intake || record.batch || '-';
-      const intakeMatch = selectedIntake === 'All' || recordIntake === selectedIntake;
-      const batchCodeMatch = selectedBatchCode === 'All' || record.batchCode === selectedBatchCode;
-      return intakeMatch && batchCodeMatch;
+      // Backend is handling all filtering via API, so we just return true.
+      return true;
     };
 
     // ---------------- STUDENTS LIST TAB ----------------
@@ -828,7 +854,6 @@ const PMDashboard = () => {
 
           // Map to supervisor records
           const newSupervisors = json.map((row, index) => ({
-            id: `S${String(index + 1).padStart(3, '0')}`,
             title: row.Title || '',
             name: row.Name || '',
             email: row.Email || '',
@@ -935,7 +960,7 @@ const PMDashboard = () => {
 
     // ---------------- SUPERVISOR ALLOCATION WORKSPACE TAB (Unresolved Cases) ----------------
     if (path === '/pm/allocation') {
-      const unresolvedStudents = students.filter(s => s.supervisorConfirmationStatus === 'Pending' && applyFilters(s));
+      const unresolvedStudents = students; // Backend already filters for Pending
       const availableSupervisors = supervisors.filter(s => (s.slots !== undefined ? s.slots : s.availableSlots || 0) > 0);
 
       const allocationColumns = [
@@ -967,9 +992,7 @@ const PMDashboard = () => {
 
       const selectedStudent = allocStudentId ? students.find(s => s.id === allocStudentId) : null;
 
-      // Mock reasons
-      const reasons = ["Awaiting Review", "Rejected", "Supervisor Full", "No Response"];
-      const mockReason = selectedStudent ? reasons[Math.abs(selectedStudent.id.charCodeAt(selectedStudent.id.length - 1)) % reasons.length] : "";
+      const mockReason = selectedStudent?.rejectionReason || "Awaiting Review";
 
       // Simple recommendation engine
       const getRecommendations = (topic) => {
@@ -1109,7 +1132,7 @@ const PMDashboard = () => {
 
     // ---------------- ASSESSOR ALLOCATION WORKSPACE TAB ----------------
     if (path === '/pm/assessors') {
-      const assessorEligibleStudents = students.filter(s => s.supervisorConfirmationStatus === 'Confirmed' && !s.assessorAssigned && applyFilters(s));
+      const assessorEligibleStudents = students.filter(s => !s.assessorAssigned); // Backend filters for Confirmed status
 
       const assessorTableColumns = [
         { header: 'Batch Intake', render: (row) => batches.find(b => b.id === row.batchId)?.intake || row.intake || row.batch || '-' },
@@ -1174,8 +1197,7 @@ const PMDashboard = () => {
           const json = XLSX.utils.sheet_to_json(sheet);
 
           const newAssessors = json.map((row, index) => ({
-            id: `A${String(index + 1).padStart(3, '0')}`,
-            Title: row.Title || '',
+            title: row.Title || '',
             Name: row.Name || '',
             Email: row.Email || ''
           }));
