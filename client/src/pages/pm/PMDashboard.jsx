@@ -271,8 +271,13 @@ const PMDashboard = () => {
         }));
       }
 
+      // Use the actual programme batch code uploaded by the PM
+      const batchCodeToUse = parsedStudents.length > 0 && parsedStudents[0].batchCode 
+        ? parsedStudents[0].batchCode 
+        : newBatchName;
+
       const response = await createBatch({
-        id: "B" + String(batches.length + 1).padStart(3, "0"),
+        batchCode: batchCodeToUse,
         intake: newBatchName,
         startDate: newBatchDate,
         stage: "Proposal",
@@ -1410,7 +1415,7 @@ const PMDashboard = () => {
                         <FileText className="h-4 w-4 text-slate-400" /> Option 1: Paste Text
                       </label>
                       <textarea
-                        placeholder="Format: CB001, John Doe&#10;CB002, Jane Smith"
+                        placeholder="Format: SENG 2421, CB001, John Doe&#10; COM 2421, CB002, Jane Smith"
                         value={batchStudentsText}
                         onChange={(e) => setBatchStudentsText(e.target.value)}
                         className="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono text-slate-600 placeholder-slate-400 focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white resize-none"

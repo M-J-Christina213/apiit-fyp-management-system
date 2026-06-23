@@ -23,14 +23,14 @@ const getBatches = async (req, res) => {
 
 const createBatch = async (req, res) => {
     try {
-        const { id, intake, startDate, stage, students } = req.body;
+        const { batchCode, intake, startDate, stage, students } = req.body;
 
         // Start a transaction
         const result = await prisma.$transaction(async (tx) => {
             // 1. Create the batch
             const newBatch = await tx.batches.create({
                 data: {
-                    batch_code: id || `B${Date.now()}`, // Using the frontend's generated string ID as the unique batch_code
+                    batch_code: batchCode, // Using the actual batch code
                     batch_intake: intake,
                     start_fyp_date: new Date(startDate),
                     stage: stage || "Proposal"
