@@ -27,10 +27,16 @@ const createBatch = async (req, res) => {
 
         // Start a transaction
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Create the batch
-            const newBatch = await tx.batches.create({
-                data: {
-                    batch_code: batchCode, // Using the actual batch code
+            // 1. Create or Update the batch
+            const newBatch = await tx.batches.upsert({
+                where: { batch_code: batchCode },
+                update: {
+                    batch_intake: intake,
+                    start_fyp_date: new Date(startDate),
+                    stage: stage || "Proposal"
+                },
+                create: {
+                    batch_code: batchCode,
                     batch_intake: intake,
                     start_fyp_date: new Date(startDate),
                     stage: stage || "Proposal"
@@ -97,8 +103,55 @@ const updateBatchStage = async (req, res) => {
     }
 };
 
+const updateBatch = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { batchCode, intake, startDate, stage } = req.body;
+
+        const updatedBatch = await prisma.batches.update({
+            where: { id: parseInt(id, 10) },
+            data: {
+                batch_code: batchCode,
+                batch_intake: intake,
+                start_fyp_date: new Date(startDate),
+                stage: stage
+            }
+        });
+
+        res.json({
+            id: updatedBatch.id,
+            intake: updatedBatch.batch_intake,
+            startDate: updatedBatch.start_fyp_date.toISOString().split("T")[0],
+            stage: updatedBatch.stage,
+            batchCode: updatedBatch.batch_code
+        });
+    } catch (error) {
+        console.error("Failed to update batch:", error);
+        res.status(500).json({ message: "Failed to update batch" });
+    }
+};
+
+const deleteBatch = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Due to onDelete: Cascade on students table (students.batch_id -> batches.id),
+        // deleting the batch will automatically delete associated students.
+        await prisma.batches.delete({
+            where: { id: parseInt(id, 10) }
+        });
+
+        res.json({ message: "Batch deleted successfully" });
+    } catch (error) {
+        console.error("Failed to delete batch:", error);
+        res.status(500).json({ message: "Failed to delete batch" });
+    }
+};
+
 module.exports = {
     getBatches,
     createBatch,
-    updateBatchStage
+    updateBatchStage,
+    updateBatch,
+    deleteBatch
 };

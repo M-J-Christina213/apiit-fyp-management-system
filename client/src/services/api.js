@@ -7,7 +7,7 @@ const API = axios.create({
 // GET DATA
 export const getSupervisors = () => API.get("/supervisors");
 export const uploadSupervisors = (data) => API.post("/supervisors/upload", data);
-export const getStudents = () => API.get("/students");
+export const getStudents = (params = {}) => API.get("/students", { params });
 export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>
     API.post("/proposals", proposalData);
@@ -27,6 +27,8 @@ export const createUser = (userData) =>
 // BATCHES
 export const createBatch = (batchData) => API.post("/batches", batchData);
 export const updateBatchStage = (batchId, stage) => API.put(`/batches/${batchId}/stage`, { stage });
+export const updateBatch = (batchId, batchData) => API.put(`/batches/${batchId}`, batchData);
+export const deleteBatch = (batchId) => API.delete(`/batches/${batchId}`);
 // LOGIN USER
 export const getLoggedInUser = () => {
     return JSON.parse(localStorage.getItem("fyp_current_user"));

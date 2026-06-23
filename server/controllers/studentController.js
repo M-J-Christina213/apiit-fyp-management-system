@@ -3,7 +3,55 @@ const prisma = new PrismaClient();
 
 const getStudents = async (req, res) => {
     try {
+        const { 
+            name, 
+            cbNo, 
+            batchIntake, 
+            batchCode, 
+            supervisorName, 
+            allocationStatus, 
+            assessorName 
+        } = req.query;
+
+        // Build Prisma where clause dynamically based on provided query params
+        const whereClause = {};
+
+        if (name && name !== 'All') whereClause.student_name = { contains: name, mode: 'insensitive' };
+        if (cbNo && cbNo !== 'All') whereClause.cb_no = { contains: cbNo, mode: 'insensitive' };
+        
+        if ((batchIntake && batchIntake !== 'All') || (batchCode && batchCode !== 'All')) {
+            whereClause.batches = {};
+            if (batchIntake && batchIntake !== 'All') whereClause.batches.batch_intake = batchIntake;
+            if (batchCode && batchCode !== 'All') whereClause.batches.batch_code = batchCode;
+        }
+
+        if ((supervisorName && supervisorName !== 'All') || 
+            (allocationStatus && allocationStatus !== 'All') || 
+            (assessorName && assessorName !== 'All')) {
+            
+            whereClause.student_fyp_records = {
+                some: {}
+            };
+
+            if (allocationStatus && allocationStatus !== 'All') {
+                whereClause.student_fyp_records.some.supervisor_confirmation_status = allocationStatus;
+            }
+
+            if (supervisorName && supervisorName !== 'All') {
+                whereClause.student_fyp_records.some.supervisors = {
+                    name: { contains: supervisorName, mode: 'insensitive' }
+                };
+            }
+
+            if (assessorName && assessorName !== 'All') {
+                whereClause.student_fyp_records.some.assessors = {
+                    name: { contains: assessorName, mode: 'insensitive' }
+                };
+            }
+        }
+
         const students = await prisma.students.findMany({
+            where: whereClause,
             include: {
                 batches: true,
                 student_fyp_records: {
