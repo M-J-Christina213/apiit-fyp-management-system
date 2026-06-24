@@ -15,7 +15,10 @@ import {
   CheckCircle,
   FileText,
   Shield,
-  Upload
+  Upload,
+  Trash2,
+  Edit,
+  AlertTriangle
 } from 'lucide-react';
 
 import {
@@ -26,6 +29,9 @@ import {
   createBatch,
   updateBatchStage,
   uploadSupervisors,
+  clearAllSupervisors,
+  updateSupervisor,
+  deleteSupervisor,
   updateBatch,
   deleteBatch
 } from "../../services/api";
@@ -59,6 +65,16 @@ const PMDashboard = () => {
   const [editBatchDate, setEditBatchDate] = useState('');
   const [editBatchCode, setEditBatchCode] = useState('');
   const [editBatchStage, setEditBatchStage] = useState('');
+
+  // Edit Supervisor states
+  const [showEditSupervisor, setShowEditSupervisor] = useState(false);
+  const [editSupervisorId, setEditSupervisorId] = useState(null);
+  const [editSupervisorTitle, setEditSupervisorTitle] = useState('');
+  const [editSupervisorName, setEditSupervisorName] = useState('');
+  const [editSupervisorEmail, setEditSupervisorEmail] = useState('');
+  const [editSupervisorExpertise, setEditSupervisorExpertise] = useState('');
+  const [editSupervisorInterests, setEditSupervisorInterests] = useState('');
+  const [editSupervisorSlots, setEditSupervisorSlots] = useState(3);
 
   // Allocation state
   const [allocStudentId, setAllocStudentId] = useState('');
@@ -907,6 +923,27 @@ const PMDashboard = () => {
               </span>
             );
           }
+        },
+        {
+          header: 'Actions',
+          render: (row) => (
+            <div className="flex gap-2">
+              <button
+                onClick={() => openEditSupervisorModal(row)}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Edit Supervisor"
+              >
+                <Edit className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => handleDeleteSupervisor(row.id)}
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                title="Delete Supervisor"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )
         }
       ];
 
@@ -914,20 +951,25 @@ const PMDashboard = () => {
         const file = e.target.files[0];
         if (!file) return;
 
+        if (!window.confirm("Uploading a new supervisor file will replace the existing supervisor pool. Do you want to continue?")) {
+          e.target.value = null;
+          return;
+        }
+
         try {
           const data = await file.arrayBuffer();
           const workbook = XLSX.read(data);
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const json = XLSX.utils.sheet_to_json(sheet);
 
-          // Map to supervisor records
+          // Map to supervisor records safely checking multiple header variations
           const newSupervisors = json.map((row, index) => ({
-            title: row.Title || '',
-            name: row.Name || '',
-            email: row.Email || '',
-            expertise: '',
-            interests: '',
-            preferredSlots: 3,
+            title: row.Title || row.title || row.TITLE || '',
+            name: row.Name || row.name || row.NAME || '',
+            email: row.Email || row.email || row.EMAIL || row['E-mail'] || '',
+            expertise: row.Expertise || row.expertise || '',
+            interests: row.Interests || row.interests || row['Research Interests'] || '',
+            preferredSlots: parseInt(row.Slots || row.slots || row.PreferredSlots || 3, 10),
             allocatedSlots: 0,
             availableSlots: 3,
             status: 'Available',
@@ -946,6 +988,61 @@ const PMDashboard = () => {
         } catch (error) {
           console.error("Error importing supervisors:", error);
           alert("Failed to import supervisors. Please check file format.");
+        }
+      };
+
+      const handleClearAllSupervisors = async () => {
+        if (!window.confirm("Are you sure you want to completely clear the Supervisor Pool? This action cannot be undone.")) return;
+        try {
+          await clearAllSupervisors();
+          const res = await getSupervisors();
+          setSupervisors(res.data);
+          alert("All supervisors have been cleared.");
+        } catch (error) {
+          console.error("Failed to clear supervisors:", error);
+          alert("Failed to clear supervisors.");
+        }
+      };
+
+      const handleDeleteSupervisor = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this supervisor?")) return;
+        try {
+          await deleteSupervisor(id);
+          const res = await getSupervisors();
+          setSupervisors(res.data);
+        } catch (error) {
+          console.error("Failed to delete supervisor:", error);
+          alert("Failed to delete supervisor.");
+        }
+      };
+
+      const openEditSupervisorModal = (row) => {
+        setEditSupervisorId(row.id);
+        setEditSupervisorTitle(row.title || '');
+        setEditSupervisorName(row.name || '');
+        setEditSupervisorEmail(row.email || '');
+        setEditSupervisorExpertise(row.expertise || '');
+        setEditSupervisorInterests(row.interests || '');
+        setEditSupervisorSlots(row.preferredSlots !== undefined ? row.preferredSlots : 3);
+        setShowEditSupervisor(true);
+      };
+
+      const handleEditSupervisorSave = async () => {
+        try {
+          await updateSupervisor(editSupervisorId, {
+            title: editSupervisorTitle,
+            name: editSupervisorName,
+            email: editSupervisorEmail,
+            expertise: editSupervisorExpertise,
+            research_interests: editSupervisorInterests,
+            preferred_supervision_slots: editSupervisorSlots
+          });
+          const res = await getSupervisors();
+          setSupervisors(res.data);
+          setShowEditSupervisor(false);
+        } catch (error) {
+          console.error("Failed to update supervisor:", error);
+          alert("Failed to update supervisor.");
         }
       };
 
@@ -985,16 +1082,24 @@ const PMDashboard = () => {
                 Supervisors Imported: {supervisors.length} | Last Uploaded: {new Date().toLocaleDateString()}
               </div>
             </div>
-            <div className="shrink-0 relative group">
-              <input
-                type="file"
-                accept=".xlsx, .xls, .csv"
-                onChange={handleSupervisorUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-              <button className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Choose Excel File
+            <div className="shrink-0 flex items-center gap-3">
+              <button
+                onClick={handleClearAllSupervisors}
+                className="px-4 py-2 bg-white border border-red-200 text-red-600 rounded hover:bg-red-50 transition-colors text-sm font-bold shadow-sm flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" /> Clear All
               </button>
+              <div className="relative group">
+                <input
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleSupervisorUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <button className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Choose Excel File
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1642,6 +1747,110 @@ const PMDashboard = () => {
               <button
                 type="submit"
                 form="edit-batch-form"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Supervisor Modal */}
+      {showEditSupervisor && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg text-blue-700">
+                  <Edit className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Edit Supervisor</h3>
+                  <p className="text-xs text-slate-500">Update supervisor details</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEditSupervisor(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6">
+              <form id="edit-supervisor-form" onSubmit={(e) => { e.preventDefault(); handleEditSupervisorSave(); }} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Title</label>
+                  <input
+                    type="text"
+                    value={editSupervisorTitle}
+                    onChange={(e) => setEditSupervisorTitle(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editSupervisorName}
+                    onChange={(e) => setEditSupervisorName(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={editSupervisorEmail}
+                    onChange={(e) => setEditSupervisorEmail(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Expertise</label>
+                  <input
+                    type="text"
+                    value={editSupervisorExpertise}
+                    onChange={(e) => setEditSupervisorExpertise(e.target.value)}
+                    placeholder="Comma separated"
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Research Interests</label>
+                  <input
+                    type="text"
+                    value={editSupervisorInterests}
+                    onChange={(e) => setEditSupervisorInterests(e.target.value)}
+                    placeholder="Comma separated"
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Preferred Slots</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editSupervisorSlots}
+                    onChange={(e) => setEditSupervisorSlots(parseInt(e.target.value, 10))}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+              </form>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowEditSupervisor(false)}
+                className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg text-sm font-semibold text-slate-700 transition-all shadow-sm hover:shadow"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-supervisor-form"
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg"
               >
                 Save Changes

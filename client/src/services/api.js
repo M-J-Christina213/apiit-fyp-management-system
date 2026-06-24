@@ -7,6 +7,9 @@ const API = axios.create({
 // GET DATA
 export const getSupervisors = () => API.get("/supervisors");
 export const uploadSupervisors = (data) => API.post("/supervisors/upload", data);
+export const clearAllSupervisors = () => API.delete("/supervisors");
+export const updateSupervisor = (id, data) => API.put(`/supervisors/${id}`, data);
+export const deleteSupervisor = (id) => API.delete(`/supervisors/${id}`);
 export const getStudents = (params = {}) => API.get("/students", { params });
 export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>

@@ -59,35 +59,39 @@ const uploadSupervisors = async (req, res) => {
     try {
         const importedSupervisors = req.body;
         
-        let count = 0;
-        for (const sup of importedSupervisors) {
-            // Upsert or skip logic (here we use upsert based on email)
-            await prisma.supervisors.upsert({
-                where: { email: sup.email },
-                update: {
-                    title: sup.title,
-                    name: sup.name,
-                    expertise: sup.expertise,
-                    research_interests: sup.interests,
-                    preferred_supervision_slots: sup.preferredSlots || 3
-                },
-                create: {
-                    title: sup.title,
-                    name: sup.name,
-                    email: sup.email,
-                    supervisor_type: "Internal",
-                    expertise: sup.expertise,
-                    research_interests: sup.interests,
-                    preferred_supervision_slots: sup.preferredSlots || 3
-                }
-            });
-            count++;
-        }
+        await prisma.$transaction(async (tx) => {
+            // Completely replace previous supervisor dataset
+            await tx.supervisors.deleteMany({});
+            
+            for (const sup of importedSupervisors) {
+                await tx.supervisors.create({
+                    data: {
+                        title: sup.title,
+                        name: sup.name,
+                        email: sup.email,
+                        supervisor_type: "Internal",
+                        expertise: sup.expertise,
+                        research_interests: sup.interests,
+                        preferred_supervision_slots: sup.preferredSlots || 3
+                    }
+                });
+            }
+        });
 
-        res.json({ message: "Supervisors imported successfully", count });
+        res.json({ message: "Supervisors replaced successfully", count: importedSupervisors.length });
     } catch (error) {
         console.error("Failed to upload supervisors:", error);
         res.status(500).json({ message: "Failed to upload supervisors" });
+    }
+};
+
+const clearAllSupervisors = async (req, res) => {
+    try {
+        await prisma.supervisors.deleteMany({});
+        res.json({ message: "All supervisors cleared successfully" });
+    } catch (error) {
+        console.error("Failed to clear supervisors:", error);
+        res.status(500).json({ message: "Failed to clear supervisors" });
     }
 };
 
@@ -133,6 +137,7 @@ module.exports = {
     getSupervisors,
     createSupervisor,
     uploadSupervisors,
+    clearAllSupervisors,
     updateSupervisor,
     deleteSupervisor
 };
