@@ -25,7 +25,9 @@ import {
   getBatches,
   createBatch,
   updateBatchStage,
-  uploadSupervisors
+  uploadSupervisors,
+  updateBatch,
+  deleteBatch
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
@@ -49,6 +51,14 @@ const PMDashboard = () => {
   const [newBatchName, setNewBatchName] = useState('');
   const [newBatchDate, setNewBatchDate] = useState('');
   const [newBatchCount, setNewBatchCount] = useState('');
+
+  // Edit Batch states
+  const [showEditBatch, setShowEditBatch] = useState(false);
+  const [editBatchId, setEditBatchId] = useState(null);
+  const [editBatchName, setEditBatchName] = useState('');
+  const [editBatchDate, setEditBatchDate] = useState('');
+  const [editBatchCode, setEditBatchCode] = useState('');
+  const [editBatchStage, setEditBatchStage] = useState('');
 
   // Allocation state
   const [allocStudentId, setAllocStudentId] = useState('');
@@ -122,6 +132,47 @@ const PMDashboard = () => {
       setBatches(updated);
     } catch (error) {
       console.error("Failed to advance stage:", error);
+    }
+  };
+
+  const handleDeleteBatch = async (batchId) => {
+    if (window.confirm("Are you sure you want to delete this batch? All associated students will also be removed.")) {
+      try {
+        await deleteBatch(batchId);
+        setBatches(batches.filter(b => b.id !== batchId));
+        setStudents(students.filter(s => s.batchId !== batchId));
+        if (selectedBatch && selectedBatch.id === batchId) setSelectedBatch(null);
+      } catch (error) {
+        console.error("Failed to delete batch", error);
+        alert("Failed to delete batch");
+      }
+    }
+  };
+
+  const handleEditBatch = (batch) => {
+    setEditBatchId(batch.id);
+    setEditBatchName(batch.intake);
+    setEditBatchDate(batch.startDate || '');
+    setEditBatchCode(batch.batchCode || '');
+    setEditBatchStage(batch.stage || 'Proposal');
+    setShowEditBatch(true);
+  };
+
+  const handleEditBatchSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await updateBatch(editBatchId, {
+        batchCode: editBatchCode,
+        intake: editBatchName,
+        startDate: editBatchDate,
+        stage: editBatchStage
+      });
+      setBatches(batches.map(b => b.id === editBatchId ? { ...b, ...response.data } : b));
+      setShowEditBatch(false);
+      alert("Batch updated successfully!");
+    } catch (error) {
+      console.error("Failed to update batch", error);
+      alert("Failed to update batch");
     }
   };
 
@@ -280,13 +331,8 @@ const PMDashboard = () => {
         }));
       }
 
-      // Use the actual programme batch code uploaded by the PM
-      const batchCodeToUse = parsedStudents.length > 0 && parsedStudents[0].batchCode 
-        ? parsedStudents[0].batchCode 
-        : newBatchName;
-
       const response = await createBatch({
-        batchCode: batchCodeToUse,
+        batchCode: newBatchName, // Fallback if no parsed students
         intake: newBatchName,
         startDate: newBatchDate,
         stage: "Proposal",
@@ -294,23 +340,32 @@ const PMDashboard = () => {
         students: parsedStudents
       });
 
-      const batchId = response.data.id;
+      const createdBatches = Array.isArray(response.data) ? response.data : [response.data];
 
-      const normalizedStudents = parsedStudents.map(s => ({
-        id: s.studentNo,
-        name: s.name ? s.name.trim() : "",
-        batchCode: s.batchCode ? s.batchCode.trim() : "-",
-        intake: newBatchName,
-        batchId: batchId,
-        topic: "",
-        supervisor: "",
-        assessor: "",
-        supervisorConfirmationStatus: "Pending",
-        assessorAssigned: false
-      }));
+      const normalizedStudents = parsedStudents.map(s => {
+        const matchingBatch = createdBatches.find(b => b.batchCode === (s.batchCode || newBatchName)) || createdBatches[0];
+        return {
+          id: s.studentNo,
+          name: s.name ? s.name.trim() : "",
+          batchCode: matchingBatch.batchCode,
+          intake: newBatchName,
+          batchId: matchingBatch.id,
+          topic: "",
+          supervisor: "",
+          assessor: "",
+          supervisorConfirmationStatus: "Pending",
+          assessorAssigned: false
+        };
+      });
 
-      // 1. Update batch
-      setBatches(prev => [...prev, { ...response.data, studentIds: normalizedStudents.map(s => s.id) }]);
+      // 1. Update batches
+      setBatches(prev => [
+        ...prev, 
+        ...createdBatches.map(b => ({
+          ...b, 
+          studentIds: normalizedStudents.filter(s => s.batchId === b.id).map(s => s.id)
+        }))
+      ]);
 
       // 2. Update global student registry
       setStudents(prev => {
@@ -457,10 +512,11 @@ const PMDashboard = () => {
     if (path === '/pm/batches') {
       const intakeSummaries = batches.map(b => {
         const intakeStudents = getStudentsByBatch(b.id);
+        const dynamicCodes = [...new Set(intakeStudents.map(s => s.batchCode).filter(c => c && c !== '-'))];
         return {
           ...b,
           actualStudentCount: intakeStudents.length,
-          batchCodes: b.batchCode ? [b.batchCode] : []
+          batchCodes: dynamicCodes.length > 0 ? dynamicCodes : (b.batchCode ? [b.batchCode] : [])
         };
       });
 
@@ -526,19 +582,31 @@ const PMDashboard = () => {
                   )}
                 </div>
 
-                <div className="pt-4 flex gap-2">
+                <div className="pt-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => advanceBatchStage(summary.id)}
                     disabled={summary.stage === 'Completed'}
-                    className="flex-1 px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="flex-1 px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm min-w-[100px]"
                   >
                     Advance Stage
                   </button>
                   <button
                     onClick={() => setSelectedBatch(summary)}
-                    className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors font-medium text-slate-700 shadow-sm"
+                    className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors font-medium text-slate-700 shadow-sm min-w-[100px]"
                   >
                     View Students
+                  </button>
+                  <button
+                    onClick={() => handleEditBatch(summary)}
+                    className="flex-1 px-3 py-1.5 text-xs border border-blue-300 rounded hover:bg-blue-50 transition-colors font-medium text-blue-700 shadow-sm min-w-[80px]"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteBatch(summary.id)}
+                    className="flex-1 px-3 py-1.5 text-xs border border-red-300 rounded hover:bg-red-50 transition-colors font-medium text-red-700 shadow-sm min-w-[80px]"
+                  >
+                    Delete
                   </button>
                 </div>
               </div>
@@ -554,7 +622,7 @@ const PMDashboard = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800">
-                      Students in {selectedBatch.intake} ({selectedBatch.id})
+                      Students in {selectedBatch.intake}
                     </h3>
                     <p className="text-xs text-slate-500">Currently in {selectedBatch.stage} stage</p>
                   </div>
@@ -1490,6 +1558,93 @@ const PMDashboard = () => {
                 className="px-5 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg"
               >
                 Create Batch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Batch Modal */}
+      {showEditBatch && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg text-blue-700">
+                  <Layers className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Edit Batch</h3>
+                  <p className="text-xs text-slate-500">Update batch details</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEditBatch(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6">
+              <form id="edit-batch-form" onSubmit={handleEditBatchSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Batch Code</label>
+                  <input
+                    type="text"
+                    required
+                    value={editBatchCode}
+                    onChange={(e) => setEditBatchCode(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Batch Intake</label>
+                  <input
+                    type="text"
+                    required
+                    value={editBatchName}
+                    onChange={(e) => setEditBatchName(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Start Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editBatchDate}
+                    onChange={(e) => setEditBatchDate(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Stage</label>
+                  <select
+                    value={editBatchStage}
+                    onChange={(e) => setEditBatchStage(e.target.value)}
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  >
+                    <option value="Proposal">Proposal</option>
+                    <option value="Midpoint">Midpoint</option>
+                    <option value="Final">Final</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+              </form>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowEditBatch(false)}
+                className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg text-sm font-semibold text-slate-700 transition-all shadow-sm hover:shadow"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-batch-form"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+              >
+                Save Changes
               </button>
             </div>
           </div>

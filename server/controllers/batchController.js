@@ -24,53 +24,90 @@ const getBatches = async (req, res) => {
 const createBatch = async (req, res) => {
     try {
         const { batchCode, intake, startDate, stage, students } = req.body;
+        
+        let fallbackBatchCode = batchCode || intake;
 
-        // Start a transaction
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Create or Update the batch
-            const newBatch = await tx.batches.upsert({
-                where: { batch_code: batchCode },
-                update: {
-                    batch_intake: intake,
-                    start_fyp_date: new Date(startDate),
-                    stage: stage || "Proposal"
-                },
-                create: {
-                    batch_code: batchCode,
-                    batch_intake: intake,
-                    start_fyp_date: new Date(startDate),
-                    stage: stage || "Proposal"
-                }
+        // If no students provided, just create one empty batch
+        if (!students || students.length === 0) {
+            const result = await prisma.$transaction(async (tx) => {
+                return await tx.batches.upsert({
+                    where: { batch_code: fallbackBatchCode },
+                    update: {
+                        batch_intake: intake,
+                        start_fyp_date: new Date(startDate),
+                        stage: stage || "Proposal"
+                    },
+                    create: {
+                        batch_code: fallbackBatchCode,
+                        batch_intake: intake,
+                        start_fyp_date: new Date(startDate),
+                        stage: stage || "Proposal"
+                    }
+                });
             });
+            
+            return res.status(201).json([{
+                id: result.id,
+                intake: result.batch_intake,
+                startDate: result.start_fyp_date.toISOString().split("T")[0],
+                stage: result.stage,
+                batchCode: result.batch_code
+            }]);
+        }
 
-            // 2. Insert students if any
-            if (students && students.length > 0) {
-                // Prepare student data for insert
-                const studentsData = students.map(s => ({
+        // Group students by their provided batchCode
+        const studentsByBatchCode = {};
+        for (const s of students) {
+            const code = s.batchCode || fallbackBatchCode;
+            if (!studentsByBatchCode[code]) {
+                studentsByBatchCode[code] = [];
+            }
+            studentsByBatchCode[code].push(s);
+        }
+
+        const createdBatches = [];
+
+        await prisma.$transaction(async (tx) => {
+            for (const [code, batchStudents] of Object.entries(studentsByBatchCode)) {
+                // Upsert batch for this specific code
+                const newBatch = await tx.batches.upsert({
+                    where: { batch_code: code },
+                    update: {
+                        batch_intake: intake,
+                        start_fyp_date: new Date(startDate),
+                        stage: stage || "Proposal"
+                    },
+                    create: {
+                        batch_code: code,
+                        batch_intake: intake,
+                        start_fyp_date: new Date(startDate),
+                        stage: stage || "Proposal"
+                    }
+                });
+
+                // Insert students
+                const studentsData = batchStudents.map(s => ({
                     batch_id: newBatch.id,
                     student_name: s.name,
-                    cb_no: s.studentNo || s.id // PMDashboard sends studentNo from Excel or id from string map
+                    cb_no: s.studentNo || s.id
                 }));
 
                 await tx.students.createMany({
                     data: studentsData,
-                    skipDuplicates: true // In case some cb_nos already exist
+                    skipDuplicates: true
+                });
+
+                createdBatches.push({
+                    id: newBatch.id,
+                    intake: newBatch.batch_intake,
+                    startDate: newBatch.start_fyp_date.toISOString().split("T")[0],
+                    stage: newBatch.stage,
+                    batchCode: newBatch.batch_code
                 });
             }
-
-            return newBatch;
         });
 
-        // Format for frontend
-        const responseBatch = {
-            id: result.id, // Using DB ID
-            intake: result.batch_intake,
-            startDate: result.start_fyp_date.toISOString().split("T")[0],
-            stage: result.stage,
-            batchCode: result.batch_code
-        };
-
-        res.status(201).json(responseBatch);
+        res.status(201).json(createdBatches);
 
     } catch (error) {
         console.error("Failed to create batch:", error);
