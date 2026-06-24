@@ -102,7 +102,9 @@ const SupervisorDashboard = () => {
 
   // Filter current supervisor's students
   const myStudents = students.filter(
-    s => s.supervisor === `${supervisorRecord.title} ${supervisorRecord.name}`
+    s =>
+      s.supervisor ===
+      `${supervisorRecord?.title || ''} ${supervisorRecord?.name || ''}`.trim()
   );
 
   // Proposal request evaluation actions
@@ -332,11 +334,11 @@ const SupervisorDashboard = () => {
           <div className="bg-white p-6 rounded border border-slate-200 shadow-sm max-w-3xl">
             <div className="flex flex-col sm:flex-row gap-6 items-start pb-6 border-b border-slate-200 mb-6">
               <div className="h-20 w-20 bg-navy-50 text-navy-900 border border-navy-100 rounded flex items-center justify-center font-bold text-3xl">
-                {supervisorRecord.name.charAt(0)}
+                {currentSupervisor.name.charAt(0)}
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-bold text-slate-800">{supervisorRecord.title} {supervisorRecord.name}</h2>
-                <p className="text-sm text-slate-500 flex items-center gap-1.5 font-medium"><Mail className="h-4 w-4 text-slate-400" /> {supervisorRecord.email}</p>
+                <h2 className="text-xl font-bold text-slate-800">{currentSupervisor.title} {currentSupervisor.name}</h2>
+                <p className="text-sm text-slate-500 flex items-center gap-1.5 font-medium"><Mail className="h-4 w-4 text-slate-400" /> {currentSupervisor.email}</p>
                 <p className="text-sm text-slate-500 flex items-center gap-1.5 font-medium"><Award className="h-4 w-4 text-slate-400" /> Academic Supervisor (APIIT School of Computing)</p>
               </div>
             </div>
@@ -404,21 +406,21 @@ const SupervisorDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Expertise Areas</h4>
-                    <p className="text-sm text-slate-700 font-semibold">{supervisorRecord.expertise}</p>
+                    <p className="text-sm text-slate-700 font-semibold">{currentSupervisor.expertise}</p>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Research Interests</h4>
-                    <p className="text-sm text-slate-700 font-semibold">{supervisorRecord.interests}</p>
+                    <p className="text-sm text-slate-700 font-semibold">{currentSupervisor.interests}</p>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Available Slots</h4>
-                    <p className="text-sm text-slate-700 font-bold">{supervisorRecord.slots} remaining / Cap: 6</p>
+                    <p className="text-sm text-slate-700 font-bold">{currentSupervisor.slots} remaining / Cap: 6</p>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Status</h4>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${supervisorRecord.status === 'Available' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${currentSupervisor.status === 'Available' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
                       }`}>
-                      {supervisorRecord.status}
+                      {currentSupervisor.status}
                     </span>
                   </div>
                 </div>
