@@ -360,9 +360,9 @@ const PMDashboard = () => {
 
       // 1. Update batches
       setBatches(prev => [
-        ...prev, 
+        ...prev,
         ...createdBatches.map(b => ({
-          ...b, 
+          ...b,
           studentIds: normalizedStudents.filter(s => s.batchId === b.id).map(s => s.id)
         }))
       ]);
@@ -825,7 +825,7 @@ const PMDashboard = () => {
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <FilterControls />
+              {FilterControls()}
               <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
                 Total Records: {filteredRecords.length}
               </div>
@@ -1089,7 +1089,7 @@ const PMDashboard = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h3 className="font-bold text-slate-800">Pending Supervisor Cases ({unresolvedStudents.length})</h3>
-                <FilterControls />
+                {FilterControls()}
               </div>
               <div className="p-0">
                 <DataTable columns={allocationColumns} data={unresolvedStudents} />
@@ -1317,7 +1317,7 @@ const PMDashboard = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h3 className="font-bold text-slate-800">Eligible Students ({assessorEligibleStudents.length})</h3>
-                <FilterControls />
+                {FilterControls()}
               </div>
               <div className="p-0">
                 <DataTable columns={assessorTableColumns} data={assessorEligibleStudents} />
