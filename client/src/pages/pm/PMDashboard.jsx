@@ -951,11 +951,6 @@ const PMDashboard = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        if (!window.confirm("Uploading a new supervisor file will replace the existing supervisor pool. Do you want to continue?")) {
-          e.target.value = null;
-          return;
-        }
-
         try {
           const data = await file.arrayBuffer();
           const workbook = XLSX.read(data);
@@ -963,20 +958,30 @@ const PMDashboard = () => {
           const json = XLSX.utils.sheet_to_json(sheet);
 
           // Map to supervisor records safely checking multiple header variations
-          const newSupervisors = json.map((row, index) => ({
-            title: row.Title || row.title || row.TITLE || '',
-            name: row.Name || row.name || row.NAME || '',
-            email: row.Email || row.email || row.EMAIL || row['E-mail'] || '',
-            expertise: row.Expertise || row.expertise || '',
-            interests: row.Interests || row.interests || row['Research Interests'] || '',
-            preferredSlots: parseInt(row.Slots || row.slots || row.PreferredSlots || 3, 10),
-            allocatedSlots: 0,
-            availableSlots: 3,
-            status: 'Available',
-            additionalInfo: ''
-          }));
+          const newSupervisors = json.map((row) => {
+            // Normalize keys to lowercase, trimming spaces
+            const normalizedRow = {};
+            for (const key in row) {
+              const normalKey = key.trim().toLowerCase();
+              normalizedRow[normalKey] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+            
+            return {
+              title: normalizedRow['title'] || '',
+              name: normalizedRow['name'] || '',
+              email: normalizedRow['email'] || normalizedRow['e-mail'] || '',
+              expertise: normalizedRow['expertise'] || '',
+              research_interests: normalizedRow['research interests'] || normalizedRow['interests'] || '',
+              additional_information: normalizedRow['additional information'] || normalizedRow['additional_information'] || '',
+              preferred_supervision_slots: 3,
+              // Fields needed for frontend table immediately
+              allocatedSlots: 0,
+              availableSlots: 3,
+              status: 'Available'
+            };
+          });
 
-          // Replace old imported list
+          // Upload list (backend will upsert based on email)
           await uploadSupervisors(newSupervisors);
 
           // Re-fetch to auto synchronize

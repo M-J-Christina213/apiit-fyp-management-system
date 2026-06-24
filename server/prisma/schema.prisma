@@ -74,14 +74,17 @@ model students {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model supervisors {
-  id                          Int                   @id @default(autoincrement())
-  title                       String?               @db.VarChar(20)
-  name                        String                @db.VarChar(100)
-  email                       String                @unique @db.VarChar(100)
-  supervisor_type             String                @db.VarChar(20)
+  id                          Int      @id @default(autoincrement())
+  title                       String?  @db.VarChar(20)
+  name                        String   @db.VarChar(100)
+  email                       String   @unique @db.VarChar(100)
+
   expertise                   String?
   research_interests          String?
-  preferred_supervision_slots Int
+  additional_information      String?
+
+  preferred_supervision_slots Int      @default(3)
+
   proposal_requests           proposal_requests[]
   student_fyp_records         student_fyp_records[]
 }

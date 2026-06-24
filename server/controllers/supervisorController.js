@@ -36,15 +36,15 @@ const getSupervisors = async (req, res) => {
 
 const createSupervisor = async (req, res) => {
     try {
-        const { title, name, email, supervisor_type, expertise, research_interests, preferred_supervision_slots } = req.body;
+        const { title, name, email, expertise, research_interests, additional_information, preferred_supervision_slots } = req.body;
         const newSupervisor = await prisma.supervisors.create({
             data: {
                 title,
                 name,
                 email,
-                supervisor_type: supervisor_type || 'Internal',
                 expertise,
                 research_interests,
+                additional_information,
                 preferred_supervision_slots: parseInt(preferred_supervision_slots, 10) || 3
             }
         });
@@ -59,26 +59,32 @@ const uploadSupervisors = async (req, res) => {
     try {
         const importedSupervisors = req.body;
         
-        await prisma.$transaction(async (tx) => {
-            // Completely replace previous supervisor dataset
-            await tx.supervisors.deleteMany({});
-            
-            for (const sup of importedSupervisors) {
-                await tx.supervisors.create({
-                    data: {
-                        title: sup.title,
-                        name: sup.name,
-                        email: sup.email,
-                        supervisor_type: "Internal",
-                        expertise: sup.expertise,
-                        research_interests: sup.interests,
-                        preferred_supervision_slots: sup.preferredSlots || 3
-                    }
-                });
-            }
-        });
+        let count = 0;
+        for (const sup of importedSupervisors) {
+            await prisma.supervisors.upsert({
+                where: { email: sup.email },
+                update: {
+                    title: sup.title,
+                    name: sup.name,
+                    expertise: sup.expertise,
+                    research_interests: sup.research_interests,
+                    additional_information: sup.additional_information,
+                    preferred_supervision_slots: sup.preferred_supervision_slots || 3
+                },
+                create: {
+                    title: sup.title,
+                    name: sup.name,
+                    email: sup.email,
+                    expertise: sup.expertise,
+                    research_interests: sup.research_interests,
+                    additional_information: sup.additional_information,
+                    preferred_supervision_slots: sup.preferred_supervision_slots || 3
+                }
+            });
+            count++;
+        }
 
-        res.json({ message: "Supervisors replaced successfully", count: importedSupervisors.length });
+        res.json({ message: "Supervisors uploaded successfully", count });
     } catch (error) {
         console.error("Failed to upload supervisors:", error);
         res.status(500).json({ message: "Failed to upload supervisors" });
@@ -98,7 +104,7 @@ const clearAllSupervisors = async (req, res) => {
 const updateSupervisor = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, name, email, supervisor_type, expertise, research_interests, preferred_supervision_slots } = req.body;
+        const { title, name, email, expertise, research_interests, additional_information, preferred_supervision_slots } = req.body;
         
         const updated = await prisma.supervisors.update({
             where: { id: parseInt(id, 10) },
@@ -106,9 +112,9 @@ const updateSupervisor = async (req, res) => {
                 title,
                 name,
                 email,
-                supervisor_type,
                 expertise,
                 research_interests,
+                additional_information,
                 preferred_supervision_slots: parseInt(preferred_supervision_slots, 10) || 3
             }
         });
