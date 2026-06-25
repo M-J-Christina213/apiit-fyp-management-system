@@ -96,6 +96,35 @@ const createBatch = async (req, res) => {
                     data: studentsData,
                     skipDuplicates: true
                 });
+                console.log(`[Batch Upload] Inserted students for batch code: ${code}`);
+
+                // Get the students that now exist in the DB (newly created + already existing)
+                const cbNos = batchStudents.map(s => s.studentNo || s.id);
+                const dbStudents = await tx.students.findMany({
+                    where: { cb_no: { in: cbNos } },
+                    include: { student_fyp_records: true }
+                });
+
+                // Create FYP records for any student that doesn't have one
+                const fypRecordsToCreate = [];
+                for (const dbStudent of dbStudents) {
+                    if (!dbStudent.student_fyp_records || dbStudent.student_fyp_records.length === 0) {
+                        fypRecordsToCreate.push({
+                            student_id: dbStudent.id,
+                            supervisor_confirmation_status: 'Pending'
+                        });
+                    }
+                }
+
+                if (fypRecordsToCreate.length > 0) {
+                    await tx.student_fyp_records.createMany({
+                        data: fypRecordsToCreate,
+                        skipDuplicates: true
+                    });
+                    console.log(`[Batch Upload] Created ${fypRecordsToCreate.length} FYP records for batch code: ${code}`);
+                } else {
+                    console.log(`[Batch Upload] No new FYP records needed for batch code: ${code}`);
+                }
 
                 createdBatches.push({
                     id: newBatch.id,

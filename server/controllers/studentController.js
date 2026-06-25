@@ -3,14 +3,14 @@ const prisma = new PrismaClient();
 
 const getStudents = async (req, res) => {
     try {
-        const { 
-            name, 
-            cbNo, 
-            batchIntake, 
-            batchCode, 
-            supervisorName, 
-            allocationStatus, 
-            assessorName 
+        const {
+            name,
+            cbNo,
+            batchIntake,
+            batchCode,
+            supervisorName,
+            allocationStatus,
+            assessorName
         } = req.query;
 
         // Build Prisma where clause dynamically based on provided query params
@@ -18,17 +18,17 @@ const getStudents = async (req, res) => {
 
         if (name && name !== 'All') whereClause.student_name = { contains: name, mode: 'insensitive' };
         if (cbNo && cbNo !== 'All') whereClause.cb_no = { contains: cbNo, mode: 'insensitive' };
-        
+
         if ((batchIntake && batchIntake !== 'All') || (batchCode && batchCode !== 'All')) {
             whereClause.batches = {};
             if (batchIntake && batchIntake !== 'All') whereClause.batches.batch_intake = batchIntake;
             if (batchCode && batchCode !== 'All') whereClause.batches.batch_code = batchCode;
         }
 
-        if ((supervisorName && supervisorName !== 'All') || 
-            (allocationStatus && allocationStatus !== 'All') || 
+        if ((supervisorName && supervisorName !== 'All') ||
+            (allocationStatus && allocationStatus !== 'All') ||
             (assessorName && assessorName !== 'All')) {
-            
+
             whereClause.student_fyp_records = {
                 some: {}
             };
@@ -79,6 +79,11 @@ const getStudents = async (req, res) => {
             };
         });
 
+        console.log(`[API Response] Returning ${formattedStudents.length} students matching criteria`);
+        if (formattedStudents.length > 0) {
+            console.log(`[API Response] Sample student:`, formattedStudents[0]);
+        }
+
         res.json(formattedStudents);
     } catch (error) {
         console.error("Failed to fetch students:", error);
@@ -111,6 +116,8 @@ const getStudentById = async (req, res) => {
 const createStudent = async (req, res) => {
     try {
         const { studentNo, name, batchId } = req.body;
+
+        // Create student
         const newStudent = await prisma.students.create({
             data: {
                 cb_no: studentNo,
@@ -118,7 +125,17 @@ const createStudent = async (req, res) => {
                 batch_id: batchId ? parseInt(batchId, 10) : null
             }
         });
+
+        // Create corresponding FYP record with Pending status
+        await prisma.student_fyp_records.create({
+            data: {
+                student_id: newStudent.id,
+                supervisor_confirmation_status: 'Pending'
+            }
+        });
+
         res.status(201).json(newStudent);
+
     } catch (error) {
         console.error("Failed to create student:", error);
         res.status(500).json({ message: "Failed to create student" });
@@ -129,7 +146,7 @@ const updateStudent = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, batchId } = req.body;
-        
+
         const updatedStudent = await prisma.students.update({
             where: { cb_no: id },
             data: {

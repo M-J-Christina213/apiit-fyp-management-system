@@ -18,7 +18,8 @@ import {
   Upload,
   Trash2,
   Edit,
-  AlertTriangle
+  AlertTriangle,
+  Search
 } from 'lucide-react';
 
 import {
@@ -83,6 +84,11 @@ const PMDashboard = () => {
   const [allocAssessorId, setAllocAssessorId] = useState('');
   const [allocSuccess, setAllocSuccess] = useState(false);
   const [assessorAllocSuccess, setAssessorAllocSuccess] = useState(false);
+
+  // Allocation Filtering state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [batchFilter, setBatchFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Pending');
 
   const [selectedBatch, setSelectedBatch] = useState(null);
 
@@ -229,6 +235,12 @@ const PMDashboard = () => {
             assessorAssigned: !!s.assessor
           };
         });
+        
+        console.log(`[Frontend PMDashboard] Successfully loaded ${mappedStudents.length} students from backend API.`);
+        if (mappedStudents.length > 0) {
+          console.log(`[Frontend PMDashboard] First mapped student:`, mappedStudents[0]);
+        }
+        
         setStudents(mappedStudents);
         setSupervisors(supRes.data);
         setBatches(batchRes.data);
@@ -1137,8 +1149,11 @@ const PMDashboard = () => {
 
     // ---------------- SUPERVISOR ALLOCATION WORKSPACE TAB (Unresolved Cases) ----------------
     if (path === '/pm/allocation') {
-      const unresolvedStudents = students; // Backend already filters for Pending
-      const availableSupervisors = supervisors.filter(s => (s.slots !== undefined ? s.slots : s.availableSlots || 0) > 0);
+      const unresolvedStudents = students.filter(student =>
+        !student.supervisorConfirmationStatus ||
+        student.supervisorConfirmationStatus === 'Pending'
+      );
+      const availableSupervisors = supervisors.filter(s => (s.preferred_supervision_slots || 0) > 0);
 
       const allocationColumns = [
         { header: 'Batch Intake', render: (row) => batches.find(b => b.id === row.batchId)?.intake || row.intake || row.batch || '-' },
@@ -1178,7 +1193,12 @@ const PMDashboard = () => {
         const scored = availableSupervisors.map(s => {
           let score = 0;
           if (s.expertise && s.expertise.toLowerCase().split(',').some(kw => lowerTopic.includes(kw.trim()))) score += 2;
-          if (s.interests && s.interests.toLowerCase().split(',').some(kw => lowerTopic.includes(kw.trim()))) score += 1;
+          if (
+            s.research_interests &&
+            s.research_interests.toLowerCase().split(',').some(kw => lowerTopic.includes(kw.trim()))
+          ) {
+            score += 1;
+          }
           return { supervisor: s, score };
         });
         scored.sort((a, b) => b.score - a.score);
@@ -1186,6 +1206,23 @@ const PMDashboard = () => {
       };
 
       const recommendedSupervisors = selectedStudent ? getRecommendations(selectedStudent.topic) : [];
+
+      const filteredStudents = unresolvedStudents.filter(student => {
+        const matchesSearch =
+          student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          student.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          student.batchCode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesBatch =
+          !batchFilter ||
+          student.batchCode === batchFilter;
+
+        const matchesStatus =
+          !statusFilter ||
+          student.supervisorConfirmationStatus === statusFilter;
+
+        return matchesSearch && matchesBatch && matchesStatus;
+      });
 
       return (
         <div className="space-y-6">
@@ -1195,13 +1232,67 @@ const PMDashboard = () => {
           </div>
 
           {!selectedStudent ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="font-bold text-slate-800">Pending Supervisor Cases ({unresolvedStudents.length})</h3>
-                {FilterControls()}
+            <div className="space-y-4">
+              {/* Filter Toolbar */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm sticky top-0 z-10 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, ID, or batch..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600"
+                  />
+                </div>
+                <div className="flex gap-4 md:w-auto w-full">
+                  <select
+                    value={batchFilter}
+                    onChange={(e) => setBatchFilter(e.target.value)}
+                    className="flex-1 md:w-40 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-navy-600"
+                  >
+                    <option value="">All Batches</option>
+                    {Array.from(new Set(students.map(s => s.batchCode))).filter(Boolean).map(bc => (
+                      <option key={bc} value={bc}>{bc}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="flex-1 md:w-40 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-navy-600"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                  <button
+                    onClick={() => { setSearchTerm(''); setBatchFilter(''); setStatusFilter(''); }}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-navy-600 hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
               </div>
-              <div className="p-0">
-                <DataTable columns={allocationColumns} data={unresolvedStudents} />
+
+              {/* Data Table or Empty State */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                  <h3 className="font-bold text-slate-800">Pending Supervisor Cases</h3>
+                  <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+                    Showing {filteredStudents.length} Pending Cases
+                  </span>
+                </div>
+                {unresolvedStudents.length === 0 ? (
+                  <div className="p-12 flex flex-col items-center justify-center text-center space-y-3">
+                    <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-600">All supervisor allocations have been resolved.</p>
+                  </div>
+                ) : (
+                  <div className="p-0">
+                    <DataTable columns={allocationColumns} data={filteredStudents} />
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -1258,7 +1349,7 @@ const PMDashboard = () => {
                         <option value="">-- Choose supervisor to resolve case --</option>
                         {availableSupervisors.map((s) => (
                           <option key={s.id} value={s.id}>
-                            {s.title} {s.name} ({(s.slots !== undefined ? s.slots : s.availableSlots || 0)} slots) - {s.expertise ? s.expertise.split(',')[0] : 'No expertise'}
+                            {s.title} {s.name} ({s.preferred_supervision_slots} slots) - {s.expertise ? s.expertise.split(',')[0] : 'No expertise'}
                           </option>
                         ))}
                       </select>
