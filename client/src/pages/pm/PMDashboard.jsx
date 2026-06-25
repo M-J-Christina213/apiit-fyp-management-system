@@ -34,7 +34,8 @@ import {
   updateSupervisor,
   deleteSupervisor,
   updateBatch,
-  deleteBatch
+  deleteBatch,
+  allocateSupervisor
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
@@ -216,7 +217,7 @@ const PMDashboard = () => {
         } else if (path === '/pm/allocation') {
           studentParams = { allocationStatus: 'Pending' };
         } else if (path === '/pm/assessors') {
-          studentParams = { allocationStatus: 'Confirmed' };
+          studentParams = { allocationStatus: 'Confirmed,Allocated' };
         }
 
         const [stuRes, supRes, propRes, batchRes] =
@@ -235,12 +236,12 @@ const PMDashboard = () => {
             assessorAssigned: !!s.assessor
           };
         });
-        
+
         console.log(`[Frontend PMDashboard] Successfully loaded ${mappedStudents.length} students from backend API.`);
         if (mappedStudents.length > 0) {
           console.log(`[Frontend PMDashboard] First mapped student:`, mappedStudents[0]);
         }
-        
+
         setStudents(mappedStudents);
         setSupervisors(supRes.data);
         setBatches(batchRes.data);
@@ -271,48 +272,75 @@ const PMDashboard = () => {
   };
 
   // Interactive Allocation
-  const handleAllocateSubmit = (e) => {
+  const handleAllocateSubmit = async (e) => {
     e.preventDefault();
+    console.log("=== FORCE ALLOCATE CLICKED ===");
+    console.log("allocStudentId:", allocStudentId);
+    console.log("allocSupervisorId:", allocSupervisorId);
+
     if (!allocStudentId || !allocSupervisorId) {
       alert("Please select both a student and a supervisor.");
       return;
     }
 
-    const student = students.find(s => s.id === allocStudentId);
-    const supervisor = supervisors.find(s => s.id === allocSupervisorId);
+    console.log("STEP 1");
+    const student = students.find(s => s.id === allocStudentId || s.id == allocStudentId);
 
-    if (!student || !supervisor) return;
+    console.log("STEP 2");
+    console.log(student);
 
-    // Update student
-    const updatedStudents = students.map(s =>
-      s.id === student.id
-        ? {
-          ...s,
-          supervisor: `${supervisor.title || ''} ${supervisor.name}`.trim(),
-          supervisorConfirmationStatus: "Confirmed",
-          supervisorAssignedBy: "PM"
-        }
-        : s
-    );
+    // FIX: Use == instead of === because allocSupervisorId is a string from select input, while s.id is a number from DB
+    const supervisor = supervisors.find(s => s.id == allocSupervisorId);
 
-    setStudents(updatedStudents);
+    console.log("STEP 3");
+    console.log(supervisor);
 
-    // Update supervisor slots
-    const updatedSupervisors = supervisors.map(s =>
-      s.id === supervisor.id
-        ? { ...s, slots: Math.max(0, (s.slots !== undefined ? s.slots : s.availableSlots || 0) - 1) }
-        : s
-    );
+    if (!student || !supervisor) {
+        console.log("Validation failed: student or supervisor is undefined");
+        return;
+    }
 
-    setSupervisors(updatedSupervisors);
+    console.log("STEP 4 BEFORE API");
+    try {
+      await allocateSupervisor(student.id, { supervisorId: supervisor.id });
+      console.log("STEP 5 AFTER API");
 
-    setAllocSuccess(true);
+      // Update student
+      const updatedStudents = students.map(s =>
+        s.id === student.id
+          ? {
+            ...s,
+            supervisor: `${supervisor.title || ''} ${supervisor.name}`.trim(),
+            supervisorName: `${supervisor.title || ''} ${supervisor.name}`.trim(),
+            supervisorId: supervisor.id,
+            supervisorConfirmationStatus: "Allocated",
+            supervisorAssignedBy: "PM"
+          }
+          : s
+      );
 
-    setTimeout(() => {
-      setAllocSuccess(false);
-      setAllocStudentId('');
-      setAllocSupervisorId('');
-    }, 1500);
+      setStudents(updatedStudents);
+
+      // Update supervisor slots
+      const updatedSupervisors = supervisors.map(s =>
+        s.id === supervisor.id
+          ? { ...s, preferred_supervision_slots: Math.max(0, (s.preferred_supervision_slots !== undefined ? s.preferred_supervision_slots : 3) - 1), slots: Math.max(0, (s.slots !== undefined ? s.slots : s.availableSlots || 0) - 1) }
+          : s
+      );
+
+      setSupervisors(updatedSupervisors);
+
+      setAllocSuccess(true);
+
+      setTimeout(() => {
+        setAllocSuccess(false);
+        setAllocStudentId('');
+        setAllocSupervisorId('');
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to allocate supervisor:", error);
+      alert("Failed to allocate supervisor. Please try again.");
+    }
   };
 
   const handleAddBatchSubmit = async (e) => {
@@ -456,12 +484,22 @@ const PMDashboard = () => {
     { header: 'Assigned Supervisor', render: (row) => row.supervisor || '-' },
     {
       header: 'Allocation Status',
-      render: (row) => (
-        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${row.supervisor ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-          }`}>
-          {row.supervisor ? 'Assigned' : 'Unassigned'}
-        </span>
-      )
+      render: (row) => {
+        const statusColors = {
+          Confirmed: 'bg-green-50 text-green-700 border-green-200',
+          Allocated: 'bg-purple-50 text-purple-700 border-purple-200',
+          Pending: 'bg-amber-50 text-amber-700 border-amber-200',
+          Rejected: 'bg-red-50 text-red-700 border-red-200'
+        };
+        const colorClass = statusColors[row.supervisorConfirmationStatus] || (row.supervisor ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-700 border-slate-200');
+        const text = row.supervisorConfirmationStatus || (row.supervisor ? 'Assigned' : 'Unassigned');
+        
+        return (
+          <span className={`px-2 py-0.5 rounded text-xs font-bold border ${colorClass}`}>
+            {text}
+          </span>
+        );
+      }
     },
   ];
 
@@ -767,6 +805,7 @@ const PMDashboard = () => {
             >
               <option value="All">All Statuses</option>
               <option value="Confirmed">Confirmed</option>
+              <option value="Allocated">Allocated</option>
               <option value="Pending">Pending</option>
               <option value="Rejected">Rejected</option>
             </select>
@@ -811,11 +850,21 @@ const PMDashboard = () => {
         { header: 'Supervisor', render: (row) => row.supervisor || '-' },
         {
           header: 'Supervisor Confirmation Status',
-          render: (row) => (
-            <span className={`px-2 py-0.5 rounded text-xs font-bold border ${row.supervisorConfirmationStatus === 'Confirmed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-              {row.supervisorConfirmationStatus}
-            </span>
-          )
+          render: (row) => {
+            const statusColors = {
+              Confirmed: 'bg-green-50 text-green-700 border-green-200',
+              Allocated: 'bg-purple-50 text-purple-700 border-purple-200',
+              Pending: 'bg-amber-50 text-amber-700 border-amber-200',
+              Rejected: 'bg-red-50 text-red-700 border-red-200'
+            };
+            const colorClass = statusColors[row.supervisorConfirmationStatus] || 'bg-slate-50 text-slate-700 border-slate-200';
+            
+            return (
+              <span className={`px-2 py-0.5 rounded text-xs font-bold border ${colorClass}`}>
+                {row.supervisorConfirmationStatus}
+              </span>
+            );
+          }
         },
         { header: 'Assessor', render: (row) => row.assessor || '-' }
       ];
@@ -974,7 +1023,7 @@ const PMDashboard = () => {
               const normalKey = key.trim().toLowerCase();
               normalizedRow[normalKey] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-            
+
             return {
               title: normalizedRow['title'] || '',
               name: normalizedRow['name'] || '',
@@ -1163,11 +1212,22 @@ const PMDashboard = () => {
         { header: 'Project Topic', render: (row) => row.topic || '-' },
         {
           header: 'Supervisor Status',
-          render: (row) => (
-            <span className="px-2 py-0.5 rounded text-xs font-bold border bg-amber-50 text-amber-700 border-amber-200">
-              Pending
-            </span>
-          )
+          render: (row) => {
+            const statusColors = {
+              Confirmed: 'bg-green-50 text-green-700 border-green-200',
+              Allocated: 'bg-purple-50 text-purple-700 border-purple-200',
+              Pending: 'bg-amber-50 text-amber-700 border-amber-200',
+              Rejected: 'bg-red-50 text-red-700 border-red-200'
+            };
+            const currentStatus = row.supervisorConfirmationStatus || 'Pending';
+            const colorClass = statusColors[currentStatus] || 'bg-slate-50 text-slate-700 border-slate-200';
+
+            return (
+              <span className={`px-2 py-0.5 rounded text-xs font-bold border ${colorClass}`}>
+                {currentStatus}
+              </span>
+            );
+          }
         },
         {
           header: 'Action',

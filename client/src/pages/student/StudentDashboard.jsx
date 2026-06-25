@@ -297,7 +297,7 @@ const StudentDashboard = () => {
             <DashboardCard
               title="Assigned Supervisor"
               value={currentStudent.supervisor || 'Pending'}
-              subtitle={currentStudent.supervisor ? 'Allocation Confirmed' : 'Awaiting Supervisor Match'}
+              subtitle={currentStudent.supervisorConfirmationStatus === 'Allocated' ? 'Assigned by PM' : currentStudent.supervisor ? 'Allocation Confirmed' : 'Awaiting Supervisor Match'}
               icon={UserCheck}
             />
             <DashboardCard

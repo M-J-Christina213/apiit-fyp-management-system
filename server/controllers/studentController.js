@@ -34,7 +34,11 @@ const getStudents = async (req, res) => {
             };
 
             if (allocationStatus && allocationStatus !== 'All') {
-                whereClause.student_fyp_records.some.supervisor_confirmation_status = allocationStatus;
+                if (allocationStatus.includes(',')) {
+                    whereClause.student_fyp_records.some.supervisor_confirmation_status = { in: allocationStatus.split(',') };
+                } else {
+                    whereClause.student_fyp_records.some.supervisor_confirmation_status = allocationStatus;
+                }
             }
 
             if (supervisorName && supervisorName !== 'All') {
@@ -175,10 +179,80 @@ const deleteStudent = async (req, res) => {
     }
 };
 
+const allocateSupervisor = async (req, res) => {
+    try {
+        const { id } = req.params; // cb_no
+        const { supervisorId } = req.body;
+
+        const student = await prisma.students.findUnique({
+            where: { cb_no: id }
+        });
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        const fypRecord = await prisma.student_fyp_records.findFirst({
+            where: { student_id: student.id }
+        });
+
+        if (fypRecord) {
+            await prisma.student_fyp_records.update({
+                where: { id: fypRecord.id },
+                data: {
+                    supervisor_id: parseInt(supervisorId, 10),
+                    supervisor_confirmation_status: 'Allocated'
+                }
+            });
+        } else {
+            await prisma.student_fyp_records.create({
+                data: {
+                    student_id: student.id,
+                    supervisor_id: parseInt(supervisorId, 10),
+                    supervisor_confirmation_status: 'Allocated'
+                }
+            });
+        }
+
+        const supervisor = await prisma.supervisors.findUnique({
+            where: { id: parseInt(supervisorId, 10) }
+        });
+
+        if (supervisor && supervisor.preferred_supervision_slots > 0) {
+            await prisma.supervisors.update({
+                where: { id: supervisor.id },
+                data: {
+                    preferred_supervision_slots: supervisor.preferred_supervision_slots - 1
+                }
+            });
+        }
+
+        const user = await prisma.users.findFirst({
+            where: { email: { startsWith: id, mode: 'insensitive' } }
+        });
+
+        if (user) {
+            await prisma.notifications.create({
+                data: {
+                    user_id: user.id,
+                    title: "Supervisor Assigned",
+                    message: `A supervisor (${supervisor ? supervisor.name : ''}) has been assigned to you by the PM.`
+                }
+            });
+        }
+
+        res.json({ message: "Supervisor allocated successfully" });
+    } catch (error) {
+        console.error("Failed to allocate supervisor:", error);
+        res.status(500).json({ message: "Failed to allocate supervisor" });
+    }
+};
+
 module.exports = {
     getStudents,
     getStudentById,
     createStudent,
     updateStudent,
-    deleteStudent
+    deleteStudent,
+    allocateSupervisor
 };

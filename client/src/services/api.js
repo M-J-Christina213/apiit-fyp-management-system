@@ -11,6 +11,7 @@ export const clearAllSupervisors = () => API.delete("/supervisors");
 export const updateSupervisor = (id, data) => API.put(`/supervisors/${id}`, data);
 export const deleteSupervisor = (id) => API.delete(`/supervisors/${id}`);
 export const getStudents = (params = {}) => API.get("/students", { params });
+export const allocateSupervisor = (id, data) => API.post(`/students/${id}/allocate-supervisor`, data);
 export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>
     API.post("/proposals", proposalData);

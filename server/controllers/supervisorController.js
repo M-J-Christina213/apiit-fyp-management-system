@@ -10,7 +10,10 @@ const getSupervisors = async (req, res) => {
         });
 
         const formatted = supervisors.map(s => {
-            const confirmedRecords = s.student_fyp_records.filter(r => r.supervisor_confirmation_status === 'Confirmed');
+            const confirmedRecords = s.student_fyp_records.filter(r => 
+                r.supervisor_confirmation_status === 'Confirmed' || 
+                r.supervisor_confirmation_status === 'Allocated'
+            );
             const usedSlots = confirmedRecords.length;
             const availableSlots = Math.max(0, s.preferred_supervision_slots - usedSlots);
 
