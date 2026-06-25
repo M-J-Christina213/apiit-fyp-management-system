@@ -529,6 +529,22 @@ const PMDashboard = () => {
 
   const getStudentsByBatch = (batchId) => students.filter(s => s.batchId === batchId);
 
+
+
+  const fetchAssessors = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/assessors");
+      const data = await res.json();
+      setAssessors(data);
+    } catch (err) {
+      console.error("Failed to load assessors", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssessors();
+  }, []);
+
   const renderContent = () => {
     // ---------------- PM DASHBOARD TAB ----------------
     if (path === '/pm/dashboard' || path === '/pm') {
@@ -1600,19 +1616,7 @@ const PMDashboard = () => {
         }
       };
 
-      const fetchAssessors = async () => {
-        try {
-          const res = await fetch("http://localhost:5000/api/assessors");
-          const data = await res.json();
-          setAssessors(data);
-        } catch (err) {
-          console.error("Failed to load assessors", err);
-        }
-      };
 
-      useEffect(() => {
-        fetchAssessors();
-      }, []);
 
       return (
         <div className="space-y-6">
@@ -1665,7 +1669,7 @@ const PMDashboard = () => {
               </div>
 
               <DataTable
-                columns={assessorTableColumns}
+                columns={assessorPoolColumns}
                 data={assessorPoolFromDB}
               />
             </div>
