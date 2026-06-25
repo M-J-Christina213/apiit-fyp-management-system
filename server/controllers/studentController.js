@@ -248,11 +248,72 @@ const allocateSupervisor = async (req, res) => {
     }
 };
 
+const allocateAssessor = async (req, res) => {
+    try {
+        const { id } = req.params; // cb_no
+        const { assessorId } = req.body;
+
+        const student = await prisma.students.findUnique({
+            where: { cb_no: id }
+        });
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        const fypRecord = await prisma.student_fyp_records.findFirst({
+            where: { student_id: student.id }
+        });
+
+        if (!fypRecord) {
+            return res.status(404).json({ message: "No FYP record found for student" });
+        }
+
+        // Conflict of interest check: assessor must not be the same person as supervisor
+        if (fypRecord.supervisor_id && fypRecord.supervisor_id === parseInt(assessorId, 10)) {
+            return res.status(400).json({ message: "Conflict of interest: Supervisor cannot be assigned as assessor" });
+        }
+
+        // Update the assessor_id in student_fyp_records
+        await prisma.student_fyp_records.update({
+            where: { id: fypRecord.id },
+            data: {
+                assessor_id: parseInt(assessorId, 10)
+            }
+        });
+
+        const assessor = await prisma.assessors.findUnique({
+            where: { id: parseInt(assessorId, 10) }
+        });
+
+        // Create notification for the student
+        const user = await prisma.users.findFirst({
+            where: { email: { startsWith: id, mode: 'insensitive' } }
+        });
+
+        if (user) {
+            await prisma.notifications.create({
+                data: {
+                    user_id: user.id,
+                    title: "Assessor Assigned",
+                    message: `An assessor (${assessor ? `${assessor.title || ''} ${assessor.name}`.trim() : ''}) has been assigned to you by the PM.`
+                }
+            });
+        }
+
+        res.json({ message: "Assessor allocated successfully" });
+    } catch (error) {
+        console.error("Failed to allocate assessor:", error);
+        res.status(500).json({ message: "Failed to allocate assessor" });
+    }
+};
+
 module.exports = {
     getStudents,
     getStudentById,
     createStudent,
     updateStudent,
     deleteStudent,
-    allocateSupervisor
+    allocateSupervisor,
+    allocateAssessor
 };

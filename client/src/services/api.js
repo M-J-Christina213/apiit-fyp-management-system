@@ -12,10 +12,16 @@ export const updateSupervisor = (id, data) => API.put(`/supervisors/${id}`, data
 export const deleteSupervisor = (id) => API.delete(`/supervisors/${id}`);
 export const getStudents = (params = {}) => API.get("/students", { params });
 export const allocateSupervisor = (id, data) => API.post(`/students/${id}/allocate-supervisor`, data);
+export const allocateAssessor = (id, data) => API.post(`/students/${id}/allocate-assessor`, data);
 export const getProposalRequests = () => API.get("/proposals");
 export const createProposal = (proposalData) =>
     API.post("/proposals", proposalData);
 export const getBatches = () => API.get("/batches");
+
+// ASSESSORS
+export const getAssessors = () => API.get("/assessors");
+export const uploadAssessors = (data) => API.post("/assessors/upload", data);
+
 // USERS
 export const getUsers = () =>
     API.get("/users");

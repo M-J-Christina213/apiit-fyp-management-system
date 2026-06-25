@@ -8,12 +8,18 @@ datasource db {
 }
 
 model assessors {
-  id                  Int                   @id @default(autoincrement())
-  title               String?               @db.VarChar(20)
-  name                String                @db.VarChar(100)
-  email               String                @unique @db.VarChar(100)
+  id                  Int     @id @default(autoincrement())
+  title               String? @db.VarChar(20)
+  name                String  @db.VarChar(100)
+  email               String  @unique @db.VarChar(100)
+
   expertise           String?
   research_interests  String?
+
+  preferred_slots     Int     @default(3)
+
+  assigned_count      Int     @default(0)  
+
   student_fyp_records student_fyp_records[]
 }
 

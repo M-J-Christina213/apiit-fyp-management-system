@@ -19,7 +19,11 @@ import {
   Trash2,
   Edit,
   AlertTriangle,
-  Search
+  Search,
+  ChevronDown,
+  ChevronUp,
+  UserCheck,
+  AlertCircle
 } from 'lucide-react';
 
 import {
@@ -35,7 +39,10 @@ import {
   deleteSupervisor,
   updateBatch,
   deleteBatch,
-  allocateSupervisor
+  allocateSupervisor,
+  getAssessors,
+  uploadAssessors,
+  allocateAssessor
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
@@ -85,6 +92,12 @@ const PMDashboard = () => {
   const [allocAssessorId, setAllocAssessorId] = useState('');
   const [allocSuccess, setAllocSuccess] = useState(false);
   const [assessorAllocSuccess, setAssessorAllocSuccess] = useState(false);
+
+  // Assessor Pool UI state
+  const [expandedAssessorId, setExpandedAssessorId] = useState(null);
+  const [assessorPoolFromDB, setAssessorPoolFromDB] = useState([]);
+  const [assessorSearchTerm, setAssessorSearchTerm] = useState('');
+  const [showAssessors, setShowAssessors] = useState(false);
 
   // Allocation Filtering state
   const [searchTerm, setSearchTerm] = useState('');
@@ -247,6 +260,16 @@ const PMDashboard = () => {
         setBatches(batchRes.data);
         setProposals(propRes.data);
 
+        // Load assessors from DB when on the assessors page
+        if (path === '/pm/assessors') {
+          try {
+            const assessorRes = await getAssessors();
+            setAssessorPoolFromDB(assessorRes.data || []);
+          } catch (err) {
+            console.warn("Could not load assessors from backend:", err);
+          }
+        }
+
       } catch (error) {
         console.error("Failed to load PM dashboard data:", error);
       }
@@ -254,6 +277,7 @@ const PMDashboard = () => {
 
     loadData();
   }, [path, selectedIntake, selectedBatchCode, searchName, searchCbNo, searchSupervisor, searchAssessor, searchStatus]);
+
 
   // Quick Action: Import Students
   const handleImportStudents = () => {
@@ -296,8 +320,8 @@ const PMDashboard = () => {
     console.log(supervisor);
 
     if (!student || !supervisor) {
-        console.log("Validation failed: student or supervisor is undefined");
-        return;
+      console.log("Validation failed: student or supervisor is undefined");
+      return;
     }
 
     console.log("STEP 4 BEFORE API");
@@ -493,7 +517,7 @@ const PMDashboard = () => {
         };
         const colorClass = statusColors[row.supervisorConfirmationStatus] || (row.supervisor ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-700 border-slate-200');
         const text = row.supervisorConfirmationStatus || (row.supervisor ? 'Assigned' : 'Unassigned');
-        
+
         return (
           <span className={`px-2 py-0.5 rounded text-xs font-bold border ${colorClass}`}>
             {text}
@@ -858,7 +882,7 @@ const PMDashboard = () => {
               Rejected: 'bg-red-50 text-red-700 border-red-200'
             };
             const colorClass = statusColors[row.supervisorConfirmationStatus] || 'bg-slate-50 text-slate-700 border-slate-200';
-            
+
             return (
               <span className={`px-2 py-0.5 rounded text-xs font-bold border ${colorClass}`}>
                 {row.supervisorConfirmationStatus}
@@ -1190,8 +1214,7 @@ const PMDashboard = () => {
             </div>
           </div>
 
-          {/* Future: Assessor Pool */}
-          {/* Future: Assessor Allocation */}
+
         </div>
       );
     }
@@ -1483,6 +1506,29 @@ const PMDashboard = () => {
         }
       ];
 
+      const assessorPoolColumns = [
+        {
+          header: 'Title',
+          accessor: 'title'
+        },
+        {
+          header: 'Name',
+          accessor: 'name'
+        },
+        {
+          header: 'Email',
+          accessor: 'email'
+        },
+        {
+          header: 'Expertise',
+          accessor: 'expertise'
+        },
+        {
+          header: 'Research Interests',
+          accessor: 'research_interests'
+        }
+      ];
+
       const selectedStudentForAssessor = allocStudentId ? students.find(s => s.id === allocStudentId) : null;
 
       const handleAssessorAllocateSubmit = (e) => {
@@ -1524,20 +1570,49 @@ const PMDashboard = () => {
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const json = XLSX.utils.sheet_to_json(sheet);
 
-          const newAssessors = json.map((row, index) => ({
-            title: row.Title || '',
-            Name: row.Name || '',
-            Email: row.Email || ''
+          const payload = json.map((row) => ({
+            title: row.Title || "",
+            name: row.Name || "",
+            email: row.Email || "",
+            expertise: row.Expertise || "",
+            research_interests: row["Research Interests"] || ""
           }));
 
-          setAssessors(newAssessors);
-          alert(`Successfully imported ${newAssessors.length} assessors.`);
+
+          const res = await fetch("http://localhost:5000/api/assessors/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await res.json();
+
+          alert(`Uploaded ${result.count} assessors`);
+
+
+          setAssessors();
+
           e.target.value = null;
+
         } catch (error) {
-          console.error("Error importing assessors:", error);
-          alert("Failed to import assessors. Please check file format.");
+          console.error(error);
+          alert("Upload failed");
         }
       };
+
+      const fetchAssessors = async () => {
+        try {
+          const res = await fetch("http://localhost:5000/api/assessors");
+          const data = await res.json();
+          setAssessors(data);
+        } catch (err) {
+          console.error("Failed to load assessors", err);
+        }
+      };
+
+      useEffect(() => {
+        fetchAssessors();
+      }, []);
 
       return (
         <div className="space-y-6">
@@ -1548,6 +1623,14 @@ const PMDashboard = () => {
 
           {/* Assessor Upload Section */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowAssessors(!showAssessors)}
+                className="px-4 py-2 bg-navy-900 text-white rounded font-medium hover:bg-navy-950"
+              >
+                {showAssessors ? 'Hide Assessor List' : 'View Assessor List'}
+              </button>
+            </div>
             <div className="space-y-2 max-w-xl">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Upload className="h-5 w-5 text-navy-700" />
@@ -1557,7 +1640,7 @@ const PMDashboard = () => {
                 Upload the assessor list. Expected columns: Title, Name, Email.
               </p>
               <div className="text-xs font-semibold text-slate-600 bg-slate-50 p-2 rounded inline-block mt-2">
-                Assessors Imported: {assessors.length}
+                Assessors Imported: {assessorPoolFromDB.length}
               </div>
             </div>
             <div className="shrink-0 relative group">
@@ -1572,6 +1655,21 @@ const PMDashboard = () => {
               </button>
             </div>
           </div>
+
+          {showAssessors && assessorPoolFromDB.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <h3 className="font-bold text-slate-800">
+                  Assessor Pool ({assessorPoolFromDB.length})
+                </h3>
+              </div>
+
+              <DataTable
+                columns={assessorTableColumns}
+                data={assessorPoolFromDB}
+              />
+            </div>
+          )}
 
           {!selectedStudentForAssessor ? (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
