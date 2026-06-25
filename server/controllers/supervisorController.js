@@ -20,8 +20,9 @@ const getSupervisors = async (req, res) => {
                 name: s.name,
                 email: s.email,
                 expertise: s.expertise,
-                interests: s.research_interests,
-                preferredSlots: s.preferred_supervision_slots,
+                research_interests: s.research_interests,
+                additional_information: s.additional_information,
+                preferred_supervision_slots: s.preferred_supervision_slots,
                 availableSlots,
                 status: availableSlots > 0 ? "Available" : "Full"
             };

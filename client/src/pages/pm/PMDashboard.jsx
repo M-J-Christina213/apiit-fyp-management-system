@@ -73,8 +73,9 @@ const PMDashboard = () => {
   const [editSupervisorName, setEditSupervisorName] = useState('');
   const [editSupervisorEmail, setEditSupervisorEmail] = useState('');
   const [editSupervisorExpertise, setEditSupervisorExpertise] = useState('');
-  const [editSupervisorInterests, setEditSupervisorInterests] = useState('');
-  const [editSupervisorSlots, setEditSupervisorSlots] = useState(3);
+  const [editSupervisorResearchInterests, setEditSupervisorResearchInterests] = useState('');
+  const [editSupervisorAdditionalInformation, setEditSupervisorAdditionalInformation] = useState('');
+  const [editSupervisorPreferredSupervisionSlots, setEditSupervisorPreferredSupervisionSlots] = useState(3);
 
   // Allocation state
   const [allocStudentId, setAllocStudentId] = useState('');
@@ -878,15 +879,11 @@ const PMDashboard = () => {
         {
           header: 'Research Interests',
           render: (row) => {
-            if (!row.interests) return <span className="text-xs text-slate-400 italic">Not Updated</span>;
+            if (!row.research_interests) return <span className="text-xs text-slate-400 italic">Not Updated</span>;
             return (
-              <div className="flex flex-wrap gap-1">
-                {row.interests.split(',').map((int, idx) => (
-                  <span key={idx} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs border border-purple-100">
-                    {int.trim()}
-                  </span>
-                ))}
-              </div>
+              <span className="text-xs text-slate-600 line-clamp-2" title={row.research_interests}>
+                {row.research_interests}
+              </span>
             );
           }
         },
@@ -894,7 +891,7 @@ const PMDashboard = () => {
           header: 'Preferred Supervision Slots',
           render: (row) => (
             <span className="font-semibold text-slate-700 text-sm">
-              {row.preferredSlots !== undefined ? row.preferredSlots : 3}
+              {row.preferred_supervision_slots !== undefined ? row.preferred_supervision_slots : 3}
             </span>
           )
         },
@@ -902,14 +899,14 @@ const PMDashboard = () => {
           header: 'Additional Information',
           render: (row) => (
             <span className="text-xs text-slate-600">
-              {row.additionalInfo || '-'}
+              {row.additional_information || '-'}
             </span>
           )
         },
         {
           header: 'Status',
           render: (row) => {
-            const slots = row.preferredSlots !== undefined ? row.preferredSlots : 3;
+            const slots = row.preferred_supervision_slots !== undefined ? row.preferred_supervision_slots : 3;
             if (slots > 0) {
               return (
                 <span className="px-2 py-0.5 rounded text-xs font-bold border bg-green-50 text-green-700 border-green-200">
@@ -969,11 +966,11 @@ const PMDashboard = () => {
             return {
               title: normalizedRow['title'] || '',
               name: normalizedRow['name'] || '',
-              email: normalizedRow['email'] || normalizedRow['e-mail'] || '',
-              expertise: normalizedRow['expertise'] || '',
-              research_interests: normalizedRow['research interests'] || normalizedRow['interests'] || '',
-              additional_information: normalizedRow['additional information'] || normalizedRow['additional_information'] || '',
-              preferred_supervision_slots: 3,
+              email: normalizedRow['email'] || '',
+              expertise: normalizedRow['areas of expertise'] || '',
+              research_interests: normalizedRow['research interests'] || '',
+              additional_information: normalizedRow['additional information'] || '',
+              preferred_supervision_slots: Number(normalizedRow['preferred supervision slots']) || 3,
               // Fields needed for frontend table immediately
               allocatedSlots: 0,
               availableSlots: 3,
@@ -1027,8 +1024,9 @@ const PMDashboard = () => {
         setEditSupervisorName(row.name || '');
         setEditSupervisorEmail(row.email || '');
         setEditSupervisorExpertise(row.expertise || '');
-        setEditSupervisorInterests(row.interests || '');
-        setEditSupervisorSlots(row.preferredSlots !== undefined ? row.preferredSlots : 3);
+        setEditSupervisorResearchInterests(row.research_interests || '');
+        setEditSupervisorAdditionalInformation(row.additional_information || '');
+        setEditSupervisorPreferredSupervisionSlots(row.preferred_supervision_slots !== undefined ? row.preferred_supervision_slots : 3);
         setShowEditSupervisor(true);
       };
 
@@ -1039,8 +1037,9 @@ const PMDashboard = () => {
             name: editSupervisorName,
             email: editSupervisorEmail,
             expertise: editSupervisorExpertise,
-            research_interests: editSupervisorInterests,
-            preferred_supervision_slots: editSupervisorSlots
+            research_interests: editSupervisorResearchInterests,
+            additional_information: editSupervisorAdditionalInformation,
+            preferred_supervision_slots: editSupervisorPreferredSupervisionSlots
           });
           const res = await getSupervisors();
           setSupervisors(res.data);
@@ -1058,10 +1057,10 @@ const PMDashboard = () => {
           Name: s.name,
           Email: s.email,
           "Areas of Expertise": s.expertise || 'Not Updated',
-          "Research Interests": s.interests || 'Not Updated',
-          "Preferred Supervision Slots": s.preferredSlots !== undefined ? s.preferredSlots : 3,
-          "Additional Information": s.additionalInfo || '-',
-          Status: (s.preferredSlots !== undefined ? s.preferredSlots : 3) > 0 ? 'Available' : 'Unavailable'
+          "Research Interests": s.research_interests || 'Not Updated',
+          "Preferred Supervision Slots": s.preferred_supervision_slots !== undefined ? s.preferred_supervision_slots : 3,
+          "Additional Information": s.additional_information || '-',
+          Status: (s.preferred_supervision_slots !== undefined ? s.preferred_supervision_slots : 3) > 0 ? 'Available' : 'Unavailable'
         }));
 
         const wb = XLSX.utils.book_new();
@@ -1825,9 +1824,18 @@ const PMDashboard = () => {
                   <label className="text-sm font-semibold text-slate-700">Research Interests</label>
                   <input
                     type="text"
-                    value={editSupervisorInterests}
-                    onChange={(e) => setEditSupervisorInterests(e.target.value)}
+                    value={editSupervisorResearchInterests}
+                    onChange={(e) => setEditSupervisorResearchInterests(e.target.value)}
                     placeholder="Comma separated"
+                    className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Additional Information</label>
+                  <input
+                    type="text"
+                    value={editSupervisorAdditionalInformation}
+                    onChange={(e) => setEditSupervisorAdditionalInformation(e.target.value)}
                     className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
                   />
                 </div>
@@ -1837,8 +1845,8 @@ const PMDashboard = () => {
                     type="number"
                     min="1"
                     required
-                    value={editSupervisorSlots}
-                    onChange={(e) => setEditSupervisorSlots(parseInt(e.target.value, 10))}
+                    value={editSupervisorPreferredSupervisionSlots}
+                    onChange={(e) => setEditSupervisorPreferredSupervisionSlots(parseInt(e.target.value, 10))}
                     className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
                   />
                 </div>
