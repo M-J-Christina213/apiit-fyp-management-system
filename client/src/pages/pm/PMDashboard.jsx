@@ -1547,33 +1547,62 @@ const PMDashboard = () => {
 
       const selectedStudentForAssessor = allocStudentId ? students.find(s => s.id === allocStudentId) : null;
 
-      const handleAssessorAllocateSubmit = (e) => {
+      const handleAssessorAllocateSubmit = async (e) => {
         e.preventDefault();
-        if (!allocStudentId || !allocAssessorId) return;
 
-        const student = students.find(s => s.id === allocStudentId);
-        const assessor = assessors.find(a => a.id === allocAssessorId);
+        if (!allocStudentId || !allocAssessorId) {
+          alert("Please select an assessor.");
+          return;
+        }
 
-        if (!student || !assessor) return;
-
-        const updatedStudents = students.map(s =>
-          s.id === student.id
-            ? {
-              ...s,
-              assessor: `${assessor.Title || ''} ${assessor.Name}`.trim(),
-              assessorAssigned: true
+        try {
+          const res = await fetch(
+            `http://localhost:5000/api/students/${allocStudentId}/allocate-assessor`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                assessorId: Number(allocAssessorId),
+              }),
             }
-            : s
-        );
+          );
 
-        setStudents(updatedStudents);
-        setAssessorAllocSuccess(true);
+          const data = await res.json();
 
-        setTimeout(() => {
-          setAssessorAllocSuccess(false);
-          setAllocStudentId('');
-          setAllocAssessorId('');
-        }, 1500);
+          if (!res.ok) {
+            alert(data.message || "Failed to assign assessor.");
+            return;
+          }
+
+          const assessor = assessors.find(
+            (a) => Number(a.id) === Number(allocAssessorId)
+          );
+
+          setStudents((prev) =>
+            prev.map((student) =>
+              student.id === allocStudentId
+                ? {
+                  ...student,
+                  assessor: `${assessor?.title || ""} ${assessor?.name || ""}`.trim(),
+                  assessorAssigned: true,
+                }
+                : student
+            )
+          );
+
+          setAssessorAllocSuccess(true);
+
+          setTimeout(() => {
+            setAssessorAllocSuccess(false);
+            setAllocStudentId("");
+            setAllocAssessorId("");
+          }, 1500);
+        } catch (err) {
+          console.error(err);
+          alert("Failed to assign assessor.");
+        }
       };
 
       const handleAssessorUpload = async (e) => {
@@ -1717,7 +1746,7 @@ const PMDashboard = () => {
                       <option value="">-- Choose assessor --</option>
                       {assessors.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.Title} {a.Name}
+                          {a.title} {a.name}
                         </option>
                       ))}
                       {assessors.length === 0 && (
