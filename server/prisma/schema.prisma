@@ -96,10 +96,13 @@ model supervisors {
 }
 
 model templates {
-  id          Int       @id @default(autoincrement())
-  title       String    @db.VarChar(150)
-  file_path   String    @db.VarChar(255)
-  uploaded_at DateTime? @default(now()) @db.Timestamp(6)
+  id          Int      @id @default(autoincrement())
+  title       String
+  file_name   String
+  file_type   String
+  file_size   String
+  file_path   String
+  uploaded_at DateTime @default(now())
 }
 
 model users {
