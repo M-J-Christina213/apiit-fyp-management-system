@@ -90,9 +90,9 @@ const StudentDashboard = () => {
 
         const studentId = loggedIn?.email ? loggedIn.email.split('@')[0].toUpperCase() : 'CB014416';
         const myLogsheets = initialLogsheets.filter(l => l.studentId === studentId);
-        
+
         if (myLogsheets.length > 0) {
-          const sorted = myLogsheets.sort((a,b) => new Date(b.meetingDate) - new Date(a.meetingDate));
+          const sorted = myLogsheets.sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate));
           const lastDate = new Date(sorted[0].meetingDate);
           const daysSince = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
           if (daysSince > 30) {
@@ -168,7 +168,7 @@ const StudentDashboard = () => {
       alert("Please fill in all required fields.");
       return;
     }
-    
+
     const newLog = {
       id: `L00${logsheets.length + 1}`,
       studentId: currentStudent.id,
@@ -181,17 +181,17 @@ const StudentDashboard = () => {
       status: 'Submitted',
       createdAt: new Date().toISOString()
     };
-    
+
     setLogsheets([...logsheets, newLog]);
     setShowLogsheetModal(false);
     setShowLogsheetAlert(false);
-    
+
     setLogDate('');
     setLogType('Physical');
     setLogSummary('');
     setLogProgress('');
     setLogAction('');
-    
+
     alert("Logsheet submitted successfully!");
   };
 
@@ -208,7 +208,7 @@ const StudentDashboard = () => {
       render: (row) => `${row.title} ${row.name}`
     },
     { header: 'Expertise Areas', accessor: 'expertise' },
-    { header: 'Research Interests', accessor: 'interests' },
+    { header: 'Research Interests', accessor: 'research_interests' },
     {
       header: 'Available Slots',
       render: (row) => (
@@ -635,20 +635,24 @@ const StudentDashboard = () => {
     // ---------------- LOGSHEETS TAB ----------------
     if (path === '/student/logsheets') {
       const myLogsheets = logsheets.filter(l => l.studentId === currentStudent.id);
-      
+
       const logsheetColumns = [
         { header: 'Meeting Date', render: (row) => new Date(row.meetingDate).toLocaleDateString() },
-        { header: 'Type', render: (row) => (
-          <span className={`text-xs font-bold px-2 py-0.5 rounded border ${row.meetingType === 'Online' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-            {row.meetingType}
-          </span>
-        )},
+        {
+          header: 'Type', render: (row) => (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${row.meetingType === 'Online' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+              {row.meetingType}
+            </span>
+          )
+        },
         { header: 'Discussion Summary', render: (row) => <span className="line-clamp-2" title={row.summary}>{row.summary}</span> },
-        { header: 'Status', render: (row) => (
-          <span className={`text-xs font-bold px-2 py-0.5 rounded border ${row.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            {row.status}
-          </span>
-        )}
+        {
+          header: 'Status', render: (row) => (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${row.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+              {row.status}
+            </span>
+          )
+        }
       ];
 
       return (
@@ -658,7 +662,7 @@ const StudentDashboard = () => {
               <h1 className="text-2xl font-bold text-slate-800">Supervisor Meeting Logsheets</h1>
               <p className="text-sm text-slate-500">Record and track your mandatory supervisor meetings to ensure academic compliance.</p>
             </div>
-            <button 
+            <button
               onClick={() => setShowLogsheetModal(true)}
               className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2"
             >
@@ -714,7 +718,7 @@ const StudentDashboard = () => {
                     <X className="h-5 w-5" />
                   </button>
                 </div>
-                
+
                 <div className="p-6 overflow-y-auto">
                   <form id="logsheet-form" onSubmit={handleLogsheetSubmit} className="space-y-5">
                     <div className="grid grid-cols-2 gap-5">
@@ -787,7 +791,7 @@ const StudentDashboard = () => {
                     </div>
                   </form>
                 </div>
-                
+
                 <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
                   <button
                     type="button"
