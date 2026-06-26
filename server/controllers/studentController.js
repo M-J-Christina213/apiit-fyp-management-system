@@ -77,9 +77,17 @@ const getStudents = async (req, res) => {
                 batchId: s.batch_id,
                 batchCode: s.batches ? s.batches.batch_code : null,
                 topic: fypRecord?.tentative_topic || null,
-                supervisor: fypRecord?.supervisors ? `${fypRecord.supervisors.title || ""} ${fypRecord.supervisors.name}`.trim() : null,
+                supervisor: fypRecord?.supervisors
+                    ? `${fypRecord.supervisors.title || ""} ${fypRecord.supervisors.name}`.trim()
+                    : null,
+
+                supervisorExpertise: fypRecord?.supervisors?.expertise || "-",
                 supervisorConfirmationStatus: fypRecord?.supervisor_confirmation_status || "Pending",
-                assessor: fypRecord?.assessors ? `${fypRecord.assessors.title || ""} ${fypRecord.assessors.name}`.trim() : null,
+                assessor: fypRecord?.assessors
+                    ? `${fypRecord.assessors.title || ""} ${fypRecord.assessors.name}`.trim()
+                    : null,
+
+                assessorAssigned: !!fypRecord?.assessor_id,
             };
         });
 

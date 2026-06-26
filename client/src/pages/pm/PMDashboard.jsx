@@ -1508,7 +1508,7 @@ const PMDashboard = () => {
         { header: 'Student Number', accessor: 'id' },
         { header: 'Project Topic', render: (row) => row.topic || '-' },
         { header: 'Confirmed Supervisor', render: (row) => row.supervisor || '-' },
-        { header: 'Assigned Assessor', render: (row) => row.assessor || '-' },
+
         {
           header: 'Action',
           render: (row) => (
@@ -1719,7 +1719,26 @@ const PMDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">Assign Assessor for: {selectedStudentForAssessor.name}</h3>
-                  <p className="text-sm text-slate-500">{selectedStudentForAssessor.id} • {selectedStudentForAssessor.topic}</p>
+                  <div className="text-sm text-slate-500 space-y-1">
+                    <p>
+                      {selectedStudentForAssessor.id} • {selectedStudentForAssessor.topic}
+                    </p>
+
+                    <p>
+                      <span className="font-semibold">Assessor:</span>{" "}
+                      {selectedStudentForAssessor.assessor || "-"}
+                    </p>
+
+                    <p>
+                      <span className="font-semibold">Supervisor:</span>{" "}
+                      {selectedStudentForAssessor.supervisor || "-"}
+                    </p>
+
+                    <p>
+                      <span className="font-semibold">Area of Expertise:</span>{" "}
+                      {selectedStudentForAssessor.supervisorExpertise || "-"}
+                    </p>
+                  </div>
                 </div>
                 <button onClick={() => setAllocStudentId('')} className="text-sm font-bold text-navy-600 hover:text-navy-900">
                   Cancel
@@ -1746,7 +1765,7 @@ const PMDashboard = () => {
                       <option value="">-- Choose assessor --</option>
                       {assessors.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.title} {a.name}
+                          {a.title} {a.name} - {a.expertise || "-"}
                         </option>
                       ))}
                       {assessors.length === 0 && (
