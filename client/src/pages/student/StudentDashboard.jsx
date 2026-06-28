@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Bell,
   Plus,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 
 import {
@@ -135,29 +136,15 @@ const StudentDashboard = () => {
     }
   }, [path]);
 
-  // ---- Template handlers (component scope) ----
-  const handleStudentDownload = async (id) => {
-    try {
-      const res = await downloadTemplate(id);
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      const disposition = res.headers['content-disposition'];
-      const match = disposition && disposition.match(/filename="?([^"]+)"?/);
-      link.download = match ? match[1] : `template_${id}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Download failed:', err);
-      alert('Failed to download template.');
-    }
-  };
+  useEffect(() => {
 
-  const handleViewTemplate = (id) => {
-    window.open(`http://localhost:5000/api/templates/download/${id}`, '_blank');
-  };
+    if (path === "/student/templates") {
+      fetchTemplates();
+    }
+
+  }, [path]);
+
+
 
   // Find current student record
   const currentStudent = students?.find(
@@ -210,6 +197,44 @@ const StudentDashboard = () => {
       alert("Failed to submit proposal");
     }
   };
+
+  const handleViewTemplate = (id) => {
+    window.open(
+      `http://localhost:5000/api/templates/view/${id}`,
+      "_blank"
+    );
+  };
+
+  const handleStudentDownload = (id) => {
+    window.open(
+      `http://localhost:5000/api/templates/download/${id}`,
+      "_self"
+    );
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      setTemplatesError(null);
+
+      const res = await fetch("http://localhost:5000/api/templates");
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch templates");
+      }
+
+      const data = await res.json();
+
+      setTemplates(data);
+    } catch (err) {
+      console.error(err);
+      setTemplatesError("Unable to load templates.");
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+
 
   const handleLogsheetSubmit = (e) => {
     e.preventDefault();
@@ -605,8 +630,27 @@ const StudentDashboard = () => {
       return (
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Academic Guides & Templates</h1>
-            <p className="text-sm text-slate-500">Download authorized templates, guidelines, and evaluation rubrics provided by the FYP committee.</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">
+                  Academic Templates
+                </h1>
+
+                <p className="text-sm text-slate-500">
+                  View and download the latest FYP templates.
+                </p>
+              </div>
+
+              <div className="bg-slate-100 px-3 py-2 rounded-lg text-center">
+                <p className="text-xs text-slate-500">
+                  Available
+                </p>
+
+                <p className="text-lg font-bold text-navy-900">
+                  {templates.length}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Loading State */}
@@ -623,7 +667,7 @@ const StudentDashboard = () => {
               <AlertCircle className="h-10 w-10 mx-auto text-red-400 mb-3" />
               <p className="text-sm font-semibold text-red-700">{templatesError}</p>
               <button
-                onClick={() => { setTemplatesError(null); setTemplatesLoading(false); }}
+                onClick={fetchTemplates}
                 className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs font-bold transition-colors"
               >
                 Retry
@@ -647,7 +691,13 @@ const StudentDashboard = () => {
                 <div key={tmpl.id} className="p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
                   <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 mt-0.5">
-                      <FileText className="h-5 w-5" />
+                      {tmpl.file_type === ".pdf" ? (
+                        <FileText className="h-5 w-5 text-red-600" />
+                      ) : tmpl.file_type === ".docx" ? (
+                        <FileText className="h-5 w-5 text-blue-600" />
+                      ) : (
+                        <FileText className="h-5 w-5 text-slate-600" />
+                      )}
                     </div>
                     <div className="space-y-1 min-w-0">
                       <h4 className="text-sm font-bold text-slate-800 truncate">{tmpl.title}</h4>
@@ -678,7 +728,7 @@ const StudentDashboard = () => {
                       onClick={() => handleViewTemplate(tmpl.id)}
                       className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 hover:border-blue-500 text-slate-700 hover:text-blue-600 rounded text-xs font-bold transition-colors bg-white select-none whitespace-nowrap justify-center flex-1 sm:flex-none"
                     >
-                      <FileText className="h-3.5 w-3.5" /> View
+                      <Eye className="h-3.5 w-3.5" /> View
                     </button>
                     <button
                       onClick={() => handleStudentDownload(tmpl.id)}
