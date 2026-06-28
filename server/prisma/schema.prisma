@@ -98,10 +98,14 @@ model supervisors {
 model templates {
   id          Int      @id @default(autoincrement())
   title       String
+
+  stage       String   @default("Proposal")
+
   file_name   String
   file_type   String
   file_size   String
   file_path   String
+
   uploaded_at DateTime @default(now())
 }
 

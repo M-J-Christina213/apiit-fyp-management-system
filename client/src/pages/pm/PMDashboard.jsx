@@ -128,10 +128,14 @@ const PMDashboard = () => {
 
   const [templates, setTemplates] = useState([]);
   const [templateTitle, setTemplateTitle] = useState('');
+  const [templateStage, setTemplateStage] = useState("Proposal");
   const [templateFile, setTemplateFile] = useState(null);
   const [editTemplateId, setEditTemplateId] = useState(null);
   const [editTemplateTitle, setEditTemplateTitle] = useState('');
   const [showEditTemplate, setShowEditTemplate] = useState(false);
+  const [showUploadTemplate, setShowUploadTemplate] = useState(false);
+
+  const [selectedTemplateFile, setSelectedTemplateFile] = useState(null);
 
 
   const getNextStage = (current) => {
@@ -397,26 +401,54 @@ const PMDashboard = () => {
   }, [path]);
 
   const handleUploadTemplateClick = () => {
-    // Programmatically open the file picker
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar';
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const title = file.name.replace(/\.[^/.]+$/, ""); // filename without extension
-      try {
-        const formData = new FormData();
-        formData.append("title", title);
-        formData.append("file", file);
-        await uploadTemplate(formData);
-        await loadTemplates();
-      } catch (err) {
-        console.error("Upload failed:", err);
-        alert("Failed to upload template. Please try again.");
-      }
-    };
-    input.click();
+    setTemplateTitle("");
+    setTemplateStage("Proposal");
+    setSelectedTemplateFile(null);
+    setShowUploadTemplate(true);
+  };
+
+  const handleUploadTemplateSubmit = async () => {
+
+    if (!templateTitle.trim()) {
+      alert("Please enter a template title.");
+      return;
+    }
+
+    if (!selectedTemplateFile) {
+      alert("Please select a file.");
+      return;
+    }
+
+    try {
+
+      const formData = new FormData();
+
+      formData.append("title", templateTitle);
+
+      formData.append("stage", templateStage);
+
+      formData.append("file", selectedTemplateFile);
+
+      await uploadTemplate(formData);
+
+      await loadTemplates();
+
+      setShowUploadTemplate(false);
+
+      setTemplateTitle("");
+
+      setTemplateStage("Proposal");
+
+      setSelectedTemplateFile(null);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert("Upload failed.");
+
+    }
+
   };
 
   const handleEditTemplate = (template) => {
@@ -1895,6 +1927,7 @@ const PMDashboard = () => {
       );
     }
 
+    // Templates tab 
 
     if (path === "/pm/templates") {
       return (
@@ -1913,6 +1946,7 @@ const PMDashboard = () => {
             </button>
           </div>
 
+
           {/* Templates Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
@@ -1926,11 +1960,13 @@ const PMDashboard = () => {
                 <p className="text-sm font-semibold text-slate-500">No templates uploaded yet</p>
                 <p className="text-xs text-slate-400 mt-1">Click "Upload Template" to add your first document</p>
               </div>
+
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/50">
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Stage</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">File Name</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Size</th>
@@ -1948,6 +1984,17 @@ const PMDashboard = () => {
                           </div>
                           <span className="font-semibold text-slate-800">{t.title}</span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold
+        ${t.stage === "Proposal"
+                            ? "bg-blue-100 text-blue-700"
+                            : t.stage === "Midpoint"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-green-100 text-green-700"
+                          }`}>
+                          {t.stage}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-slate-600">{t.file_name || '-'}</td>
                       <td className="px-6 py-4">
@@ -1995,6 +2042,119 @@ const PMDashboard = () => {
               </table>
             )}
           </div>
+
+          {showUploadTemplate && (
+            <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+
+              <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+
+                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+
+                  <div>
+
+                    <h3 className="text-lg font-bold text-slate-800">
+                      Upload Template
+                    </h3>
+
+                    <p className="text-xs text-slate-500">
+                      Upload a new document for students
+                    </p>
+
+                  </div>
+
+                  <button
+                    onClick={() => setShowUploadTemplate(false)}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+
+                    <X className="h-5 w-5" />
+
+                  </button>
+
+                </div>
+
+                <div className="p-6 space-y-5">
+
+                  <div>
+
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Template Title
+                    </label>
+
+                    <input
+                      type="text"
+                      value={templateTitle}
+                      onChange={(e) => setTemplateTitle(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-lg"
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Stage
+                    </label>
+
+                    <select
+                      value={templateStage}
+                      onChange={(e) => setTemplateStage(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-lg"
+                    >
+
+                      <option value="Proposal">Proposal</option>
+
+                      <option value="Midpoint">Midpoint</option>
+
+                      <option value="Final">Final</option>
+
+                    </select>
+
+                  </div>
+
+                  <div>
+
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Document
+                    </label>
+
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                      onChange={(e) => setSelectedTemplateFile(e.target.files[0])}
+                      className="w-full"
+                    />
+
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+
+                    <button
+                      onClick={() => setShowUploadTemplate(false)}
+                      className="px-4 py-2 border rounded-lg"
+                    >
+
+                      Cancel
+
+                    </button>
+
+                    <button
+                      onClick={handleUploadTemplateSubmit}
+                      className="px-4 py-2 bg-navy-900 text-white rounded-lg"
+                    >
+
+                      Upload
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+          )}
 
           {/* Edit Template Modal */}
           {showEditTemplate && (

@@ -43,6 +43,8 @@ const uploadTemplate = async (req, res) => {
 
                 title: req.body.title,
 
+                stage: req.body.stage,
+
                 file_name: req.file.originalname,
 
                 file_type: path.extname(req.file.originalname),
@@ -200,16 +202,16 @@ const viewTemplate = async (req, res) => {
         // Determine MIME type
         const ext = path.extname(template.file_name).toLowerCase();
         const mimeTypes = {
-            '.pdf':  'application/pdf',
-            '.png':  'image/png',
-            '.jpg':  'image/jpeg',
+            '.pdf': 'application/pdf',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg',
-            '.gif':  'image/gif',
-            '.txt':  'text/plain',
+            '.gif': 'image/gif',
+            '.txt': 'text/plain',
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            '.doc':  'application/msword',
+            '.doc': 'application/msword',
             '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            '.xls':  'application/vnd.ms-excel',
+            '.xls': 'application/vnd.ms-excel',
             '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         };
 
