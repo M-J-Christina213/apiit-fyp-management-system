@@ -27,7 +27,9 @@ import {
   getProposalRequests,
   getLoggedInUser,
   getTemplates,
-  downloadTemplate
+  downloadTemplate,
+  getStudentProposals,
+  submitProposal
 } from "../../services/api.js";
 
 const StudentDashboard = () => {
@@ -54,6 +56,7 @@ const StudentDashboard = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+
   // Logsheets state
   const [logsheets, setLogsheets] = useState([]);
   const [showLogsheetModal, setShowLogsheetModal] = useState(false);
@@ -64,13 +67,24 @@ const StudentDashboard = () => {
   const [logAction, setLogAction] = useState('');
   const [showLogsheetAlert, setShowLogsheetAlert] = useState(false);
 
+
   useEffect(() => {
+    const loggedIn = getLoggedInUser();
+    if (loggedIn) {
+      setCurrentUser(loggedIn);
+    }
+
+    const studentId = loggedIn?.email
+      ? loggedIn.email.split('@')[0].toUpperCase()
+      : 'CB014416';
+
     const loadData = async () => {
       try {
+
         const [supRes, stuRes, propRes] = await Promise.all([
           getSupervisors(),
           getStudents(),
-          getProposalRequests()
+          getProposalRequests(studentId)
         ]);
 
         setSupervisors(supRes.data);
@@ -98,7 +112,7 @@ const StudentDashboard = () => {
         ];
         setLogsheets(initialLogsheets);
 
-        const studentId = loggedIn?.email ? loggedIn.email.split('@')[0].toUpperCase() : 'CB014416';
+
         const myLogsheets = initialLogsheets.filter(l => l.studentId === studentId);
 
         if (myLogsheets.length > 0) {
