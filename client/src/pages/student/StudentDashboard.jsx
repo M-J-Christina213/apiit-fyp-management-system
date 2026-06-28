@@ -17,7 +17,8 @@ import {
   Bell,
   Plus,
   X,
-  Eye
+  Eye,
+  Lock
 } from 'lucide-react';
 
 import {
@@ -38,6 +39,7 @@ const StudentDashboard = () => {
   const [students, setStudents] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [studentStage, setStudentStage] = useState("Proposal");
 
   // Templates state
   const [templates, setTemplates] = useState([]);
@@ -134,6 +136,16 @@ const StudentDashboard = () => {
           setTemplatesLoading(false);
         });
     }
+
+    const fetchStudentStage = async () => {
+
+      const res = await axios.get(
+        `http://localhost:5000/api/students/${studentId}/stage`
+      );
+
+      setStudentStage(res.data.stage);
+
+    };
   }, [path]);
 
   useEffect(() => {
@@ -234,6 +246,17 @@ const StudentDashboard = () => {
     }
   };
 
+  const proposalTemplates = templates.filter(
+    t => t.stage === "Proposal"
+  );
+
+  const midpointTemplates = templates.filter(
+    t => t.stage === "Midpoint"
+  );
+
+  const finalTemplates = templates.filter(
+    t => t.stage === "Final"
+  );
 
 
   const handleLogsheetSubmit = (e) => {
@@ -627,6 +650,15 @@ const StudentDashboard = () => {
 
     // ---------------- TEMPLATES TAB ----------------
     if (path === '/student/templates') {
+      const unlocked = {
+        Proposal: true,
+        Midpoint:
+          studentStage === "Midpoint" ||
+          studentStage === "Final",
+
+        Final:
+          studentStage === "Final"
+      };
       return (
         <div className="space-y-6">
           <div className="space-y-2">
@@ -685,61 +717,269 @@ const StudentDashboard = () => {
           )}
 
           {/* Templates List */}
-          {!templatesLoading && !templatesError && templates.length > 0 && (
-            <div className="bg-white rounded-lg border border-slate-200 shadow-sm divide-y divide-slate-200">
-              {templates.map((tmpl) => (
-                <div key={tmpl.id} className="p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 mt-0.5">
-                      {tmpl.file_type === ".pdf" ? (
-                        <FileText className="h-5 w-5 text-red-600" />
-                      ) : tmpl.file_type === ".docx" ? (
-                        <FileText className="h-5 w-5 text-blue-600" />
-                      ) : (
-                        <FileText className="h-5 w-5 text-slate-600" />
-                      )}
-                    </div>
-                    <div className="space-y-1 min-w-0">
-                      <h4 className="text-sm font-bold text-slate-800 truncate">{tmpl.title}</h4>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 font-medium">
-                        <span className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold uppercase text-[10px]">
-                            {(tmpl.file_type || '').replace('.', '') || '?'}
-                          </span>
-                          {tmpl.file_name || '-'}
-                        </span>
-                        {tmpl.file_size && (
-                          <>
-                            <span>•</span>
-                            <span>{tmpl.file_size}</span>
-                          </>
-                        )}
-                        {tmpl.uploaded_at && (
-                          <>
-                            <span>•</span>
-                            <span>Uploaded: {new Date(tmpl.uploaded_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 self-stretch sm:self-auto">
-                    <button
-                      onClick={() => handleViewTemplate(tmpl.id)}
-                      className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 hover:border-blue-500 text-slate-700 hover:text-blue-600 rounded text-xs font-bold transition-colors bg-white select-none whitespace-nowrap justify-center flex-1 sm:flex-none"
-                    >
-                      <Eye className="h-3.5 w-3.5" /> View
-                    </button>
-                    <button
-                      onClick={() => handleStudentDownload(tmpl.id)}
-                      className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 hover:border-navy-900 text-slate-700 hover:text-navy-900 rounded text-xs font-bold transition-colors bg-white select-none whitespace-nowrap justify-center flex-1 sm:flex-none"
-                    >
-                      <Download className="h-3.5 w-3.5" /> Download
-                    </button>
-                  </div>
+          {/* Templates by Stage */}
+
+          {!templatesLoading && !templatesError && (
+
+            <div className="space-y-6">
+
+              {/* Proposal */}
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+                <div className="px-5 py-4 border-b bg-blue-50">
+
+                  <h3 className="font-bold text-blue-800">
+                    📘 Proposal Stage
+                  </h3>
+
+                  <p className="text-xs text-blue-600">
+                    Documents required before proposal submission.
+                  </p>
+
                 </div>
-              ))}
+
+                {proposalTemplates.length === 0 ? (
+
+                  <div className="p-6 text-sm text-slate-400">
+                    No templates uploaded.
+                  </div>
+
+                ) : (
+
+                  proposalTemplates.map((tmpl) => (
+
+                    <div
+                      key={tmpl.id}
+                      className="p-4 flex justify-between items-center border-b last:border-b-0 hover:bg-slate-50"
+                    >
+
+                      <div>
+
+                        <h4 className="font-semibold">
+                          {tmpl.title}
+                        </h4>
+
+                        <p className="text-xs text-slate-500">
+                          {tmpl.file_name}
+                        </p>
+
+                      </div>
+
+                      <div className="flex gap-2">
+
+                        <button
+                          onClick={() => handleViewTemplate(tmpl.id)}
+                          className="px-3 py-2 border rounded text-xs hover:border-blue-500"
+                        >
+                          <Eye className="h-4 w-4 inline mr-1" />
+                          View
+                        </button>
+
+                        <button
+                          onClick={() => handleStudentDownload(tmpl.id)}
+                          className="px-3 py-2 border rounded text-xs hover:border-navy-900"
+                        >
+                          <Download className="h-4 w-4 inline mr-1" />
+                          Download
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  ))
+
+                )}
+
+              </div>
+
+
+              {/* Midpoint */}
+
+              {unlocked.Midpoint ? (
+
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+                  <div className="px-5 py-4 border-b bg-amber-50">
+
+                    <h3 className="font-bold text-amber-800">
+                      🟡 Midpoint Stage
+                    </h3>
+
+                    <p className="text-xs text-amber-700">
+                      Templates for midpoint evaluation.
+                    </p>
+
+                  </div>
+
+                  {midpointTemplates.length === 0 ? (
+
+                    <div className="p-6 text-sm text-slate-400">
+                      No templates uploaded.
+                    </div>
+
+                  ) : (
+
+                    midpointTemplates.map((tmpl) => (
+
+                      <div
+                        key={tmpl.id}
+                        className="p-4 flex justify-between items-center border-b last:border-b-0 hover:bg-slate-50"
+                      >
+
+                        <div>
+
+                          <h4 className="font-semibold">
+                            {tmpl.title}
+                          </h4>
+
+                          <p className="text-xs text-slate-500">
+                            {tmpl.file_name}
+                          </p>
+
+                        </div>
+
+                        <div className="flex gap-2">
+
+                          <button
+                            onClick={() => handleViewTemplate(tmpl.id)}
+                            className="px-3 py-2 border rounded text-xs hover:border-blue-500"
+                          >
+                            <Eye className="h-4 w-4 inline mr-1" />
+                            View
+                          </button>
+
+                          <button
+                            onClick={() => handleStudentDownload(tmpl.id)}
+                            className="px-3 py-2 border rounded text-xs hover:border-navy-900"
+                          >
+                            <Download className="h-4 w-4 inline mr-1" />
+                            Download
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    ))
+
+                  )}
+
+                </div>
+
+              ) : (
+
+                <div className="p-8 text-center">
+
+                  <Lock className="mx-auto h-10 w-10 text-slate-400 mb-3" />
+
+                  <h4 className="font-semibold text-slate-600">
+                    Midpoint Stage Locked
+                  </h4>
+
+                  <p className="text-sm text-slate-500">
+                    Reach the Midpoint stage to unlock these templates.
+                  </p>
+
+                </div>
+
+              )}
+
+
+              {/* Final */}
+
+              {unlocked.Final ? (
+
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+                  <div className="px-5 py-4 border-b bg-green-50">
+
+                    <h3 className="font-bold text-green-800">
+                      🟢 Final Stage
+                    </h3>
+
+                    <p className="text-xs text-green-700">
+                      Templates required before final submission.
+                    </p>
+
+                  </div>
+
+                  {finalTemplates.length === 0 ? (
+
+                    <div className="p-6 text-sm text-slate-400">
+                      No templates uploaded.
+                    </div>
+
+                  ) : (
+
+                    finalTemplates.map((tmpl) => (
+
+                      <div
+                        key={tmpl.id}
+                        className="p-4 flex justify-between items-center border-b last:border-b-0 hover:bg-slate-50"
+                      >
+
+                        <div>
+
+                          <h4 className="font-semibold">
+                            {tmpl.title}
+                          </h4>
+
+                          <p className="text-xs text-slate-500">
+                            {tmpl.file_name}
+                          </p>
+
+                        </div>
+
+                        <div className="flex gap-2">
+
+                          <button
+                            onClick={() => handleViewTemplate(tmpl.id)}
+                            className="px-3 py-2 border rounded text-xs hover:border-blue-500"
+                          >
+                            <Eye className="h-4 w-4 inline mr-1" />
+                            View
+                          </button>
+
+                          <button
+                            onClick={() => handleStudentDownload(tmpl.id)}
+                            className="px-3 py-2 border rounded text-xs hover:border-navy-900"
+                          >
+                            <Download className="h-4 w-4 inline mr-1" />
+                            Download
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    ))
+
+                  )}
+
+                </div>
+
+              ) : (
+
+                <div className="p-8 text-center">
+
+                  <Lock className="mx-auto h-10 w-10 text-slate-400 mb-3" />
+
+                  <h4 className="font-semibold text-slate-600">
+                    Final Stage Locked
+                  </h4>
+
+                  <p className="text-sm text-slate-500">
+                    Reach the Final stage to unlock these templates.
+                  </p>
+
+                </div>
+
+              )}
+
             </div>
+
           )}
         </div>
       );

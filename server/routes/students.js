@@ -1,5 +1,5 @@
 const express = require("express");
-const { getStudents, getStudentById, createStudent, updateStudent, deleteStudent, allocateSupervisor, allocateAssessor } = require("../controllers/studentController");
+const { getStudents, getStudentById, createStudent, updateStudent, deleteStudent, allocateSupervisor, allocateAssessor, getStudentStage } = require("../controllers/studentController");
 
 const router = express.Router();
 
@@ -10,5 +10,6 @@ router.put("/:id", updateStudent);
 router.delete("/:id", deleteStudent);
 router.post("/:id/allocate-supervisor", allocateSupervisor);
 router.post("/:id/allocate-assessor", allocateAssessor);
+router.get("/:id/stage", getStudentStage);
 
 module.exports = router;

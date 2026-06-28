@@ -103,6 +103,8 @@ const getStudents = async (req, res) => {
     }
 };
 
+
+
 const getStudentById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -316,6 +318,36 @@ const allocateAssessor = async (req, res) => {
     }
 };
 
+const getStudentStage = async (req, res) => {
+    try {
+
+        const student = await prisma.students.findUnique({
+            where: {
+                id: Number(req.params.id)
+            },
+            include: {
+                batches: true
+            }
+        });
+
+        if (!student) {
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
+
+        res.json({
+            stage: student.batches?.stage || "Proposal"
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            message: "Failed to fetch stage"
+        });
+    }
+};
+
 module.exports = {
     getStudents,
     getStudentById,
@@ -323,5 +355,6 @@ module.exports = {
     updateStudent,
     deleteStudent,
     allocateSupervisor,
-    allocateAssessor
+    allocateAssessor,
+    getStudentStage
 };
