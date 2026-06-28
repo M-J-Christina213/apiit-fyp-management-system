@@ -7,9 +7,12 @@ const {
     getTemplates,
     uploadTemplate,
     downloadTemplate,
-    deleteTemplate
+    deleteTemplate,
+    updateTemplate,
+    viewTemplate
 
 } = require("../controllers/templateController");
+
 
 const router = express.Router();
 
@@ -69,4 +72,8 @@ router.delete(
 
 );
 
-module.exports = router;
+router.patch("/:id", updateTemplate);
+
+router.get("/view/:id", viewTemplate);
+
+module.exports = router;

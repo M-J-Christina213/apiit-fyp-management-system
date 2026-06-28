@@ -39,6 +39,16 @@ export const createBatch = (batchData) => API.post("/batches", batchData);
 export const updateBatchStage = (batchId, stage) => API.put(`/batches/${batchId}/stage`, { stage });
 export const updateBatch = (batchId, batchData) => API.put(`/batches/${batchId}`, batchData);
 export const deleteBatch = (batchId) => API.delete(`/batches/${batchId}`);
+// TEMPLATES
+export const getTemplates = () => API.get("/templates");
+export const uploadTemplate = (formData) => API.post("/templates/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+});
+export const deleteTemplate = (id) => API.delete(`/templates/${id}`);
+export const updateTemplate = (id, data) => API.patch(`/templates/${id}`, data);
+export const downloadTemplate = (id) => API.get(`/templates/download/${id}`, { responseType: "blob" });
+export const viewTemplate = (id) => `http://localhost:5000/api/templates/view/${id}`;
+
 // LOGIN USER
 export const getLoggedInUser = () => {
     return JSON.parse(localStorage.getItem("fyp_current_user"));

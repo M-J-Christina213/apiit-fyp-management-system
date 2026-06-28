@@ -50,6 +50,7 @@ const pmLinks = [
   { path: '/pm/supervisors', label: 'Supervisors', icon: UserCheck },
   { path: '/pm/allocation', label: 'Supervisor Allocation', icon: Shield },
   { path: '/pm/assessors', label: 'Assessor Allocation', icon: FileCheck },
+  { path: '/pm/templates', label: 'Templates', icon: Layers },
   { path: '/pm/reports', label: 'Reports', icon: FileText },
 ];
 
@@ -189,6 +190,7 @@ function App() {
             <Route path="/pm/supervisors" element={<PMDashboard />} />
             <Route path="/pm/allocation" element={<PMDashboard />} />
             <Route path="/pm/assessors" element={<PMDashboard />} />
+            <Route path="/pm/templates" element={<PMDashboard />} />
             <Route path="/pm/reports" element={<PMDashboard />} />
             <Route path="/pm/*" element={<Navigate to="/pm/dashboard" replace />} />
           </Route>

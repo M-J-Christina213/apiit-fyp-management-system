@@ -23,7 +23,8 @@ import {
   ChevronDown,
   ChevronUp,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 
 import {
@@ -46,6 +47,8 @@ import {
   uploadTemplate,
   getTemplates,
   deleteTemplate,
+  updateTemplate,
+  viewTemplate,
   downloadTemplate
 
 } from "../../services/api";
@@ -126,6 +129,9 @@ const PMDashboard = () => {
   const [templates, setTemplates] = useState([]);
   const [templateTitle, setTemplateTitle] = useState('');
   const [templateFile, setTemplateFile] = useState(null);
+  const [editTemplateId, setEditTemplateId] = useState(null);
+  const [editTemplateTitle, setEditTemplateTitle] = useState('');
+  const [showEditTemplate, setShowEditTemplate] = useState(false);
 
 
   const getNextStage = (current) => {
@@ -384,25 +390,89 @@ const PMDashboard = () => {
     }
   };
 
-  if (path === "/pm/templates") {
-    loadTemplates();
-  }
+  useEffect(() => {
+    if (path === "/pm/templates") {
+      loadTemplates();
+    }
+  }, [path]);
+
+  const handleUploadTemplateClick = () => {
+    // Programmatically open the file picker
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const title = file.name.replace(/\.[^/.]+$/, ""); // filename without extension
+      try {
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("file", file);
+        await uploadTemplate(formData);
+        await loadTemplates();
+      } catch (err) {
+        console.error("Upload failed:", err);
+        alert("Failed to upload template. Please try again.");
+      }
+    };
+    input.click();
+  };
+
+  const handleEditTemplate = (template) => {
+    setEditTemplateId(template.id);
+    setEditTemplateTitle(template.title);
+    setShowEditTemplate(true);
+  };
+
+  const handleEditTemplateSubmit = async () => {
+    if (!editTemplateTitle.trim()) {
+      alert("Title cannot be empty.");
+      return;
+    }
+    try {
+      await updateTemplate(editTemplateId, { title: editTemplateTitle.trim() });
+      setTemplates(prev => prev.map(t => t.id === editTemplateId ? { ...t, title: editTemplateTitle.trim() } : t));
+      setShowEditTemplate(false);
+      setEditTemplateId(null);
+      setEditTemplateTitle('');
+    } catch (err) {
+      console.error(err);
+      alert("Failed to rename template.");
+    }
+  };
 
   const handleDeleteTemplate = async (id) => {
-    if (!window.confirm("Delete this template?")) return;
-
+    if (!window.confirm("Delete this template? This cannot be undone.")) return;
     try {
       await deleteTemplate(id);
-      getTemplates(prev => prev.filter(t => t.id !== id));
+      setTemplates(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       console.error(err);
       alert("Delete failed");
     }
   };
 
-  const handleDownloadTemplate = (fileUrl) => {
-    window.open(fileUrl, "_blank");
+  const handleDownloadTemplate = async (id) => {
+    try {
+      const res = await downloadTemplate(id);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      // Get filename from content-disposition header if available
+      const disposition = res.headers['content-disposition'];
+      const match = disposition && disposition.match(/filename="?([^"]+)"?/);
+      link.download = match ? match[1] : `template_${id}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed:", err);
+      alert("Failed to download template.");
+    }
   };
+
 
   const handleAddBatchSubmit = async (e) => {
     e.preventDefault();
@@ -1829,76 +1899,150 @@ const PMDashboard = () => {
     if (path === "/pm/templates") {
       return (
         <div className="space-y-6">
-
-          {/* Upload Section */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-slate-800">Upload Templates</h2>
-
-            <input
-              type="text"
-              placeholder="Template Title"
-              value={templateTitle}
-              onChange={(e) => setTemplateTitle(e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-
-            <input
-              type="file"
-              onChange={(e) => setTemplateFile(e.target.files[0])}
-              className="w-full"
-            />
-
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-slate-800">Template Management</h1>
+              <p className="text-sm text-slate-500">Upload and manage FYP document templates for students</p>
+            </div>
             <button
-              onClick={handleUploadTemplate}
-              className="px-4 py-2 bg-blue-600 text-white rounded"
+              onClick={handleUploadTemplateClick}
+              className="flex items-center gap-2 px-4 py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded-lg font-bold text-sm shadow-md transition-all hover:shadow-lg"
             >
-              Upload Template
+              <Upload className="h-4 w-4" /> Upload Template
             </button>
           </div>
 
-          {/* Table Section */}
+          {/* Templates Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b bg-slate-50">
-              <h2 className="font-bold text-slate-800">Available Templates</h2>
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Uploaded Templates</h2>
+              <span className="text-xs font-semibold text-slate-400">{templates.length} template{templates.length !== 1 ? 's' : ''}</span>
             </div>
 
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-slate-100">
-                  <th className="p-3 text-left">Title</th>
-                  <th className="p-3 text-left">Uploaded</th>
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {templates.map((t) => (
-                  <tr key={t.id} className="border-b">
-                    <td className="p-3">{t.title}</td>
-                    <td className="p-3">{new Date(t.createdAt).toLocaleDateString()}</td>
-                    <td className="p-3 flex gap-3">
-
-                      <button
-                        onClick={() => handleDownloadTemplate(t.fileUrl)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Download
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteTemplate(t.id)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-
-                    </td>
+            {templates.length === 0 ? (
+              <div className="text-center py-16 px-6">
+                <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                <p className="text-sm font-semibold text-slate-500">No templates uploaded yet</p>
+                <p className="text-xs text-slate-400 mt-1">Click "Upload Template" to add your first document</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">File Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Size</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Uploaded</th>
+                    <th className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {templates.map((t) => (
+                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 bg-blue-50 rounded text-blue-600">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <span className="font-semibold text-slate-800">{t.title}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">{t.file_name || '-'}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-bold uppercase">
+                          {(t.file_type || '').replace('.', '') || '-'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">{t.file_size || '-'}</td>
+                      <td className="px-6 py-4 text-slate-500">{t.uploaded_at ? new Date(t.uploaded_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleEditTemplate(t)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Rename"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => window.open(viewTemplate(t.id), '_blank')}
+                            className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                            title="View file"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDownloadTemplate(t.id)}
+                            className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                            title="Download"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTemplate(t.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
+
+          {/* Edit Template Modal */}
+          {showEditTemplate && (
+            <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                      <Edit className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800">Rename Template</h3>
+                      <p className="text-xs text-slate-500">Update the display title for this template</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowEditTemplate(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Template Title *</label>
+                    <input
+                      type="text"
+                      value={editTemplateTitle}
+                      onChange={(e) => setEditTemplateTitle(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      onClick={() => setShowEditTemplate(false)}
+                      className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-sm font-semibold text-slate-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleEditTemplateSubmit}
+                      className="px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }

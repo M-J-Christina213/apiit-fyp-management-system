@@ -23,7 +23,9 @@ import {
   getSupervisors,
   getStudents,
   getProposalRequests,
-  getLoggedInUser
+  getLoggedInUser,
+  getTemplates,
+  downloadTemplate
 } from "../../services/api.js";
 
 const StudentDashboard = () => {
@@ -35,6 +37,11 @@ const StudentDashboard = () => {
   const [students, setStudents] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Templates state
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState(null);
 
   // Proposal form state
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
@@ -109,6 +116,48 @@ const StudentDashboard = () => {
 
     loadData();
   }, [path]);
+
+  // Fetch templates when navigating to /student/templates
+  useEffect(() => {
+    if (path === '/student/templates') {
+      setTemplatesLoading(true);
+      setTemplatesError(null);
+      getTemplates()
+        .then(res => {
+          setTemplates(res.data || []);
+          setTemplatesLoading(false);
+        })
+        .catch(err => {
+          console.error('Failed to load templates:', err);
+          setTemplatesError('Unable to load templates. Please try again later.');
+          setTemplatesLoading(false);
+        });
+    }
+  }, [path]);
+
+  // ---- Template handlers (component scope) ----
+  const handleStudentDownload = async (id) => {
+    try {
+      const res = await downloadTemplate(id);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const disposition = res.headers['content-disposition'];
+      const match = disposition && disposition.match(/filename="?([^"]+)"?/);
+      link.download = match ? match[1] : `template_${id}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Failed to download template.');
+    }
+  };
+
+  const handleViewTemplate = (id) => {
+    window.open(`http://localhost:5000/api/templates/download/${id}`, '_blank');
+  };
 
   // Find current student record
   const currentStudent = students?.find(
@@ -553,14 +602,6 @@ const StudentDashboard = () => {
 
     // ---------------- TEMPLATES TAB ----------------
     if (path === '/student/templates') {
-      const templates = [
-        { name: "Final Year Project Proposal Template", type: "Word Document (DOCX)", size: "240 KB", version: "v1.2", date: "2026-01-15" },
-        { name: "Interim Research Progress Report Format", type: "Word Document (DOCX)", size: "190 KB", version: "v1.0", date: "2025-11-20" },
-        { name: "Staffordshire University Final Thesis Template", type: "Word Document (DOCX)", size: "1.2 MB", version: "v2.4", date: "2026-02-10" },
-        { name: "Ethics Application and Clearance Form", type: "PDF Document", size: "380 KB", version: "v3.1", date: "2026-03-01" },
-        { name: "Turnitin Assessment Plagiarism Checklist", type: "PDF Document", size: "150 KB", version: "v1.1", date: "2025-08-05" },
-      ];
-
       return (
         <div className="space-y-6">
           <div className="space-y-2">
@@ -568,30 +609,88 @@ const StudentDashboard = () => {
             <p className="text-sm text-slate-500">Download authorized templates, guidelines, and evaluation rubrics provided by the FYP committee.</p>
           </div>
 
-          <div className="bg-white rounded border border-slate-200 shadow-sm divide-y divide-slate-200">
-            {templates.map((tmpl, idx) => (
-              <div key={idx} className="p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-slate-800">{tmpl.name}</h4>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 font-medium">
-                    <span>Format: {tmpl.type}</span>
-                    <span>•</span>
-                    <span>Size: {tmpl.size}</span>
-                    <span>•</span>
-                    <span>Version: {tmpl.version}</span>
-                    <span>•</span>
-                    <span>Released: {tmpl.date}</span>
+          {/* Loading State */}
+          {templatesLoading && (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="h-10 w-10 border-4 border-slate-200 border-t-navy-900 rounded-full animate-spin mb-4"></div>
+              <p className="text-sm font-medium text-slate-500">Loading templates...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {templatesError && !templatesLoading && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <AlertCircle className="h-10 w-10 mx-auto text-red-400 mb-3" />
+              <p className="text-sm font-semibold text-red-700">{templatesError}</p>
+              <button
+                onClick={() => { setTemplatesError(null); setTemplatesLoading(false); }}
+                className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs font-bold transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!templatesLoading && !templatesError && templates.length === 0 && (
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm text-center py-16 px-6">
+              <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+              <p className="text-sm font-semibold text-slate-500">No templates have been uploaded yet.</p>
+              <p className="text-xs text-slate-400 mt-1">Your project manager will upload templates here when they are available.</p>
+            </div>
+          )}
+
+          {/* Templates List */}
+          {!templatesLoading && !templatesError && templates.length > 0 && (
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm divide-y divide-slate-200">
+              {templates.map((tmpl) => (
+                <div key={tmpl.id} className="p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 mt-0.5">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 min-w-0">
+                      <h4 className="text-sm font-bold text-slate-800 truncate">{tmpl.title}</h4>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 font-medium">
+                        <span className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold uppercase text-[10px]">
+                            {(tmpl.file_type || '').replace('.', '') || '?'}
+                          </span>
+                          {tmpl.file_name || '-'}
+                        </span>
+                        {tmpl.file_size && (
+                          <>
+                            <span>•</span>
+                            <span>{tmpl.file_size}</span>
+                          </>
+                        )}
+                        {tmpl.uploaded_at && (
+                          <>
+                            <span>•</span>
+                            <span>Uploaded: {new Date(tmpl.uploaded_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                    <button
+                      onClick={() => handleViewTemplate(tmpl.id)}
+                      className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 hover:border-blue-500 text-slate-700 hover:text-blue-600 rounded text-xs font-bold transition-colors bg-white select-none whitespace-nowrap justify-center flex-1 sm:flex-none"
+                    >
+                      <FileText className="h-3.5 w-3.5" /> View
+                    </button>
+                    <button
+                      onClick={() => handleStudentDownload(tmpl.id)}
+                      className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 hover:border-navy-900 text-slate-700 hover:text-navy-900 rounded text-xs font-bold transition-colors bg-white select-none whitespace-nowrap justify-center flex-1 sm:flex-none"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => alert(`Downloading file: ${tmpl.name}`)}
-                  className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 hover:border-navy-900 text-slate-700 hover:text-navy-900 rounded text-xs font-bold transition-colors bg-white select-none whitespace-nowrap self-stretch sm:self-auto justify-center"
-                >
-                  <Download className="h-4 w-4" /> Download File
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
