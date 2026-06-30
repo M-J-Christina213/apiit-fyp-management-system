@@ -55,6 +55,7 @@ const StudentDashboard = () => {
   const [fileName, setFileName] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showProposalForm, setShowProposalForm] = useState(false);
 
 
   // Logsheets state
@@ -199,21 +200,13 @@ const StudentDashboard = () => {
     }
 
     try {
-      const selectedSupervisor = supervisors.find(
-        s => s.id === selectedSupervisorId
-      );
-
-      await createProposal({
-        studentId: currentStudent.id,
-        studentName: currentStudent.name,
-        supervisor: selectedSupervisor?.name,
-        topic,
-        status: "Pending",
-        submittedDate: new Date().toISOString().split("T")[0]
+      await submitProposal({
+        student_id: currentStudent.id,
+        supervisor_id: selectedSupervisorId,
+        proposed_topic: topic,
       });
 
       setFormSubmitted(true);
-
       setTopic("");
       setAbstract("");
       setFileName("");
@@ -505,7 +498,354 @@ const StudentDashboard = () => {
     }
 
     // ---------------- PROPOSAL SUBMISSION TAB ----------------
-    if (path === '/student/proposal') {
+    if (path === "/student/proposal") {
+
+      const latestProposal =
+        proposals.length > 0
+          ? [...proposals].sort(
+            (a, b) =>
+              new Date(b.submitted_at) -
+              new Date(a.submitted_at)
+          )[0]
+          : null;
+
+      const getStatusColor = (status) => {
+        switch (status) {
+          case "Approved":
+            return "bg-green-100 text-green-700";
+
+          case "Rejected":
+            return "bg-red-100 text-red-700";
+
+          case "Pending":
+            return "bg-yellow-100 text-yellow-700";
+
+          default:
+            return "bg-slate-100 text-slate-700";
+        }
+      };
+
+      return (
+        <div className="space-y-6">
+
+          {/* HEADER */}
+
+          <div>
+
+            <h1 className="text-2xl font-bold text-slate-800">
+              Proposal Management
+            </h1>
+
+            <p className="text-sm text-slate-500 mt-1">
+              Submit, monitor and manage your Final Year Project proposal.
+            </p>
+
+          </div>
+
+          {/* CURRENT PROPOSAL */}
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+            <div className="border-b px-6 py-4">
+
+              <h2 className="font-bold text-lg">
+                Current Proposal
+              </h2>
+
+            </div>
+
+            <div className="p-6">
+
+              {latestProposal ? (
+
+                <div className="grid grid-cols-2 gap-5">
+
+                  <div>
+
+                    <p className="text-xs text-slate-500">
+                      Status
+                    </p>
+
+                    <span
+                      className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(latestProposal.status)}`}
+                    >
+                      {latestProposal.status}
+                    </span>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-slate-500">
+                      Submitted
+                    </p>
+
+                    <p className="font-medium">
+
+                      {new Date(
+                        latestProposal.submitted_at
+                      ).toLocaleDateString()}
+
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-slate-500">
+                      Supervisor
+                    </p>
+
+                    <p className="font-medium">
+                      {latestProposal.supervisor_name}
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-slate-500">
+                      Student
+                    </p>
+
+                    <p className="font-medium">
+                      {currentStudent.name}
+                    </p>
+
+                  </div>
+
+                  <div className="col-span-2">
+
+                    <p className="text-xs text-slate-500">
+                      Proposed Topic
+                    </p>
+
+                    <p className="font-semibold text-lg mt-1">
+                      {latestProposal.proposed_topic}
+                    </p>
+
+                  </div>
+
+                  {latestProposal.rejection_reason && (
+
+                    <div className="col-span-2">
+
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+
+                        <p className="font-semibold text-red-700">
+                          Rejection Reason
+                        </p>
+
+                        <p className="text-sm mt-1 text-red-600">
+                          {latestProposal.rejection_reason}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  )}
+
+                </div>
+
+              ) : (
+
+                <div className="text-center py-10">
+
+                  <FileText className="mx-auto h-12 w-12 text-slate-300" />
+
+                  <h3 className="mt-3 font-semibold">
+
+                    No Proposal Submitted
+
+                  </h3>
+
+                  <p className="text-sm text-slate-500 mt-1">
+
+                    You haven't submitted a proposal yet.
+
+                  </p>
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+          {/* TIMELINE */}
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+            <div className="border-b px-6 py-4">
+
+              <h2 className="font-bold">
+                Proposal Progress
+              </h2>
+
+            </div>
+
+            <div className="p-6 space-y-4">
+
+              <div className="flex items-center gap-3">
+
+                <CheckCircle className="text-green-500 h-5 w-5" />
+
+                <span>
+                  Proposal Submitted
+                </span>
+
+              </div>
+
+              <div className="flex items-center gap-3">
+
+                <Clock className="text-yellow-500 h-5 w-5" />
+
+                <span>
+                  Awaiting Supervisor Review
+                </span>
+
+              </div>
+
+              <div className="flex items-center gap-3">
+
+                <div className="h-5 w-5 rounded-full border-2 border-slate-300"></div>
+
+                <span className="text-slate-400">
+                  Supervisor Approval
+                </span>
+
+              </div>
+
+              <div className="flex items-center gap-3">
+
+                <div className="h-5 w-5 rounded-full border-2 border-slate-300"></div>
+
+                <span className="text-slate-400">
+                  Official FYP Record Created
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* HISTORY */}
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+            <div className="flex justify-between items-center px-6 py-4 border-b">
+
+              <h2 className="font-bold">
+
+                Proposal History
+
+              </h2>
+
+              <button
+                onClick={() => navigate('/student/proposal/new')}
+                className="bg-navy-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-950"
+              >
+                + Submit New Proposal
+              </button>
+
+            </div>
+
+            <div className="overflow-x-auto">
+
+              <table className="w-full">
+
+                <thead className="bg-slate-50">
+
+                  <tr>
+
+                    <th className="text-left px-5 py-3">
+                      Topic
+                    </th>
+
+                    <th className="text-left px-5 py-3">
+                      Supervisor
+                    </th>
+
+                    <th className="text-left px-5 py-3">
+                      Status
+                    </th>
+
+                    <th className="text-left px-5 py-3">
+                      Submitted
+                    </th>
+
+                    <th className="text-left px-5 py-3">
+                      Action
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  {proposals.map((proposal) => (
+
+                    <tr
+                      key={proposal.id}
+                      className="border-b"
+                    >
+
+                      <td className="px-5 py-4">
+                        {proposal.proposed_topic}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        {proposal.supervisor_name}
+                      </td>
+
+                      <td className="px-5 py-4">
+
+                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(proposal.status)}`}>
+                          {proposal.status}
+                        </span>
+
+                      </td>
+
+                      <td className="px-5 py-4">
+
+                        {new Date(
+                          proposal.submitted_at
+                        ).toLocaleDateString()}
+
+                      </td>
+
+                      <td className="px-5 py-4">
+
+                        <button
+                          className="text-blue-600 hover:underline"
+                        >
+                          View
+                        </button>
+
+                      </td>
+
+                    </tr>
+
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+        </div>
+      );
+
+    }
+
+    if (path === '/student/proposal/new') {
       return (
         <div className="space-y-6">
           <div className="space-y-2">
@@ -661,6 +1001,10 @@ const StudentDashboard = () => {
         </div>
       );
     }
+
+
+
+
 
     // ---------------- TEMPLATES TAB ----------------
     if (path === '/student/templates') {
