@@ -231,6 +231,26 @@ const PMDashboard = () => {
     }
   };
 
+  const handleEditSupervisorSave = async () => {
+    try {
+      await updateSupervisor(editSupervisorId, {
+        title: editSupervisorTitle,
+        name: editSupervisorName,
+        email: editSupervisorEmail,
+        expertise: editSupervisorExpertise,
+        research_interests: editSupervisorResearchInterests,
+        additional_information: editSupervisorAdditionalInformation,
+        preferred_supervision_slots: editSupervisorPreferredSupervisionSlots
+      });
+      const res = await getSupervisors();
+      setSupervisors(res.data);
+      setShowEditSupervisor(false);
+    } catch (error) {
+      console.error("Failed to update supervisor:", error);
+      alert("Failed to update supervisor.");
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -1270,25 +1290,7 @@ const PMDashboard = () => {
         setShowEditSupervisor(true);
       };
 
-      const handleEditSupervisorSave = async () => {
-        try {
-          await updateSupervisor(editSupervisorId, {
-            title: editSupervisorTitle,
-            name: editSupervisorName,
-            email: editSupervisorEmail,
-            expertise: editSupervisorExpertise,
-            research_interests: editSupervisorResearchInterests,
-            additional_information: editSupervisorAdditionalInformation,
-            preferred_supervision_slots: editSupervisorPreferredSupervisionSlots
-          });
-          const res = await getSupervisors();
-          setSupervisors(res.data);
-          setShowEditSupervisor(false);
-        } catch (error) {
-          console.error("Failed to update supervisor:", error);
-          alert("Failed to update supervisor.");
-        }
-      };
+
 
       const handleExportSupervisorPool = () => {
         // Build export data
@@ -1353,15 +1355,37 @@ const PMDashboard = () => {
               <div className="space-y-1">
                 <h1 className="text-xl font-bold text-slate-800">Faculty Supervisor Pool</h1>
                 <p className="text-sm text-slate-500">View available supervisors and their supervision capacities.</p>
-              </div>
 
-              {/* Section 4 - Export Supervisor Pool */}
-              <button
-                onClick={handleExportSupervisorPool}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 transition-colors text-sm font-bold shadow-sm"
-              >
-                <FileSpreadsheet className="h-4 w-4 text-green-600" /> Export Supervisor Pool
-              </button>
+              </div>
+              <div className="flex gap-3">
+
+                <button
+                  onClick={() => {
+                    setEditSupervisorId(null);
+                    setEditSupervisorTitle("");
+                    setEditSupervisorName("");
+                    setEditSupervisorEmail("");
+                    setEditSupervisorExpertise("");
+                    setEditSupervisorResearchInterests("");
+                    setEditSupervisorAdditionalInformation("");
+                    setEditSupervisorPreferredSupervisionSlots(3);
+                    setShowEditSupervisor(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded hover:bg-navy-950 text-sm font-bold"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Supervisor
+                </button>
+
+                <button
+                  onClick={handleExportSupervisorPool}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 text-sm font-bold"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  Export Supervisor Pool
+                </button>
+
+              </div>
             </div>
 
             <div className="p-0">
