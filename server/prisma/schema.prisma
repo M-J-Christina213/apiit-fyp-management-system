@@ -51,6 +51,7 @@ model proposal_requests {
   proposal_pdf     String?      @db.VarChar(255)
   status           String?      @default("Pending") @db.VarChar(30)
   rejection_reason String?
+  student_confirmed Boolean @default(false)
   submitted_at     DateTime?    @default(now()) @db.Timestamp(6)
   students         students?    @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   supervisors      supervisors? @relation(fields: [supervisor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

@@ -41,6 +41,17 @@ const SupervisorDashboard = () => {
   const [interests, setInterests] = useState('');
   const [slots, setSlots] = useState(0);
 
+  //Proposal 
+  const [proposalRequests, setProposalRequests] = useState([]);
+
+  const [selectedProposal, setSelectedProposal] = useState(null);
+
+  const [showProposalModal, setShowProposalModal] = useState(false);
+
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  const supervisorId = currentSupervisor?.id;
+
   useEffect(() => {
 
     const loadData = async () => {
@@ -107,6 +118,36 @@ const SupervisorDashboard = () => {
       `${supervisorRecord?.title || ''} ${supervisorRecord?.name || ''}`.trim()
   );
 
+  useEffect(() => {
+
+    if (path !== "/supervisor/requests") return;
+
+    fetchProposalRequests();
+
+  }, [path]);
+
+  const fetchProposalRequests = async () => {
+
+    try {
+
+      const res = await axios.get(
+
+        `http://localhost:5000/api/proposals/supervisor/${supervisorId}`
+
+      );
+
+      setProposalRequests(res.data);
+
+    }
+
+    catch (err) {
+
+      console.log(err);
+
+    }
+
+  }
+
   // Proposal request evaluation actions
   const handleProposalAction = (proposalId, status) => {
     const proposal = proposals.find(p => p.id === proposalId);
@@ -155,52 +196,227 @@ const SupervisorDashboard = () => {
         ? { ...s, expertise, interests, slots: parseInt(slots) || 0, status: (parseInt(slots) || 0) === 0 ? 'Full' : 'Available' }
         : s
     );
-    saveSupervisors(updatedSupervisors);
+    setSupervisors(updatedSupervisors);
     setSupervisors(updatedSupervisors);
     setEditingProfile(false);
     alert("Profile configurations saved successfully.");
   };
 
+  const handleViewProposal = (proposal) => {
+
+    setSelectedProposal(proposal);
+
+    setShowProposalModal(true);
+
+  }
+
+  const handleApproveProposal = async (id) => {
+
+    if (!window.confirm("Approve this proposal?")) return;
+
+    try {
+
+      await axios.patch(
+
+        `http://localhost:5000/api/proposals/${id}/approve`
+      );
+
+      fetchProposalRequests();
+
+    }
+
+    catch (err) {
+
+      alert("Failed to approve proposal.");
+
+    }
+
+  }
+
+  const handleRejectProposal = async () => {
+
+    if (rejectionReason.trim() === "") {
+
+      return alert("Please enter a rejection reason.");
+
+    }
+
+    try {
+
+      await axios.patch(
+
+        `http://localhost:5000/api/proposals/${selectedProposal.id}/reject`,
+
+        {
+
+          reason: rejectionReason
+
+        }
+
+      );
+
+      setShowProposalModal(false);
+
+      setRejectionReason("");
+
+      fetchProposalRequests();
+
+    }
+
+    catch (err) {
+
+      alert("Failed to reject proposal.");
+
+    }
+
+  }
   // Columns definition
   const proposalColumns = [
-    { header: 'Student Name', accessor: 'studentName' },
-    { header: 'Student Number', accessor: 'studentNumber' },
-    { header: 'Tentative Topic', accessor: 'topic' },
-    { header: 'Submission Date', accessor: 'date' },
+
     {
-      header: 'Status',
+
+      header: "Student",
+
       render: (row) => (
-        <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${row.status === 'Approved' ? 'bg-green-50 text-green-700 border border-green-200' :
-          row.status === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
-            'bg-amber-50 text-amber-700 border border-amber-200'
-          }`}>
-          {row.status}
-        </span>
+
+        <div>
+
+          <p className="font-semibold">
+
+            {row.students.student_name}
+
+          </p>
+
+          <p className="text-xs text-slate-500">
+
+            {row.students.cb_no}
+
+          </p>
+
+        </div>
+
       )
+
     },
+
     {
-      header: 'Evaluation Actions',
-      render: (row) => (
-        row.status === 'Pending' ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleProposalAction(row.id, 'Approved')}
-              className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-            >
-              <Check className="h-3 w-3" /> Approve
-            </button>
-            <button
-              onClick={() => handleProposalAction(row.id, 'Rejected')}
-              className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-            >
-              <X className="h-3 w-3" /> Reject
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-slate-400 font-semibold italic">Processed</span>
+
+      header: "Topic",
+
+      accessor: "proposed_topic"
+
+    },
+
+    {
+
+      header: "Submitted",
+
+      render: (row) =>
+
+        new Date(row.submitted_at).toLocaleDateString()
+
+    },
+
+    {
+
+      header: "Status",
+
+      render: (row) => {
+
+        const colors = {
+
+          Pending: "bg-yellow-100 text-yellow-700",
+
+          Approved: "bg-green-100 text-green-700",
+
+          Rejected: "bg-red-100 text-red-700",
+
+          Declined: "bg-slate-100 text-slate-700"
+
+        }
+
+        return (
+
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colors[row.status]}`}>
+
+            {row.status}
+
+          </span>
+
         )
+
+      }
+
+    },
+
+    {
+
+      header: "Actions",
+
+      render: (row) => (
+
+        <div className="flex gap-2">
+
+          <button
+
+            onClick={() => handleViewProposal(row)}
+
+            className="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-sm"
+
+          >
+
+            View
+
+          </button>
+
+          {
+
+            row.status === "Pending" && (
+
+              <>
+
+                <button
+
+                  onClick={() => handleApproveProposal(row.id)}
+
+                  className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700"
+
+                >
+
+                  Approve
+
+                </button>
+
+                <button
+
+                  onClick={() => {
+
+                    setSelectedProposal(row);
+
+                    setShowProposalModal(true);
+
+                  }}
+
+                  className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+
+                >
+
+                  Reject
+
+                </button>
+
+              </>
+
+            )
+
+          }
+
+        </div>
+
       )
+
     }
+
   ];
 
   const studentOverviewColumns = [
@@ -291,19 +507,260 @@ const SupervisorDashboard = () => {
     }
 
     // ---------------- PROPOSAL REQUESTS TAB ----------------
-    if (path === '/supervisor/requests') {
+    if (path === "/supervisor/requests") {
+
+      const pending = proposalRequests.filter(p => p.status === "Pending").length;
+
+      const approved = proposalRequests.filter(p => p.status === "Approved").length;
+
+      const rejected = proposalRequests.filter(p => p.status === "Rejected").length;
+
       return (
+
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Proposal Evaluation Queue</h1>
-            <p className="text-sm text-slate-500">Review student-submitted fyp proposal documents, topic abstracts, and approve or decline allocations.</p>
+
+          <div>
+
+            <h1 className="text-2xl font-bold text-slate-800">
+
+              Proposal Requests
+
+            </h1>
+
+            <p className="text-slate-500 mt-1">
+
+              Review, evaluate and respond to Final Year Project proposals submitted by students.
+
+            </p>
+
           </div>
 
-          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-            <DataTable columns={proposalColumns} data={proposals} />
+          <div className="grid grid-cols-3 gap-4">
+
+            <div className="bg-yellow-50 border rounded-lg p-4">
+
+              <p className="text-sm text-slate-500">
+
+                Pending
+
+              </p>
+
+              <p className="text-3xl font-bold text-yellow-600">
+
+                {pending}
+
+              </p>
+
+            </div>
+
+            <div className="bg-green-50 border rounded-lg p-4">
+
+              <p className="text-sm text-slate-500">
+
+                Approved
+
+              </p>
+
+              <p className="text-3xl font-bold text-green-600">
+
+                {approved}
+
+              </p>
+
+            </div>
+
+            <div className="bg-red-50 border rounded-lg p-4">
+
+              <p className="text-sm text-slate-500">
+
+                Rejected
+
+              </p>
+
+              <p className="text-3xl font-bold text-red-600">
+
+                {rejected}
+
+              </p>
+
+            </div>
+
           </div>
+
+          <div className="bg-white rounded-xl border shadow-sm p-5">
+
+            <DataTable
+
+              columns={proposalColumns}
+
+              data={proposalRequests}
+
+            />
+
+          </div>
+
         </div>
+
       );
+
+    }
+
+    {
+      showProposalModal && selectedProposal && (
+
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+
+          <div className="bg-white rounded-xl w-[700px] p-6 space-y-5">
+
+            <div className="flex justify-between">
+
+              <h2 className="text-xl font-bold">
+
+                Proposal Details
+
+              </h2>
+
+              <button
+
+                onClick={() => {
+
+                  setShowProposalModal(false);
+
+                  setRejectionReason("");
+
+                }}
+
+              >
+
+                ✕
+
+              </button>
+
+            </div>
+
+            <div>
+
+              <p className="text-sm text-slate-500">
+
+                Student
+
+              </p>
+
+              <p className="font-semibold">
+
+                {selectedProposal.students.student_name}
+
+              </p>
+
+              <p className="text-sm">
+
+                {selectedProposal.students.cb_no}
+
+              </p>
+
+            </div>
+
+            <div>
+
+              <p className="text-sm text-slate-500">
+
+                Project Topic
+
+              </p>
+
+              <p className="font-semibold">
+
+                {selectedProposal.proposed_topic}
+
+              </p>
+
+            </div>
+
+            <div>
+
+              <p className="text-sm text-slate-500">
+
+                Proposal Document
+
+              </p>
+
+              <a
+
+                href={`http://localhost:5000/uploads/${selectedProposal.proposal_pdf}`}
+
+                target="_blank"
+
+                rel="noreferrer"
+
+                className="text-blue-600 hover:underline"
+
+              >
+
+                Open Proposal PDF
+
+              </a>
+
+            </div>
+
+            {
+
+              selectedProposal.status === "Pending" && (
+
+                <>
+
+                  <textarea
+
+                    rows={4}
+
+                    placeholder="Enter rejection reason if rejecting..."
+
+                    value={rejectionReason}
+
+                    onChange={(e) => setRejectionReason(e.target.value)}
+
+                    className="w-full border rounded-lg p-3"
+
+                  />
+
+                  <div className="flex justify-end gap-3">
+
+                    <button
+
+                      onClick={() => handleApproveProposal(selectedProposal.id)}
+
+                      className="bg-green-600 text-white px-4 py-2 rounded"
+
+                    >
+
+                      Approve
+
+                    </button>
+
+                    <button
+
+                      onClick={handleRejectProposal}
+
+                      className="bg-red-600 text-white px-4 py-2 rounded"
+
+                    >
+
+                      Reject
+
+                    </button>
+
+                  </div>
+
+                </>
+
+              )
+
+            }
+
+          </div>
+
+        </div>
+
+      )
     }
 
     // ---------------- MY STUDENTS TAB ----------------
