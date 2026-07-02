@@ -8,7 +8,8 @@ const batchesRoute = require("./routes/batches");
 const usersRoute = require("./routes/users");
 const assessorsRoute = require("./routes/assessors");
 const templateRoutes = require("./routes/templateRoutes");
-const proposalRoutes = require("./routes/proposalRoutes")
+const proposalRoutes = require("./routes/proposalRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/users", usersRoute);
 app.use("/api/assessors", assessorsRoute);
 app.use("/api/templates", templateRoutes);
 app.use("/api/proposals", proposalRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 const PORT = 5000;
 

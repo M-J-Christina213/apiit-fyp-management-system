@@ -24,7 +24,8 @@ import {
   ChevronUp,
   UserCheck,
   AlertCircle,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 
 import {
@@ -54,6 +55,10 @@ import {
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
 
 const PMDashboard = () => {
   const location = useLocation();
@@ -137,6 +142,10 @@ const PMDashboard = () => {
 
   const [selectedTemplateFile, setSelectedTemplateFile] = useState(null);
 
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
 
   const getNextStage = (current) => {
     switch (current) {
@@ -170,6 +179,50 @@ const PMDashboard = () => {
       pmAssignedStudents: students.filter(s => s.supervisorAssignedBy === "PM").length
     }));
   }, [students, supervisors]);
+
+  const COLORS = ["#0C2340", "#2563eb", "#38bdf8", "#94a3b8", "#f59e0b"];
+
+  function StatCard({ title, value, icon: Icon, accent }) {
+    return (
+      <div className="relative overflow-hidden bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div className={`absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 ${accent}`} />
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{title}</p>
+            <p className="text-3xl font-bold text-[#0C2340] mt-2">{value}</p>
+          </div>
+          <div className={`h-11 w-11 rounded-lg flex items-center justify-center ${accent} bg-opacity-15`}>
+            <Icon className="h-5 w-5" style={{ color: accent.replace("bg-", "").includes("navy") ? "#0C2340" : undefined }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function ChartCard({ title, children }) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h3 className="text-sm font-bold text-[#0C2340] mb-4">{title}</h3>
+        {children}
+      </div>
+    );
+  }
+
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/dashboard/stats")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load dashboard data");
+        return res.json();
+      })
+      .then((json) => { if (!cancelled) setData(json); })
+      .catch((err) => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
 
   const advanceBatchStage = async (batchId) => {
     const batch = batches.find(b => b.id === batchId);
@@ -704,72 +757,87 @@ const PMDashboard = () => {
     fetchAssessors();
   }, []);
 
+
   const renderContent = () => {
     // ---------------- PM DASHBOARD TAB ----------------
     if (path === '/pm/dashboard' || path === '/pm') {
+
+      if (loading) {
+        return (
+          <div className="flex items-center justify-center h-64 text-slate-400">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading dashboard…
+          </div>
+        );
+      }
+
+      if (error) {
+        return (
+          <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg p-4">
+            <AlertTriangle className="h-5 w-5" /> {error}
+          </div>
+        );
+      }
+
+      const { cards, allocationStatusChart, batchStageChart, supervisorWorkload } = data;
+
       return (
         <div className="space-y-6">
-          {/* Quick Actions Header */}
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <h1 className="text-2xl font-bold text-slate-800">Project Manager Workspace</h1>
-
-            <div className="flex flex-wrap gap-2.5">
-              <button
-                onClick={() => setShowAddBatch(true)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors text-xs font-bold select-none"
-              >
-                <Plus className="h-4 w-4 text-slate-500" /> Add Batch
-              </button>
-
-              <button
-                onClick={() => setShowImport(true)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors text-xs font-bold select-none"
-              >
-                <Download className="h-4 w-4 text-slate-500" /> Import Students
-              </button>
-
-              <button
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors text-xs font-bold select-none"
-              >
-                <FileSpreadsheet className="h-4 w-4 text-slate-500" /> Export Excel
-              </button>
-
-              <button
-                onClick={handleGenerateReport}
-                className="flex items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors text-xs font-bold shadow-sm select-none"
-              >
-                <FileCheck className="h-4 w-4" /> Generate Report
-              </button>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">FYP Allocation Dashboard</h1>
+            <p className="text-sm text-slate-500 mt-1">Live overview of student–supervisor allocation progress</p>
           </div>
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">
-            <DashboardCard title="Awaiting Supervisor Confirmation" value={stats.unassignedStudents || 0} icon={Users} />
-            <DashboardCard title="Confirmed Supervisors" value={stats.confirmedSupervisors || 0} icon={CheckCircle} />
-            <DashboardCard title="Manually Assigned By PM" value={stats.pmAssignedStudents || 0} icon={Shield} />
+          {/* Stat cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard title="Awaiting Supervisor Confirmation" value={cards.unassignedStudents} icon={Users} accent="bg-amber-500" />
+            <StatCard title="Confirmed Supervisors" value={cards.confirmedSupervisors} icon={CheckCircle} accent="bg-emerald-500" />
+            <StatCard title="Manually Assigned By PM" value={cards.pmAssignedStudents} icon={Shield} accent="bg-navy-900" />
           </div>
 
-          <div className="space-y-6">
-            {/* Table 1: Supervisor Pool */}
-            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-[#0C2340]">Supervisor Pool</h3>
-                <button onClick={() => navigate('/pm/supervisors')} className="text-xs font-bold text-navy-600 hover:text-navy-800">View All Supervisors</button>
-              </div>
-              <DataTable columns={supervisorPoolColumns} data={supervisors} />
-            </div>
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartCard title="Allocation Status Breakdown">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={allocationStatusChart} dataKey="value" nameKey="name" outerRadius={90} label>
+                    {allocationStatusChart.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-            {/* Table 2: Student Allocation Status */}
-            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-[#0C2340]">Student Allocation Status</h3>
-                <button onClick={() => navigate('/pm/students')} className="text-xs font-bold text-navy-600 hover:text-navy-800">View All Students</button>
-              </div>
-              <DataTable columns={studentAllocationColumns} data={students} />
-            </div>
+            <ChartCard title="Batches by Stage">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={batchStageChart} dataKey="value" nameKey="name" outerRadius={90} label>
+                    {batchStageChart.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
           </div>
+
+          <ChartCard title="Supervisor Workload (Assigned vs. Capacity)">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={supervisorWorkload}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="assigned" fill="#0C2340" radius={[4, 4, 0, 0]} name="Assigned" />
+                <Bar dataKey="capacity" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Capacity" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
         </div>
       );
     }
