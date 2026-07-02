@@ -50,6 +50,9 @@ const StudentDashboard = () => {
 
   // Proposal form state
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState([]);
+  const [viewingProposal, setViewingProposal] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [topic, setTopic] = useState('');
   const [abstract, setAbstract] = useState('');
   const [fileName, setFileName] = useState('');
@@ -188,28 +191,37 @@ const StudentDashboard = () => {
 
   // Find student's proposal request
   const myProposalRequest = proposals.find(
-    p => p.studentId === currentStudent.id
+    p => p.studentId === currentStudent.id || p.student_cb_no === currentStudent.id
   );
 
   const handleProposalSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedSupervisorId || !topic || !abstract) {
+    if (selectedSupervisorIds.length === 0 || !topic || !abstract) {
       alert("Please fill in all required fields.");
       return;
     }
 
     try {
-      await submitProposal({
-        student_id: currentStudent.id,
-        supervisor_id: selectedSupervisorId,
-        proposed_topic: topic,
-      });
+      await Promise.all(selectedSupervisorIds.map(supId => 
+        submitProposal({
+          student_id: currentStudent.id,
+          supervisor_id: supId,
+          proposed_topic: topic,
+        })
+      ));
 
       setFormSubmitted(true);
       setTopic("");
       setAbstract("");
       setFileName("");
+      setSelectedSupervisorIds([]);
+
+      const studentId = currentUser?.email
+        ? currentUser.email.split('@')[0].toUpperCase()
+        : 'CB014416';
+      const propRes = await getProposalRequests(studentId);
+      setProposals(propRes.data);
 
     } catch (error) {
       console.error(error);
@@ -597,7 +609,7 @@ const StudentDashboard = () => {
                     </p>
 
                     <p className="font-medium">
-                      {latestProposal.supervisor_name}
+                      {latestProposal.supervisor_name || "N/A"}
                     </p>
 
                   </div>
@@ -799,7 +811,7 @@ const StudentDashboard = () => {
                       </td>
 
                       <td className="px-5 py-4">
-                        {proposal.supervisor_name}
+                        {proposal.supervisor_name || "N/A"}
                       </td>
 
                       <td className="px-5 py-4">
@@ -821,6 +833,10 @@ const StudentDashboard = () => {
                       <td className="px-5 py-4">
 
                         <button
+                          onClick={() => {
+                            setViewingProposal(proposal);
+                            setShowViewModal(true);
+                          }}
                           className="text-blue-600 hover:underline"
                         >
                           View
@@ -897,24 +913,29 @@ const StudentDashboard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Target Supervisor *</label>
-                    <select
-                      required
-                      value={selectedSupervisorId}
-                      onChange={(e) => setSelectedSupervisorId(e.target.value)}
-                      className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                    >
-                      <option value="">-- Choose an available supervisor --</option>
+                    <label className="text-sm font-semibold text-slate-700">Target Supervisor(s) *</label>
+                    <div className="border border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                       {supervisors.map((s) => (
-                        <option
-                          key={s.id}
-                          value={s.id}
-                          disabled={s.availableSlots === 0}
-                        >
-                          {s.title} {s.name} ({s.availableSlots} {s.availableSlots === 1 ? 'slot' : 'slots'} available) - {s.expertise.split(',')[0]}
-                        </option>
+                        <label key={s.id} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedSupervisorIds.includes(s.id)}
+                            disabled={s.availableSlots === 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSupervisorIds([...selectedSupervisorIds, s.id]);
+                              } else {
+                                setSelectedSupervisorIds(selectedSupervisorIds.filter(id => id !== s.id));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-navy-900 focus:ring-navy-900"
+                          />
+                          <span>
+                            {s.title} {s.name} ({s.availableSlots} {s.availableSlots === 1 ? 'slot' : 'slots'} available) - <span className="text-slate-500">{s.expertise?.split(',')[0]}</span>
+                          </span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1553,6 +1574,90 @@ const StudentDashboard = () => {
                     className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-bold rounded transition-colors shadow-md"
                   >
                     Submit Logsheet
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {showViewModal && viewingProposal && (
+            <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+              <div className="bg-white rounded-xl w-[650px] p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b pb-3">
+                  <h2 className="text-xl font-bold text-slate-800">Proposal Details</h2>
+                  <button 
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setViewingProposal(null);
+                    }}
+                    className="text-slate-400 hover:text-slate-600 transition-colors text-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Topic</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.proposed_topic || "N/A"}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Requested Supervisor</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.supervisor_name || "N/A"}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
+                    <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                      viewingProposal.status === "Approved" ? "bg-green-100 text-green-700" :
+                      viewingProposal.status === "Rejected" ? "bg-red-100 text-red-700" :
+                      viewingProposal.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-slate-100 text-slate-700"
+                    }`}>
+                      {viewingProposal.status || "Pending"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Submission Date</p>
+                    <p className="text-sm font-medium text-slate-700 mt-0.5">
+                      {viewingProposal.submitted_at ? new Date(viewingProposal.submitted_at).toLocaleDateString() : "N/A"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proposal PDF</p>
+                    {viewingProposal.proposal_pdf ? (
+                      <a 
+                        href={`http://localhost:5000/uploads/${viewingProposal.proposal_pdf}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors underline"
+                      >
+                        Open/Download PDF
+                      </a>
+                    ) : (
+                      <p className="text-sm text-slate-500 mt-0.5">No file uploaded</p>
+                    )}
+                  </div>
+
+                  {viewingProposal.status === "Rejected" && viewingProposal.rejection_reason && (
+                    <div className="col-span-2 bg-red-50 border border-red-100 rounded-lg p-3.5">
+                      <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">Rejection Reason</p>
+                      <p className="text-sm text-red-700 mt-1 font-medium">{viewingProposal.rejection_reason}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-4 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setViewingProposal(null);
+                    }}
+                    className="px-5 py-2 text-sm font-semibold text-white bg-navy-900 hover:bg-navy-950 rounded-lg transition-colors shadow-md"
+                  >
+                    Close
                   </button>
                 </div>
               </div>

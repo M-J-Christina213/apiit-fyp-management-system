@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import DashboardCard from '../../components/common/DashboardCard';
 import DataTable from '../../components/common/DataTable';
 
@@ -50,29 +51,35 @@ const SupervisorDashboard = () => {
 
   const [rejectionReason, setRejectionReason] = useState("");
 
-  const supervisorId = currentSupervisor?.id;
-
   useEffect(() => {
 
     const loadData = async () => {
 
       try {
-
-        const [stuRes, supRes, propRes] =
-          await Promise.all([
-            getStudents(),
-            getSupervisors(),
-            getProposalRequests()
-          ]);
-
-        setStudents(stuRes.data);
-        setSupervisors(supRes.data);
-        setProposals(propRes.data);
-
         const activeUser = getLoggedInUser();
 
         if (activeUser) {
           setCurrentUser(activeUser);
+        }
+
+        const [stuRes, supRes] =
+          await Promise.all([
+             getStudents(),
+             getSupervisors()
+          ]);
+
+        setStudents(stuRes.data);
+        setSupervisors(supRes.data);
+
+        const supRecord = Array.isArray(supRes.data)
+          ? supRes.data.find(s => s.email === activeUser?.email)
+          : null;
+
+        if (supRecord) {
+          const res = await axios.get(
+            `http://localhost:5000/api/proposals/supervisor/${supRecord.id}`
+          );
+          setProposalRequests(res.data);
         }
 
       } catch (err) {
@@ -103,30 +110,19 @@ const SupervisorDashboard = () => {
     status: "Available"
   };
 
-  useEffect(() => {
-    if (supervisorRecord) {
-      setExpertise(supervisorRecord.expertise);
-      setInterests(supervisorRecord.interests);
-      setSlots(supervisorRecord.slots);
-    }
-  }, [supervisors]);
-
-  // Filter current supervisor's students
-  const myStudents = students.filter(
-    s =>
-      s.supervisor ===
-      `${supervisorRecord?.title || ''} ${supervisorRecord?.name || ''}`.trim()
-  );
+  const supervisorId = currentSupervisor?.id;
 
   useEffect(() => {
 
-    if (path !== "/supervisor/requests") return;
+    if (path !== "/supervisor/requests" || !supervisorId || isNaN(Number(supervisorId))) return;
 
     fetchProposalRequests();
 
-  }, [path]);
+  }, [path, supervisorId]);
 
   const fetchProposalRequests = async () => {
+
+    if (!supervisorId || isNaN(Number(supervisorId))) return;
 
     try {
 
@@ -147,6 +143,23 @@ const SupervisorDashboard = () => {
     }
 
   }
+
+  useEffect(() => {
+    if (supervisorRecord) {
+      setExpertise(supervisorRecord.expertise);
+      setInterests(supervisorRecord.interests);
+      setSlots(supervisorRecord.slots);
+    }
+  }, [supervisors]);
+
+  // Filter current supervisor's students
+  const myStudents = students.filter(
+    s =>
+      s.supervisor ===
+      `${supervisorRecord?.title || ''} ${supervisorRecord?.name || ''}`.trim()
+  );
+
+
 
   // Proposal request evaluation actions
   const handleProposalAction = (proposalId, status) => {
@@ -283,13 +296,13 @@ const SupervisorDashboard = () => {
 
           <p className="font-semibold">
 
-            {row.students.student_name}
+            {row.students?.student_name || "N/A"}
 
           </p>
 
           <p className="text-xs text-slate-500">
 
-            {row.students.cb_no}
+            {row.students?.cb_no || "N/A"}
 
           </p>
 
@@ -648,13 +661,13 @@ const SupervisorDashboard = () => {
 
               <p className="font-semibold">
 
-                {selectedProposal.students.student_name}
+                {selectedProposal.students?.student_name || "N/A"}
 
               </p>
 
               <p className="text-sm">
 
-                {selectedProposal.students.cb_no}
+                {selectedProposal.students?.cb_no || "N/A"}
 
               </p>
 
