@@ -332,6 +332,9 @@ const PMDashboard = () => {
             getBatches()
           ]);
 
+        console.log("BATCHES FROM BACKEND");
+        console.log(batchRes.data);
+
         const mappedStudents = stuRes.data.map(s => {
           return {
             ...s,
@@ -625,7 +628,6 @@ const PMDashboard = () => {
       }
 
       const response = await createBatch({
-        batchCode: newBatchName, // Fallback if no parsed students
         intake: newBatchName,
         startDate: newBatchDate,
         stage: "Proposal",
@@ -633,44 +635,15 @@ const PMDashboard = () => {
         students: parsedStudents
       });
 
-      const createdBatches = Array.isArray(response.data) ? response.data : [response.data];
-
-      const normalizedStudents = parsedStudents.map(s => {
-        const matchingBatch = createdBatches.find(b => b.batchCode === (s.batchCode || newBatchName)) || createdBatches[0];
-        return {
-          id: s.studentNo,
-          name: s.name ? s.name.trim() : "",
-          batchCode: matchingBatch.batchCode,
-          intake: newBatchName,
-          batchId: matchingBatch.id,
-          topic: "",
-          supervisor: "",
-          assessor: "",
-          supervisorConfirmationStatus: "Pending",
-          assessorAssigned: false
-        };
-      });
 
       // 1. Update batches
-      setBatches(prev => [
-        ...prev,
-        ...createdBatches.map(b => ({
-          ...b,
-          studentIds: normalizedStudents.filter(s => s.batchId === b.id).map(s => s.id)
-        }))
+      const [studentRes, batchRes] = await Promise.all([
+        getStudents(),
+        getBatches()
       ]);
 
-      // 2. Update global student registry
-      setStudents(prev => {
-        const existingIds = new Set(prev.map(x => x.id));
-        const merged = [...prev];
-
-        normalizedStudents.forEach(s => {
-          if (!existingIds.has(s.id)) merged.push(s);
-        });
-
-        return merged;
-      });
+      setStudents(studentRes.data);
+      setBatches(batchRes.data);
 
       setShowAddBatch(false);
       setNewBatchName('');
@@ -682,7 +655,9 @@ const PMDashboard = () => {
       alert("Batch created successfully with students!");
 
     } catch (error) {
-      console.error(error);
+      console.error("Failed to create batch:", error);
+      const serverMessage = error.response?.data?.message;
+      alert(serverMessage ? `Failed to create batch: ${serverMessage}` : "Failed to create batch. Please check the form and try again.");
     }
   };
 
