@@ -146,6 +146,8 @@ const PMDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [supervisorFilter, setSupervisorFilter] = useState("All");
+  const [supervisorSearch, setSupervisorSearch] = useState("");
 
   const getNextStage = (current) => {
     switch (current) {
@@ -1447,7 +1449,42 @@ const PMDashboard = () => {
         !student.supervisorConfirmationStatus ||
         student.supervisorConfirmationStatus === 'Pending'
       );
-      const availableSupervisors = supervisors.filter(s => (s.preferred_supervision_slots || 0) > 0);
+      const availableSupervisors = supervisors.filter(
+        s => Number(s.preferred_supervision_slots || 0) > 0
+      );
+
+      const filteredSupervisors = availableSupervisors.filter((s) => {
+
+        const search =
+          supervisorSearch.toLowerCase();
+
+        const matchesSearch =
+          s.name?.toLowerCase().includes(search) ||
+          s.expertise?.toLowerCase().includes(search);
+
+        if (supervisorFilter === "All")
+          return matchesSearch;
+
+        if (supervisorFilter === "Expertise")
+          return (
+            matchesSearch &&
+            s.expertise?.toLowerCase().includes(search)
+          );
+
+        if (supervisorFilter === "Supervisor")
+          return (
+            matchesSearch &&
+            s.name?.toLowerCase().includes(search)
+          );
+
+        if (supervisorFilter === "Slots")
+          return (
+            matchesSearch &&
+            Number(s.preferred_supervision_slots) > 0
+          );
+
+        return matchesSearch;
+      });
 
       const allocationColumns = [
         { header: 'Batch Intake', render: (row) => batches.find(b => b.id === row.batchId)?.intake || row.intake || row.batch || '-' },
@@ -1645,19 +1682,110 @@ const PMDashboard = () => {
                   <form onSubmit={handleAllocateSubmit} className="space-y-5 border-t border-slate-100 pt-5">
                     <div className="space-y-1.5">
                       <label className="text-sm font-semibold text-slate-700">Manual Assignment *</label>
-                      <select
-                        required
-                        value={allocSupervisorId}
-                        onChange={(e) => setAllocSupervisorId(e.target.value)}
-                        className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                      >
-                        <option value="">-- Choose supervisor to resolve case --</option>
-                        {availableSupervisors.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.title} {s.name} ({s.preferred_supervision_slots} slots) - {s.expertise ? s.expertise.split(',')[0] : 'No expertise'}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="space-y-4">
+
+                        <div className="flex gap-3">
+
+                          <select
+                            value={supervisorFilter}
+                            onChange={(e) => setSupervisorFilter(e.target.value)}
+                            className="border rounded px-3 py-2 text-sm"
+                          >
+                            <option value="All">All</option>
+                            <option value="Expertise">Expertise</option>
+                            <option value="Supervisor">Supervisor Name</option>
+                            <option value="Slots">Slots Available</option>
+                          </select>
+
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={supervisorSearch}
+                            onChange={(e) => setSupervisorSearch(e.target.value)}
+                            className="flex-1 border rounded px-3 py-2 text-sm"
+                          />
+
+                        </div>
+
+                        <div className="border rounded-lg overflow-hidden">
+
+                          <table className="w-full text-sm">
+
+                            <thead className="bg-slate-100">
+
+                              <tr>
+
+                                <th className="p-3 text-left">
+                                  Supervisor
+                                </th>
+
+                                <th className="p-3 text-left">
+                                  Expertise
+                                </th>
+
+                                <th className="p-3 text-center">
+                                  Slots
+                                </th>
+
+                                <th className="p-3 text-center">
+                                  Select
+                                </th>
+
+                              </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                              {filteredSupervisors.map((s) => (
+
+                                <tr
+                                  key={s.id}
+                                  className="border-t hover:bg-slate-50"
+                                >
+
+                                  <td className="p-3">
+                                    {s.title} {s.name}
+                                  </td>
+
+                                  <td className="p-3">
+                                    {s.expertise || "-"}
+                                  </td>
+
+                                  <td className="text-center p-3">
+
+                                    <span className="px-2 py-1 rounded bg-green-100 text-green-700">
+
+                                      {s.preferred_supervision_slots}
+
+                                    </span>
+
+                                  </td>
+
+                                  <td className="text-center p-3">
+
+                                    <input
+                                      type="radio"
+                                      name="supervisor"
+                                      checked={allocSupervisorId == s.id}
+                                      onChange={() =>
+                                        setAllocSupervisorId(s.id)
+                                      }
+                                    />
+
+                                  </td>
+
+                                </tr>
+
+                              ))}
+
+                            </tbody>
+
+                          </table>
+
+                        </div>
+
+                      </div>
                     </div>
 
                     <div className="pt-2">
