@@ -10,6 +10,7 @@ const assessorsRoute = require("./routes/assessors");
 const templateRoutes = require("./routes/templateRoutes");
 const proposalRoutes = require("./routes/proposalRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const logsheetRoutes = require("./routes/logsheetRoutes");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/assessors", assessorsRoute);
 app.use("/api/templates", templateRoutes);
 app.use("/api/proposals", proposalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/logsheets", logsheetRoutes);
 
 const PORT = 5000;
 

@@ -62,3 +62,9 @@ export const viewTemplate = (id) => `http://localhost:5000/api/templates/view/${
 export const getLoggedInUser = () => {
     return JSON.parse(localStorage.getItem("fyp_current_user"));
 };
+
+// LOGSHEETS
+export const getStudentLogsheets = (studentId) => API.get(`/logsheets/student/${studentId}`);
+export const submitLogsheet = (formData) => API.post("/logsheets", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+});

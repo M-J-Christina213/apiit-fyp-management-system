@@ -29,7 +29,9 @@ import {
   getTemplates,
   downloadTemplate,
   getStudentProposals,
-  submitProposal
+  submitProposal,
+  getStudentLogsheets,
+  submitLogsheet
 } from "../../services/api.js";
 
 const StudentDashboard = () => {
@@ -65,12 +67,14 @@ const StudentDashboard = () => {
   const [logsheets, setLogsheets] = useState([]);
   const [showLogsheetModal, setShowLogsheetModal] = useState(false);
   const [logDate, setLogDate] = useState('');
-  const [logType, setLogType] = useState('Physical');
-  const [logSummary, setLogSummary] = useState('');
-  const [logProgress, setLogProgress] = useState('');
-  const [logAction, setLogAction] = useState('');
+  const [logVenue, setLogVenue] = useState('');
+  const [logFile, setLogFile] = useState(null);
   const [showLogsheetAlert, setShowLogsheetAlert] = useState(false);
-
+  const stageToSemester = {
+    Proposal: "Semester 1",
+    Midpoint: "Semester 2",
+    Final: "Semester 3",
+  };
 
   useEffect(() => {
     const loggedIn = getLoggedInUser();
@@ -84,44 +88,28 @@ const StudentDashboard = () => {
 
     const loadData = async () => {
       try {
-
-        const [supRes, stuRes, propRes] = await Promise.all([
+        const [supRes, stuRes, propRes, logsheetsRes] = await Promise.all([
           getSupervisors(),
           getStudents(),
-          getProposalRequests(studentId)
+          getProposalRequests(studentId),
+          getStudentLogsheets(studentId)
         ]);
 
         setSupervisors(supRes.data);
         setStudents(stuRes.data);
         setProposals(propRes.data);
+        setLogsheets(logsheetsRes.data || []);
 
         const loggedIn = getLoggedInUser();
         if (loggedIn) {
           setCurrentUser(loggedIn);
         }
 
-        // Mock logsheets
-        const initialLogsheets = [
-          {
-            id: 'L001',
-            studentId: 'CB014416',
-            semester: 1,
-            meetingDate: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 40 days ago
-            meetingType: 'Physical',
-            summary: 'Discussed initial project scope and feasibility',
-            progressUpdate: 'Completed literature review phase 1',
-            nextAction: 'Draft chapter 1 introduction',
-            status: 'Approved',
-          }
-        ];
-        setLogsheets(initialLogsheets);
-
-
-        const myLogsheets = initialLogsheets.filter(l => l.studentId === studentId);
+        const myLogsheets = logsheetsRes.data || [];
 
         if (myLogsheets.length > 0) {
-          const sorted = myLogsheets.sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate));
-          const lastDate = new Date(sorted[0].meetingDate);
+          const sorted = [...myLogsheets].sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
+          const lastDate = new Date(sorted[0].meeting_date);
           const daysSince = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
           if (daysSince > 30) {
             setShowLogsheetAlert(true);
@@ -203,7 +191,7 @@ const StudentDashboard = () => {
     }
 
     try {
-      await Promise.all(selectedSupervisorIds.map(supId => 
+      await Promise.all(selectedSupervisorIds.map(supId =>
         submitProposal({
           student_id: currentStudent.id,
           supervisor_id: supId,
@@ -278,37 +266,46 @@ const StudentDashboard = () => {
   );
 
 
-  const handleLogsheetSubmit = (e) => {
+  const handleLogsheetSubmit = async (e) => {
     e.preventDefault();
-    if (!logDate || !logType || !logSummary || !logProgress || !logAction) {
-      alert("Please fill in all required fields.");
+    if (!logDate) {
+      alert("Meeting date is required.");
+      return;
+    }
+    if (!logFile) {
+      alert("Supporting logsheet file is required.");
       return;
     }
 
-    const newLog = {
-      id: `L00${logsheets.length + 1}`,
-      studentId: currentStudent.id,
-      semester: 1,
-      meetingDate: logDate,
-      meetingType: logType,
-      summary: logSummary,
-      progressUpdate: logProgress,
-      nextAction: logAction,
-      status: 'Submitted',
-      createdAt: new Date().toISOString()
-    };
+    const studentId = currentUser?.email
+      ? currentUser.email.split('@')[0].toUpperCase()
+      : 'CB014416';
 
-    setLogsheets([...logsheets, newLog]);
-    setShowLogsheetModal(false);
-    setShowLogsheetAlert(false);
+    const formData = new FormData();
+    formData.append("student_id", studentId);
+    formData.append("meeting_date", logDate);
+    if (logVenue) {
+      formData.append("venue", logVenue);
+    }
+    formData.append("file", logFile);
 
-    setLogDate('');
-    setLogType('Physical');
-    setLogSummary('');
-    setLogProgress('');
-    setLogAction('');
+    try {
+      const res = await submitLogsheet(formData);
 
-    alert("Logsheet submitted successfully!");
+      setLogsheets((prev) => [res.data, ...prev]);
+      setShowLogsheetModal(false);
+      setShowLogsheetAlert(false);
+
+      setLogDate('');
+      setLogVenue('');
+      setLogFile(null);
+
+      alert("Logsheet submitted successfully!");
+    } catch (error) {
+      console.error("Failed to submit logsheet:", error);
+      const errorMsg = error.response?.data?.message || "Failed to submit logsheet. Please try again.";
+      alert(errorMsg);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -1402,56 +1399,135 @@ const StudentDashboard = () => {
 
     // ---------------- LOGSHEETS TAB ----------------
     if (path === '/student/logsheets') {
-      const myLogsheets = logsheets.filter(l => l.studentId === currentStudent.id);
+      const myLogsheets = logsheets;
+
+      const supervisorName = currentStudent.supervisor || 'Pending Assignment';
+      const studentSemester = stageToSemester[studentStage] || "Semester 1";
 
       const logsheetColumns = [
-        { header: 'Meeting Date', render: (row) => new Date(row.meetingDate).toLocaleDateString() },
         {
-          header: 'Type', render: (row) => (
-            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${row.meetingType === 'Online' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-              {row.meetingType}
+          header: 'Semester',
+          render: (row) => (
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+              {row.semester}
             </span>
           )
         },
-        { header: 'Discussion Summary', render: (row) => <span className="line-clamp-2" title={row.summary}>{row.summary}</span> },
         {
-          header: 'Status', render: (row) => (
-            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${row.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-              {row.status}
-            </span>
+          header: 'Meeting Date',
+          render: (row) => new Date(row.meeting_date).toLocaleDateString()
+        },
+        {
+          header: 'Supervisor Name',
+          accessor: 'supervisor_name'
+        },
+        {
+          header: 'Venue',
+          render: (row) => row.venue || '-'
+        },
+        {
+          header: 'Status',
+          render: (row) => {
+            const statusColors = {
+              'Approved': 'bg-green-100 text-green-700 border-green-200',
+              'Rejected': 'bg-red-100 text-red-700 border-red-200',
+              'Pending Review': 'bg-amber-100 text-amber-700 border-amber-200',
+              'Pending': 'bg-amber-100 text-amber-700 border-amber-200'
+            };
+            const colorClass = statusColors[row.status] || 'bg-slate-100 text-slate-700 border-slate-200';
+            return (
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
+                {row.status}
+              </span>
+            );
+          }
+        },
+        {
+          header: 'File',
+          render: (row) => (
+            <a
+              href={`http://localhost:5000/uploads/logsheets/${row.file_path}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors underline"
+            >
+              {row.file_name}
+            </a>
           )
         }
       ];
 
+      const handleDownloadLogsheetTemplate = async () => {
+        try {
+          let tmpls = templates;
+          if (tmpls.length === 0) {
+            const res = await fetch("http://localhost:5000/api/templates");
+            if (res.ok) {
+              tmpls = await res.json();
+              setTemplates(tmpls);
+            }
+          }
+
+          const logsheetTmpl = tmpls.find(t =>
+            t.title.toLowerCase().includes("logsheet") ||
+            t.stage.toLowerCase().includes("logsheet")
+          );
+
+          if (logsheetTmpl) {
+            window.open(`http://localhost:5000/api/templates/download/${logsheetTmpl.id}`, "_self");
+          } else if (tmpls.length > 0) {
+            window.open(`http://localhost:5000/api/templates/download/${tmpls[0].id}`, "_self");
+          } else {
+            alert("No logsheet template has been uploaded by the Project Manager yet.");
+          }
+        } catch (err) {
+          console.error("Failed to download template:", err);
+          alert("Failed to download template.");
+        }
+      };
+
       return (
         <div className="space-y-6">
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
               <h1 className="text-2xl font-bold text-slate-800">Supervisor Meeting Logsheets</h1>
-              <p className="text-sm text-slate-500">Record and track your mandatory supervisor meetings to ensure academic compliance.</p>
+              <p className="text-sm text-slate-500 mt-1">Record and track your mandatory supervisor meetings to ensure academic compliance.</p>
             </div>
             <button
               onClick={() => setShowLogsheetModal(true)}
-              className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2"
+              className="px-4.5 py-2.5 bg-navy-900 text-white rounded-lg font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2 select-none"
             >
               <Plus className="h-4 w-4" /> Submit Logsheet
             </button>
           </div>
 
-          {/* Templates Section inside Logsheets */}
-          <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-center justify-between">
-            <div>
-              <h3 className="font-bold text-slate-800">Logsheet Templates</h3>
-              <p className="text-sm text-slate-600 mt-1">Download the approved logsheet format before your meeting, fill it offline, and upload it when submitting.</p>
+          {/* Supervisor Summary Card (TOP) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Confirmed Supervisor</span>
+              <h3 className="text-lg font-bold text-[#0C2340] mt-1.5">{supervisorName}</h3>
+              <p className="text-xs text-slate-500 mt-1">Automatically assigned to all meeting logsheets</p>
             </div>
-            <div className="flex gap-3">
-              <button className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded font-bold text-sm shadow-sm transition-all hover:bg-slate-100 flex items-center gap-2">
-                <Download className="h-4 w-4" /> Example Template
-              </button>
-              <button className="px-4 py-2 bg-white border border-slate-300 text-navy-700 rounded font-bold text-sm shadow-sm transition-all hover:bg-slate-100 flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Official Format (Word)
-              </button>
+
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Academic Semester</span>
+              <h3 className="text-lg font-bold text-[#0C2340] mt-1.5">{studentSemester}</h3>
+              <p className="text-xs text-slate-500 mt-1">Derived automatically from your batch's current stage</p>
             </div>
+          </div>
+
+          {/* Templates Section */}
+          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-center justify-between">
+            <div className="max-w-xl">
+              <h3 className="font-bold text-slate-800">Academic Logsheet Templates</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Download the official logsheet template provided by the PM office. Ensure to fill this out, gather supervisor signature if necessary, and upload the signed PDF/Word document.</p>
+            </div>
+            <button
+              onClick={handleDownloadLogsheetTemplate}
+              className="px-5 py-2.5 bg-white border border-slate-300 text-navy-900 rounded-lg font-bold text-sm shadow-sm transition-all hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap select-none animate-pulse hover:animate-none"
+            >
+              <Download className="h-4 w-4 text-slate-500" /> Download Logsheet Template
+            </button>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1476,86 +1552,59 @@ const StudentDashboard = () => {
           {/* Modal */}
           {showLogsheetModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-              <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                   <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-navy-700" />
                     Submit Logsheet
                   </h2>
-                  <button onClick={() => setShowLogsheetModal(false)} className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded">
+                  <button
+                    onClick={() => {
+                      setShowLogsheetModal(false);
+                      setLogDate('');
+                      setLogVenue('');
+                      setLogFile(null);
+                    }}
+                    className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
+                  >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
                 <div className="p-6 overflow-y-auto">
                   <form id="logsheet-form" onSubmit={handleLogsheetSubmit} className="space-y-5">
-                    <div className="grid grid-cols-2 gap-5">
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700">Meeting Date *</label>
-                        <input
-                          type="date"
-                          required
-                          value={logDate}
-                          onChange={(e) => setLogDate(e.target.value)}
-                          className="w-full p-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-navy-900 bg-slate-50"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700">Meeting Type *</label>
-                        <select
-                          required
-                          value={logType}
-                          onChange={(e) => setLogType(e.target.value)}
-                          className="w-full p-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-navy-900 bg-slate-50"
-                        >
-                          <option value="Physical">Physical (On-campus)</option>
-                          <option value="Online">Online (Teams/Zoom)</option>
-                        </select>
-                      </div>
-                    </div>
-
                     <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700">Discussion Summary *</label>
-                      <textarea
+                      <label className="text-sm font-semibold text-slate-700">Meeting Date *</label>
+                      <input
+                        type="date"
                         required
-                        value={logSummary}
-                        onChange={(e) => setLogSummary(e.target.value)}
-                        placeholder="Briefly describe what was discussed..."
-                        className="w-full p-3 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-navy-900 bg-slate-50 h-24 resize-none"
-                      ></textarea>
+                        value={logDate}
+                        onChange={(e) => setLogDate(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
+                      />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700">Progress Updates *</label>
-                      <textarea
-                        required
-                        value={logProgress}
-                        onChange={(e) => setLogProgress(e.target.value)}
-                        placeholder="What have you completed since the last meeting?"
-                        className="w-full p-3 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-navy-900 bg-slate-50 h-24 resize-none"
-                      ></textarea>
+                      <label className="text-sm font-semibold text-slate-700">Venue (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Teams, Office 305, Library Study Room"
+                        value={logVenue}
+                        onChange={(e) => setLogVenue(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
+                      />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700">Next Action Points *</label>
-                      <textarea
-                        required
-                        value={logAction}
-                        onChange={(e) => setLogAction(e.target.value)}
-                        placeholder="What are you supposed to do before the next meeting?"
-                        className="w-full p-3 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-navy-900 bg-slate-50 h-20 resize-none"
-                      ></textarea>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700">Upload Supporting Logsheet (Optional)</label>
+                      <label className="text-sm font-semibold text-slate-700">Upload Signed Logsheet (Mandatory PDF/DOC) *</label>
                       <input
                         type="file"
+                        required
                         accept=".pdf,.doc,.docx"
-                        onChange={(e) => setLogFile(e.target.files[0])}
-                        className="w-full p-2 border border-slate-300 rounded text-sm bg-slate-50 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-navy-50 file:text-navy-700 hover:file:bg-navy-100 transition-all cursor-pointer"
+                        onChange={(e) => setLogFile(e.target.files[0] || null)}
+                        className="w-full p-2 border border-slate-200 rounded text-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-navy-50 file:text-navy-700 hover:file:bg-navy-100 transition-all cursor-pointer text-slate-600"
                       />
-                      <p className="text-xs text-slate-500 mt-1">Attach the signed logsheet document if required by your supervisor.</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Supported formats: PDF, DOC, DOCX. Max file size: 10MB.</p>
                     </div>
                   </form>
                 </div>
@@ -1563,15 +1612,20 @@ const StudentDashboard = () => {
                 <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowLogsheetModal(false)}
-                    className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded transition-colors"
+                    onClick={() => {
+                      setShowLogsheetModal(false);
+                      setLogDate('');
+                      setLogVenue('');
+                      setLogFile(null);
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     form="logsheet-form"
-                    className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-bold rounded transition-colors shadow-md"
+                    className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-semibold rounded-lg transition-colors shadow-md select-none"
                   >
                     Submit Logsheet
                   </button>
@@ -1584,7 +1638,7 @@ const StudentDashboard = () => {
               <div className="bg-white rounded-xl w-[650px] p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b pb-3">
                   <h2 className="text-xl font-bold text-slate-800">Proposal Details</h2>
-                  <button 
+                  <button
                     onClick={() => {
                       setShowViewModal(false);
                       setViewingProposal(null);
@@ -1594,7 +1648,7 @@ const StudentDashboard = () => {
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Topic</p>
@@ -1608,12 +1662,11 @@ const StudentDashboard = () => {
 
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
-                    <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                      viewingProposal.status === "Approved" ? "bg-green-100 text-green-700" :
+                    <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${viewingProposal.status === "Approved" ? "bg-green-100 text-green-700" :
                       viewingProposal.status === "Rejected" ? "bg-red-100 text-red-700" :
-                      viewingProposal.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-slate-100 text-slate-700"
-                    }`}>
+                        viewingProposal.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
+                          "bg-slate-100 text-slate-700"
+                      }`}>
                       {viewingProposal.status || "Pending"}
                     </span>
                   </div>
@@ -1628,7 +1681,7 @@ const StudentDashboard = () => {
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proposal PDF</p>
                     {viewingProposal.proposal_pdf ? (
-                      <a 
+                      <a
                         href={`http://localhost:5000/uploads/${viewingProposal.proposal_pdf}`}
                         target="_blank"
                         rel="noreferrer"
