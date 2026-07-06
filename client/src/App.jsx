@@ -39,6 +39,7 @@ const supervisorLinks = [
   { path: '/supervisor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/supervisor/requests', label: 'Proposal Requests', icon: FileText },
   { path: '/supervisor/students', label: 'My Students', icon: Users },
+  { path: '/supervisor/logsheets', label: 'Logsheets', icon: FileText },
   { path: '/supervisor/profile', label: 'Profile', icon: Settings },
   { path: '/supervisor/notifications', label: 'Notifications', icon: Bell },
 ];
@@ -169,6 +170,7 @@ function App() {
             <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
             <Route path="/supervisor/requests" element={<SupervisorDashboard />} />
             <Route path="/supervisor/students" element={<SupervisorDashboard />} />
+            <Route path="/supervisor/logsheets" element={<SupervisorDashboard />} />
             <Route path="/supervisor/profile" element={<SupervisorDashboard />} />
             <Route path="/supervisor/notifications" element={<SupervisorDashboard />} />
             <Route path="/supervisor/*" element={<Navigate to="/supervisor/dashboard" replace />} />

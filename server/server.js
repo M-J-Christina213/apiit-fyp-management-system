@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const supervisorsRoute = require("./routes/supervisors");
@@ -16,6 +17,10 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files (logsheets, signatures, proposals)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 app.use("/api/auth", authRoutes);
 

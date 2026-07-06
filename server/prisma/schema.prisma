@@ -86,6 +86,7 @@ model supervisors {
   research_interests          String?
   additional_information      String?
   preferred_supervision_slots Int                   @default(3)
+  signature_url               String?
   logsheets                   logsheets[]
   proposal_requests           proposal_requests[]
   student_fyp_records         student_fyp_records[]
@@ -113,18 +114,23 @@ model users {
 }
 
 model logsheets {
-  id            Int          @id @default(autoincrement())
-  student_id    Int
-  supervisor_id Int?
-  meeting_date  DateTime
-  venue         String?
-  file_name     String
-  file_path     String
-  file_type     String?
-  file_size     String?
-  status        String       @default("Pending Review")
-  semester      String
-  created_at    DateTime     @default(now())
-  students      students     @relation(fields: [student_id], references: [id], onDelete: Cascade)
-  supervisors   supervisors? @relation(fields: [supervisor_id], references: [id])
+  id               Int          @id @default(autoincrement())
+  student_id       Int
+  supervisor_id    Int?
+  meeting_date     DateTime
+  venue            String?
+  file_name        String
+  file_path        String
+  file_type        String?
+  file_size        String?
+  status           String       @default("Pending Review")
+  semester         String
+  rejection_reason String?
+  approved_at      DateTime?
+  rejected_at      DateTime?
+  signature_applied Boolean     @default(false)
+  signed_file_url  String?
+  created_at       DateTime     @default(now())
+  students         students     @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  supervisors      supervisors? @relation(fields: [supervisor_id], references: [id])
 }

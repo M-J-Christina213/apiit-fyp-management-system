@@ -68,3 +68,16 @@ export const getStudentLogsheets = (studentId) => API.get(`/logsheets/student/${
 export const submitLogsheet = (formData) => API.post("/logsheets", formData, {
     headers: { "Content-Type": "multipart/form-data" }
 });
+export const updateLogsheet = (id, formData) => API.put(`/logsheets/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+});
+export const deleteLogsheet = (id) => API.delete(`/logsheets/${id}`);
+
+// SUPERVISOR LOGSHEETS
+export const getSupervisorLogsheets = (params) => API.get("/logsheets/supervisor/logsheets", { params });
+export const getSupervisorStudents = (params) => API.get("/logsheets/supervisor/students", { params });
+export const approveLogsheet = (id, data) => API.post(`/logsheets/supervisor/approve/${id}`, data);
+export const rejectLogsheet = (id, data) => API.post(`/logsheets/supervisor/reject/${id}`, data);
+export const uploadSignature = (formData) => API.post("/logsheets/supervisor/signature", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+});
