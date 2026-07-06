@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const fs = require("fs");
 const path = require("path");
 const { PDFDocument } = require("pdf-lib");
+const NotificationService = require("../services/notificationService");
 
 const resolveStudentDbId = async (studentIdOrCbNo) => {
     if (!studentIdOrCbNo) return null;
@@ -133,6 +134,14 @@ const createLogsheet = async (req, res) => {
                 supervisors: true
             }
         });
+
+        if (supervisorId) {
+            await NotificationService.notifySupervisor(
+                supervisorId,
+                "New Logsheet Submitted",
+                `Student ${student?.student_name || "A student"} has uploaded a new logsheet for review.`
+            );
+        }
 
         res.status(201).json({
             id: logsheet.id,
@@ -481,20 +490,11 @@ const approveLogsheet = async (req, res) => {
 
         // Trigger student notification
         if (logsheet.students) {
-            const studentEmail = `${logsheet.students.cb_no}@students.apiit.lk`;
-            const studentUser = await prisma.users.findUnique({
-                where: { email: studentEmail }
-            });
-
-            if (studentUser) {
-                await prisma.notifications.create({
-                    data: {
-                        user_id: studentUser.id,
-                        title: "Logsheet Approved",
-                        message: "Your logsheet has been approved by your supervisor."
-                    }
-                });
-            }
+            await NotificationService.notifyStudent(
+                logsheet.students.id,
+                "Logsheet Approved",
+                "Your logsheet has been approved by your supervisor."
+            );
         }
 
         res.json({ message: "Logsheet approved successfully.", logsheet: updated });
@@ -536,20 +536,11 @@ const rejectLogsheet = async (req, res) => {
 
         // Trigger student notification
         if (logsheet.students) {
-            const studentEmail = `${logsheet.students.cb_no}@students.apiit.lk`;
-            const studentUser = await prisma.users.findUnique({
-                where: { email: studentEmail }
-            });
-
-            if (studentUser) {
-                await prisma.notifications.create({
-                    data: {
-                        user_id: studentUser.id,
-                        title: "Logsheet Rejected",
-                        message: `Your logsheet was rejected. Reason: ${rejection_reason}`
-                    }
-                });
-            }
+            await NotificationService.notifyStudent(
+                logsheet.students.id,
+                "Logsheet Rejected",
+                `Your logsheet was rejected. Reason: ${rejection_reason}`
+            );
         }
 
         res.json({ message: "Logsheet rejected successfully.", logsheet: updated });

@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const NotificationService = require("../services/notificationService");
 
 const getStudents = async (req, res) => {
     try {
@@ -237,18 +238,24 @@ const allocateSupervisor = async (req, res) => {
             });
         }
 
-        const user = await prisma.users.findFirst({
+        const studentUser = await prisma.users.findFirst({
             where: { email: { startsWith: id, mode: 'insensitive' } }
         });
 
-        if (user) {
-            await prisma.notifications.create({
-                data: {
-                    user_id: user.id,
-                    title: "Supervisor Assigned",
-                    message: `A supervisor (${supervisor ? supervisor.name : ''}) has been assigned to you by the PM.`
-                }
+        if (studentUser) {
+            await NotificationService.create({
+                userId: studentUser.id,
+                title: "Supervisor Assigned",
+                message: `A supervisor (${supervisor ? supervisor.name : ''}) has been assigned to you by the PM.`
             });
+        }
+
+        if (supervisorId) {
+            await NotificationService.notifySupervisor(
+                parseInt(supervisorId, 10),
+                "New Student Assigned",
+                `You have been assigned as the supervisor for student ${student.student_name} (${student.cb_no}) by the PM.`
+            );
         }
 
         res.json({ message: "Supervisor allocated successfully" });
@@ -297,18 +304,24 @@ const allocateAssessor = async (req, res) => {
         });
 
         // Create notification for the student
-        const user = await prisma.users.findFirst({
+        const studentUser = await prisma.users.findFirst({
             where: { email: { startsWith: id, mode: 'insensitive' } }
         });
 
-        if (user) {
-            await prisma.notifications.create({
-                data: {
-                    user_id: user.id,
-                    title: "Assessor Assigned",
-                    message: `An assessor (${assessor ? `${assessor.title || ''} ${assessor.name}`.trim() : ''}) has been assigned to you by the PM.`
-                }
+        if (studentUser) {
+            await NotificationService.create({
+                userId: studentUser.id,
+                title: "Assessor Assigned",
+                message: `An assessor (${assessor ? `${assessor.title || ''} ${assessor.name}`.trim() : ''}) has been assigned to you by the PM.`
             });
+        }
+
+        if (assessorId) {
+            await NotificationService.notifyAssessor(
+                parseInt(assessorId, 10),
+                "Assessor Assignment",
+                `You have been allocated as assessor for student ${student.student_name} (${student.cb_no}) by the PM.`
+            );
         }
 
         res.json({ message: "Assessor allocated successfully" });

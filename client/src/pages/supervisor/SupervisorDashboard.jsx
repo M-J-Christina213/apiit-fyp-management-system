@@ -50,6 +50,7 @@ const SupervisorDashboard = () => {
   const [proposals, setProposals] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [dbNotifications, setDbNotifications] = useState([]);
 
   // Profile edit states
   const [expertise, setExpertise] = useState('');
@@ -93,6 +94,18 @@ const SupervisorDashboard = () => {
         const [stuRes, supRes] = await Promise.all([getStudents(), getSupervisors()]);
         setStudents(stuRes.data);
         setSupervisors(supRes.data);
+
+        if (activeUser?.id) {
+          try {
+            const notifRes = await fetch(`http://localhost:5000/api/notifications/${activeUser.id}`);
+            if (notifRes.ok) {
+              const notifData = await notifRes.json();
+              setDbNotifications(notifData);
+            }
+          } catch (notifErr) {
+            console.error("Failed to load notifications:", notifErr);
+          }
+        }
 
         const supRecord = Array.isArray(supRes.data)
           ? supRes.data.find(s => s.email === activeUser?.email)
@@ -753,10 +766,7 @@ const SupervisorDashboard = () => {
 
     // ── NOTIFICATIONS TAB ─────────────────────────────────────────────────────
     if (path === '/supervisor/notifications') {
-      const activeNotifications = [
-        { id: 1, type: 'Proposal', title: 'New Proposal Assigned', message: `Student has submitted a research proposal draft nominating you as supervisor.`, date: '2026-06-12' },
-        { id: 2, type: 'Milestone', title: 'Batch 2024-Feb Update', message: 'Evaluation Rubric v2.1 has been published. Please align progress report grading accordingly.', date: '2026-06-10' }
-      ];
+      const activeNotifications = dbNotifications;
       return (
         <div className="space-y-6">
           <div className="space-y-2">
@@ -770,10 +780,10 @@ const SupervisorDashboard = () => {
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-slate-800">{n.title}</h3>
-                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{n.type}</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{n.is_read ? "Read" : "New"}</span>
                   </div>
                   <p className="text-sm text-slate-600">{n.message}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">{n.date}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold">{new Date(n.created_at).toLocaleDateString()} at {new Date(n.created_at).toLocaleTimeString()}</p>
                 </div>
               </div>
             ))}

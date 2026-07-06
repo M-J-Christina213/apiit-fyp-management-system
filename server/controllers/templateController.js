@@ -2,6 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const path = require("path");
 const fs = require("fs");
+const NotificationService = require("../services/notificationService");
 
 // Get all templates
 const getTemplates = async (req, res) => {
@@ -56,6 +57,11 @@ const uploadTemplate = async (req, res) => {
             }
 
         });
+
+        await NotificationService.notifyAllStudents(
+            "New Template Uploaded",
+            `A new template "${req.body.title}" for ${req.body.stage} stage has been uploaded by Admin.`
+        );
 
         res.status(201).json(template);
 

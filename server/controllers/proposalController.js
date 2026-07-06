@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const NotificationService = require("../services/notificationService");
 
 const resolveStudentDbId = async (studentIdOrCbNo) => {
     if (!studentIdOrCbNo) return null;
@@ -47,6 +48,14 @@ const submitProposal = async (req, res) => {
                 supervisors: true
             }
         });
+
+        if (proposal.supervisor_id) {
+            await NotificationService.notifySupervisor(
+                proposal.supervisor_id,
+                "New Proposal Assigned",
+                `Student ${proposal.students?.student_name || "A student"} has submitted a research proposal draft titled "${proposed_topic}" nominating you as supervisor.`
+            );
+        }
 
         res.json(formatProposal(proposal));
     } catch (err) {
@@ -153,13 +162,11 @@ const approveProposal = async (req, res) => {
             }
         });
 
-        await prisma.notifications.create({
-            data: {
-                user_id: proposal.student_id,
-                title: "Proposal Approved",
-                message: "Your proposal has been approved by the supervisor."
-            }
-        });
+        await NotificationService.notifyStudent(
+            proposal.student_id,
+            "Proposal Approved",
+            "Your proposal has been approved by the supervisor."
+        );
 
         res.json(formatProposal(proposal));
     } catch (err) {
@@ -187,13 +194,11 @@ const rejectProposal = async (req, res) => {
             }
         });
 
-        await prisma.notifications.create({
-            data: {
-                user_id: proposal.student_id,
-                title: "Proposal Rejected",
-                message: reason
-            }
-        });
+        await NotificationService.notifyStudent(
+            proposal.student_id,
+            "Proposal Rejected",
+            `Your proposal was rejected. Reason: ${reason}`
+        );
 
         res.json(formatProposal(proposal));
     } catch (err) {

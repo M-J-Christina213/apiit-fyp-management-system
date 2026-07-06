@@ -44,6 +44,7 @@ const StudentDashboard = () => {
   const [proposals, setProposals] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [studentStage, setStudentStage] = useState("Proposal");
+  const [dbNotifications, setDbNotifications] = useState([]);
 
   // Templates state
   const [templates, setTemplates] = useState([]);
@@ -114,6 +115,18 @@ const StudentDashboard = () => {
         setStudents(stuRes.data);
         setProposals(propRes.data);
         setLogsheets(logsheetsRes.data || []);
+
+        if (loggedIn?.id) {
+          try {
+            const notifRes = await fetch(`http://localhost:5000/api/notifications/${loggedIn.id}`);
+            if (notifRes.ok) {
+              const notifData = await notifRes.json();
+              setDbNotifications(notifData);
+            }
+          } catch (notifErr) {
+            console.error("Failed to load notifications:", notifErr);
+          }
+        }
 
         const loggedIn = getLoggedInUser();
         if (loggedIn) {
@@ -1378,11 +1391,7 @@ const StudentDashboard = () => {
 
     // ---------------- NOTIFICATIONS TAB ----------------
     if (path === '/student/notifications') {
-      const allNotifications = [
-        { id: 1, type: 'System', title: 'Portal Maintenance Notice', message: 'The FYPMS portal will undergo scheduled database maintenance on Sunday from 02:00 AM to 04:00 AM. Access may be temporarily interrupted.', date: '2026-06-12', time: '10:00 AM' },
-        { id: 2, type: 'Proposal', title: 'Proposal Status Updated', message: 'Your supervisor assignment status has changed. If you submitted a proposal, it is now awaiting review by the designated faculty supervisor.', date: '2026-06-11', time: '04:30 PM' },
-        { id: 3, type: 'Academic', title: 'FYP Guideline Updates Released', message: 'Staffordshire University has released updated guidelines for ethics clearances. Please make sure to download the latest v3.1 Ethics Application from the Templates tab.', date: '2026-06-08', time: '09:15 AM' },
-      ];
+      const allNotifications = dbNotifications;
 
       return (
         <div className="space-y-6">
@@ -1400,10 +1409,10 @@ const StudentDashboard = () => {
                 <div className="space-y-1.5 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-bold text-slate-800">{notif.title}</h3>
-                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{notif.type}</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{notif.is_read ? "Read" : "New"}</span>
                   </div>
                   <p className="text-sm text-slate-600 leading-relaxed">{notif.message}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">{notif.date} at {notif.time}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold">{new Date(notif.created_at).toLocaleDateString()} at {new Date(notif.created_at).toLocaleTimeString()}</p>
                 </div>
               </div>
             ))}

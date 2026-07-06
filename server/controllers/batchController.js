@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require("bcryptjs");
+const NotificationService = require("../services/notificationService");
 
 // Helper: safely format a Date (or null) to "YYYY-MM-DD" for the frontend
 const formatDate = (date) => {
@@ -293,6 +294,12 @@ const updateBatchStage = async (req, res) => {
             where: { id: parseInt(id, 10) },
             data: { stage }
         });
+
+        await NotificationService.notifyBatch(
+            updatedBatch.id,
+            "Batch Stage Updated",
+            `Your batch stage has been updated to "${stage}".`
+        );
 
         res.json({
             id: updatedBatch.id,
