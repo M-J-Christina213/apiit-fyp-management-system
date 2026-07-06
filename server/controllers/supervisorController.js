@@ -10,8 +10,8 @@ const getSupervisors = async (req, res) => {
         });
 
         const formatted = supervisors.map(s => {
-            const confirmedRecords = s.student_fyp_records.filter(r => 
-                r.supervisor_confirmation_status === 'Confirmed' || 
+            const confirmedRecords = s.student_fyp_records.filter(r =>
+                r.supervisor_confirmation_status === 'Confirmed' ||
                 r.supervisor_confirmation_status === 'Allocated'
             );
             const usedSlots = confirmedRecords.length;
@@ -26,6 +26,7 @@ const getSupervisors = async (req, res) => {
                 research_interests: s.research_interests,
                 additional_information: s.additional_information,
                 preferred_supervision_slots: s.preferred_supervision_slots,
+                signature_url: s.signature_url,
                 availableSlots,
                 status: availableSlots > 0 ? "Available" : "Full"
             };
@@ -62,7 +63,7 @@ const createSupervisor = async (req, res) => {
 const uploadSupervisors = async (req, res) => {
     try {
         const importedSupervisors = req.body;
-        
+
         let count = 0;
         for (const sup of importedSupervisors) {
             await prisma.supervisors.upsert({
@@ -109,7 +110,7 @@ const updateSupervisor = async (req, res) => {
     try {
         const { id } = req.params;
         const { title, name, email, expertise, research_interests, additional_information, preferred_supervision_slots } = req.body;
-        
+
         const updated = await prisma.supervisors.update({
             where: { id: parseInt(id, 10) },
             data: {

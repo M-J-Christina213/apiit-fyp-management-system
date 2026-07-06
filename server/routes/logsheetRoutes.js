@@ -51,7 +51,7 @@ const signatureUpload = multer({
         if (/\.(png|jpg|jpeg)$/.test(ext)) return cb(null, true);
         cb(new Error("Only PNG and JPG signature images are allowed."));
     },
-    limits: { fileSize: 2 * 1024 * 1024 } // 2 MB limit
+    limits: { fileSize: 50 * 1024 * 1024 } // 2 MB limit
 });
 
 // ── Student routes ───────────────────────────────────────────────────────────
