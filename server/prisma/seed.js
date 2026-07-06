@@ -7,21 +7,11 @@ async function main() {
 
     await prisma.users.createMany({
         data: [
-            {
-                email: "CB014416@students.apiit.lk",
-                password: bcrypt.hashSync("123@abc", 10),
-                role: "student"
-            },
-            {
-                email: "CB014417@students.apiit.lk",
-                password: bcrypt.hashSync("123@abc", 10),
-                role: "student"
-            },
-            {
-                email: "CB014418@students.apiit.lk",
-                password: bcrypt.hashSync("123@abc", 10),
-                role: "student"
-            },
+            // {
+            //    email: "CB014416@students.apiit.lk",
+            //   password: bcrypt.hashSync("123@abc", 10),
+            //   role: "student"
+            // },
             {
                 email: "kavin@apiit.lk",
                 password: bcrypt.hashSync("123@abc", 10),

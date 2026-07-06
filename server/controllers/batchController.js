@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const bcrypt = require("bcryptjs");
 
 // Helper: safely format a Date (or null) to "YYYY-MM-DD" for the frontend
 const formatDate = (date) => {
@@ -88,11 +89,10 @@ const createBatch = async (req, res) => {
     try {
         const { batchCode, intake, startDate, stage, students } = req.body;
 
-        // start_fyp_date is NOT NULL in the DB - fail fast with a clear 400
-        // instead of letting the transaction throw and roll back silently.
         if (!intake || !intake.toString().trim()) {
             return res.status(400).json({ message: "Intake name is required." });
         }
+
         const parsedStartDate = parseDate(startDate);
         if (!parsedStartDate) {
             return res.status(400).json({ message: "A valid start date is required." });
@@ -100,11 +100,13 @@ const createBatch = async (req, res) => {
 
         if (!students || students.length === 0) {
             const result = await prisma.$transaction(async (tx) => {
-                if (batchCode) {
 
-                    const existing = await tx.batches.findUnique({ where: { batch_code: batchCode } });
+                if (batchCode) {
+                    const existing = await tx.batches.findUnique({
+                        where: { batch_code: batchCode }
+                    });
+
                     if (existing) {
-                        // Caller explicitly referenced an existing batch code -> update it
                         return await tx.batches.update({
                             where: { batch_code: batchCode },
                             data: {
@@ -116,8 +118,8 @@ const createBatch = async (req, res) => {
                     }
                 }
 
-                // Otherwise, always create a brand-new batch with a guaranteed-unique code
                 const uniqueCode = await generateUniqueBatchCode(tx, batchCode || intake);
+
                 return await tx.batches.create({
                     data: {
                         batch_code: uniqueCode,
@@ -137,11 +139,9 @@ const createBatch = async (req, res) => {
             }]);
         }
 
-        // Group students by their provided batchCode (if any). Students without
-        // an explicit code fall under a single "no code provided" bucket, keyed
-        // by a placeholder — we'll assign each bucket its own unique batch.
         const NO_CODE_KEY = "__NO_CODE__";
         const studentsByBatchCode = {};
+
         for (const s of students) {
             const code = s.batchCode || NO_CODE_KEY;
             if (!studentsByBatchCode[code]) {
@@ -152,21 +152,22 @@ const createBatch = async (req, res) => {
 
         const createdBatches = [];
 
-        await prisma.$transaction(async (tx) => {
+        // ============================
+        // 🔥 TRANSACTION (FAST ONLY)
+        // ============================
+        const result = await prisma.$transaction(async (tx) => {
+
+            const batchResults = [];
+
             for (const [code, batchStudents] of Object.entries(studentsByBatchCode)) {
+
                 let newBatch;
 
                 if (code !== NO_CODE_KEY) {
-                    // Student rows specified an explicit code. Only reuse it if a
-                    // batch with that exact code already exists; otherwise treat
-                    // it as a request for a new batch with that code (if free) or
-                    // a de-duplicated variant of it (if taken by something else).
                     let finalBatchCode = code;
 
                     const existing = await tx.batches.findUnique({
-                        where: {
-                            batch_code: code
-                        }
+                        where: { batch_code: code }
                     });
 
                     if (existing) {
@@ -181,9 +182,10 @@ const createBatch = async (req, res) => {
                             stage: stage || "Proposal"
                         }
                     });
+
                 } else {
-                    // No code given by the student rows / form -> always create fresh
                     const uniqueCode = await generateUniqueBatchCode(tx, batchCode || intake);
+
                     newBatch = await tx.batches.create({
                         data: {
                             batch_code: uniqueCode,
@@ -194,87 +196,91 @@ const createBatch = async (req, res) => {
                     });
                 }
 
-                // Insert students
+                const cbNos = batchStudents.map(s => (s.studentNo || s.id).toUpperCase());
+
+                const studentRecords = [];
+
                 for (const s of batchStudents) {
 
-                    const cbNo = s.studentNo || s.id;
+                    const cbNo = (s.studentNo || s.id).toUpperCase();
 
-                    const existingStudent = await tx.students.findUnique({
-                        where: {
-                            cb_no: cbNo
+                    const student = await tx.students.upsert({
+                        where: { cb_no: cbNo },
+                        update: {
+                            student_name: s.name,
+                            batch_id: newBatch.id
+                        },
+                        create: {
+                            cb_no: cbNo,
+                            student_name: s.name,
+                            batch_id: newBatch.id
                         }
                     });
 
-                    if (existingStudent) {
-
-                        await tx.students.update({
-                            where: {
-                                cb_no: cbNo
-                            },
-                            data: {
-                                student_name: s.name,
-                                batch_id: newBatch.id
-                            }
-                        });
-
-                    } else {
-
-                        await tx.students.create({
-                            data: {
-                                cb_no: cbNo,
-                                student_name: s.name,
-                                batch_id: newBatch.id
-                            }
-                        });
-
-                    }
+                    studentRecords.push(student);
                 }
 
-                console.log(`[Batch Upload] Inserted students for batch code: ${newBatch.batch_code}`);
-
-                // Get the students that now exist in the DB (newly created + already existing)
-                const cbNos = batchStudents.map(s => s.studentNo || s.id);
                 const dbStudents = await tx.students.findMany({
                     where: { cb_no: { in: cbNos } },
                     include: { student_fyp_records: true }
                 });
 
-                // Create FYP records for any student that doesn't have one
-                const fypRecordsToCreate = [];
-                for (const dbStudent of dbStudents) {
-                    if (!dbStudent.student_fyp_records || dbStudent.student_fyp_records.length === 0) {
-                        fypRecordsToCreate.push({
-                            student_id: dbStudent.id,
-                            supervisor_confirmation_status: 'Pending'
-                        });
-                    }
-                }
+                const fypRecordsToCreate = dbStudents
+                    .filter(s => !s.student_fyp_records || s.student_fyp_records.length === 0)
+                    .map(s => ({
+                        student_id: s.id,
+                        supervisor_confirmation_status: "Pending"
+                    }));
 
                 if (fypRecordsToCreate.length > 0) {
                     await tx.student_fyp_records.createMany({
                         data: fypRecordsToCreate,
                         skipDuplicates: true
                     });
-                    console.log(`[Batch Upload] Created ${fypRecordsToCreate.length} FYP records for batch code: ${newBatch.batch_code}`);
-                } else {
-                    console.log(`[Batch Upload] No new FYP records needed for batch code: ${newBatch.batch_code}`);
                 }
 
-                createdBatches.push({
+                batchResults.push({
                     id: newBatch.id,
                     intake: newBatch.batch_intake,
                     startDate: formatDate(newBatch.start_fyp_date),
                     stage: newBatch.stage,
-                    batchCode: newBatch.batch_code
+                    batchCode: newBatch.batch_code,
+                    students: studentRecords
                 });
             }
+
+            return batchResults;
         });
 
-        res.status(201).json(createdBatches);
+        // ============================
+        // 🔥 USER CREATION OUTSIDE TX
+        // ============================
+        for (const batch of result) {
+            for (const s of batch.students) {
+
+                const email = `${s.cb_no}@students.apiit.lk`;
+
+                const existingUser = await prisma.users.findUnique({
+                    where: { email }
+                });
+
+                if (!existingUser) {
+                    await prisma.users.create({
+                        data: {
+                            email,
+                            password: bcrypt.hashSync("123@abc", 10),
+                            role: "student"
+                        }
+                    });
+                }
+            }
+        }
+
+        return res.status(201).json(result);
 
     } catch (error) {
         console.error("Failed to create batch:", error);
-        res.status(500).json({ message: "Failed to create batch" });
+        return res.status(500).json({ message: "Failed to create batch" });
     }
 };
 
@@ -349,8 +355,13 @@ const deleteBatch = async (req, res) => {
 
         res.json({ message: "Batch deleted successfully" });
     } catch (error) {
-        console.error("Failed to delete batch:", error);
-        res.status(500).json({ message: "Failed to delete batch" });
+        console.error(error);
+
+        res.status(500).json({
+            message: error.message,
+            code: error.code,
+            meta: error.meta
+        });
     }
 };
 
