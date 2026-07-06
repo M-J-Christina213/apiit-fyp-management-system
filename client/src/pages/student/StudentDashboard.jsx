@@ -76,6 +76,21 @@ const StudentDashboard = () => {
     Final: "Semester 3",
   };
 
+  const semesterMeta = {
+    "Semester 1": {
+      label: "Semester 1 - Proposal Stage",
+      color: "bg-blue-50 text-blue-700 border-blue-100"
+    },
+    "Semester 2": {
+      label: "Semester 2 - Midpoint",
+      color: "bg-amber-50 text-amber-700 border-amber-100"
+    },
+    "Semester 3": {
+      label: "Semester 3 - Final",
+      color: "bg-emerald-50 text-emerald-700 border-emerald-100"
+    }
+  };
+
   useEffect(() => {
     const loggedIn = getLoggedInUser();
     if (loggedIn) {
@@ -1406,21 +1421,10 @@ const StudentDashboard = () => {
 
       const logsheetColumns = [
         {
-          header: 'Semester',
-          render: (row) => (
-            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-              {row.semester}
-            </span>
-          )
-        },
-        {
           header: 'Meeting Date',
           render: (row) => new Date(row.meeting_date).toLocaleDateString()
         },
-        {
-          header: 'Supervisor Name',
-          accessor: 'supervisor_name'
-        },
+
         {
           header: 'Venue',
           render: (row) => row.venue || '-'
@@ -1486,6 +1490,14 @@ const StudentDashboard = () => {
         }
       };
 
+      const groupedLogsheets = myLogsheets.reduce((acc, log) => {
+        const key = log.semester || "Semester 1";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(log);
+        return acc;
+      }, {});
+
+
       return (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1536,7 +1548,115 @@ const StudentDashboard = () => {
             </div>
             <div className="p-0">
               {myLogsheets.length > 0 ? (
-                <DataTable columns={logsheetColumns} data={myLogsheets} />
+                <div className="space-y-8">
+                  {Object.entries(groupedLogsheets).map(([semester, logs]) => {
+                    const stageLabel =
+                      semester === "Semester 1"
+                        ? "Proposal Stage"
+                        : semester === "Semester 2"
+                          ? "Midpoint Stage"
+                          : "Final Stage";
+
+                    const stageStyles =
+                      semester === "Semester 1"
+                        ? "border-blue-200 bg-blue-50"
+                        : semester === "Semester 2"
+                          ? "border-amber-200 bg-amber-50"
+                          : "border-emerald-200 bg-emerald-50";
+
+                    const badgeStyles =
+                      semester === "Semester 1"
+                        ? "text-blue-700 bg-blue-100"
+                        : semester === "Semester 2"
+                          ? "text-amber-700 bg-amber-100"
+                          : "text-emerald-700 bg-emerald-100";
+
+                    return (
+                      <div
+                        key={semester}
+                        className={`rounded-2xl border ${stageStyles} shadow-sm overflow-hidden`}
+                      >
+                        {/* HEADER */}
+                        <div className="px-6 py-4 flex items-center justify-between">
+                          <div>
+                            <h2 className="text-sm font-semibold text-slate-800">
+                              {semester}
+                            </h2>
+                            <p className="text-xs text-slate-500">{stageLabel}</p>
+                          </div>
+
+                          <span className="text-xs px-3 py-1 rounded-full bg-white border text-slate-600">
+                            {logs.length} submissions
+                          </span>
+                        </div>
+
+                        {/* TABLE WRAPPER */}
+                        <div className="bg-white">
+                          <table className="w-full text-sm">
+                            <thead className="sticky top-0 bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
+                              <tr>
+                                <th className="text-left px-6 py-3">Date</th>
+                                <th className="text-left px-6 py-3">Venue</th>
+                                <th className="text-left px-6 py-3">Status</th>
+                                <th className="text-left px-6 py-3">File Name</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {logs.map((row, idx) => (
+                                <tr
+                                  key={idx}
+                                  className="border-t border-slate-100 hover:bg-slate-50 transition"
+                                >
+                                  {/* DATE */}
+                                  <td className="px-6 py-4 text-slate-700">
+                                    {new Date(row.meeting_date).toLocaleDateString()}
+                                  </td>
+
+                                  {/* VENUE */}
+                                  <td className="px-6 py-4 text-slate-600">
+                                    {row.venue || (
+                                      <span className="text-slate-400 italic">Not set</span>
+                                    )}
+                                  </td>
+
+                                  {/* STATUS */}
+                                  <td className="px-6 py-4">
+                                    <span
+                                      className={`text-xs px-3 py-1 rounded-full font-medium ${badgeStyles}`}
+                                    >
+                                      {row.status}
+                                    </span>
+                                  </td>
+
+                                  {/* FILE */}
+                                  <td className="px-6 py-4">
+                                    <a
+                                      href={`http://localhost:5000/uploads/logsheets/${row.file_path}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+                                    >
+                                      📄 {row.file_name}
+                                    </a>
+                                  </td>
+                                </tr>
+
+                              ))}
+                            </tbody>
+                          </table>
+
+                          {/* EMPTY STATE */}
+                          {logs.length === 0 && (
+                            <div className="p-8 text-center text-sm text-slate-500">
+                              No logsheet submissions yet for this stage.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="p-12 text-center">
                   <div className="mx-auto w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100 mb-4">
