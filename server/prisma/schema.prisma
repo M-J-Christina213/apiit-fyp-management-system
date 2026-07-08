@@ -141,7 +141,6 @@ model external_supervisor_requests {
   title                       String?  @db.VarChar(20)
   name                        String   @db.VarChar(100)
   email                       String   @unique @db.VarChar(100)
-  password                    String   @db.VarChar(255)
   university                  String   @db.VarChar(150)
   expertise                   String?
   research_interests          String?

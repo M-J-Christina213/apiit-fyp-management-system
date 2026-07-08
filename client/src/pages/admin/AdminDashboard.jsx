@@ -24,7 +24,10 @@ import {
   getSupervisors,
   getUsers,
   getStats,
-  createUser
+  createUser,
+  getExternalSupervisorRequests,
+  approveExternalSupervisor,
+  rejectExternalSupervisor,
 } from "../../services/api";
 
 
@@ -58,6 +61,11 @@ const AdminDashboard = () => {
     Admin: { viewSupervisors: true, submitProposal: true, evaluateProposal: true, allocateSupervisors: true, manageSystem: true }
   });
 
+  const [externalRequests, setExternalRequests] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -65,12 +73,18 @@ const AdminDashboard = () => {
         const [
           usersRes,
           studentsRes,
-          supervisorsRes
+          supervisorsRes,
+          externalRequestsRes
         ] = await Promise.all([
           getUsers(),
           getStudents(),
-          getSupervisors()
+          getSupervisors(),
+          getExternalSupervisorRequests()
         ]);
+
+        setExternalRequests(
+          externalRequestsRes.data
+        );
 
         setUsers(usersRes.data);
         setStudents(studentsRes.data);
@@ -204,6 +218,84 @@ const AdminDashboard = () => {
     setRolePermissions(updated);
   };
 
+  // Approve External Supervisor
+
+  const handleApproveExternalSupervisor = async (id) => {
+
+    try {
+
+      await approveExternalSupervisorRequest(id);
+
+      alert(
+        "External supervisor approved successfully"
+      );
+
+
+      const updated =
+        await getExternalSupervisorRequests();
+
+      setExternalRequests(updated.data);
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Failed to approve request"
+      );
+
+    }
+
+  };
+
+
+
+  // Reject External Supervisor
+
+  const handleRejectExternalSupervisor = async (id) => {
+
+    const reason =
+      window.prompt(
+        "Enter rejection reason"
+      );
+
+
+    if (!reason)
+      return;
+
+
+    try {
+
+      await rejectExternalSupervisorRequest(
+        id,
+        reason
+      );
+
+
+      alert(
+        "Request rejected"
+      );
+
+
+      const updated =
+        await getExternalSupervisorRequests();
+
+      setExternalRequests(updated.data);
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Failed to reject request"
+      );
+
+    }
+
+  };
+
   // Columns definition
   const userManagementColumns = [
     { header: 'ID', accessor: 'id' },
@@ -251,6 +343,70 @@ const AdminDashboard = () => {
         </div>
       )
     }
+  ];
+
+  const externalRequestColumns = [
+
+    {
+      header: "Name",
+      accessor: "name"
+    },
+
+    {
+      header: "Email",
+      accessor: "email"
+    },
+
+    {
+      header: "Company",
+      accessor: "company"
+    },
+
+    {
+      header: "Status",
+      render: (row) => (
+        <span className="px-2 py-1 rounded text-xs font-bold bg-yellow-50 text-yellow-700">
+          {row.status}
+        </span>
+      )
+    },
+
+    {
+      header: "Actions",
+      render: (row) => (
+        <div className="flex gap-2">
+
+          <button
+            onClick={async () => {
+
+              await approveExternalSupervisor(row.id);
+
+              alert("Supervisor approved");
+
+              window.location.reload();
+
+            }}
+            className="px-3 py-1 bg-green-600 text-white rounded text-xs"
+          >
+            Approve
+          </button>
+
+
+          <button
+            onClick={() => {
+              setSelectedRequest(row);
+              setShowRejectModal(true);
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded text-xs"
+          >
+            Reject
+          </button>
+
+        </div>
+      )
+
+    }
+
   ];
 
   const renderContent = () => {
@@ -339,6 +495,42 @@ const AdminDashboard = () => {
           </div>
         </div>
       );
+    }
+
+    // ---------------- EXTERNAL SUPERVISOR REQUESTS ----------------
+
+    if (path === '/admin/external-supervisor-requests') {
+
+      return (
+
+        <div className="space-y-6">
+
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">
+              External Supervisor Requests
+            </h1>
+
+            <p className="text-sm text-slate-500">
+              Review and approve external supervisor registrations.
+            </p>
+
+          </div>
+
+
+          <div className="bg-white p-5 rounded border border-slate-200">
+
+            <DataTable
+              columns={externalRequestColumns}
+              data={externalRequests}
+            />
+
+          </div>
+
+
+        </div>
+
+      );
+
     }
 
     // ---------------- ROLES PERMISSIONS TAB ----------------

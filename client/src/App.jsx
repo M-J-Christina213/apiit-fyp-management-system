@@ -59,6 +59,7 @@ const pmLinks = [
 const adminLinks = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/users', label: 'Users', icon: Users },
+  { path: '/admin/external-supervisor-requests', label: 'External Supervisor Requests', icon: UserCheck },
   { path: '/admin/roles', label: 'Roles', icon: Shield },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
@@ -221,6 +222,10 @@ function App() {
             <Route path="/admin/users" element={<AdminDashboard />} />
             <Route path="/admin/roles" element={<AdminDashboard />} />
             <Route path="/admin/settings" element={<AdminDashboard />} />
+            <Route
+              path="/admin/external-supervisor-requests"
+              element={<AdminDashboard />}
+            />
             <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>

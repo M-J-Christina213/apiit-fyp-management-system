@@ -101,3 +101,15 @@ export const approveExternalSupervisor = (id) =>
 export const rejectExternalSupervisor = (id, data) =>
     API.put(`/external-supervisors/${id}/reject`, data);
 
+
+export const approveExternalSupervisorRequest = (id) =>
+    API.put(`/admin/external-supervisor-requests/${id}/approve`);
+
+
+export const rejectExternalSupervisorRequest = (id, reason) =>
+    API.put(`/admin/external-supervisor-requests/${id}/reject`, {
+        rejection_reason: reason
+    });
+
+export const getPendingRequests = () => API.get("/admin/pending");
+
