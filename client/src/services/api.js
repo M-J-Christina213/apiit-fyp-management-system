@@ -86,30 +86,24 @@ export const uploadSignature = (formData) => API.post("/logsheets/supervisor/sig
 // EXTERNAL SUPERVISOR
 // ===============================
 
+
 export const registerExternalSupervisor = (data) =>
     API.post("/external-supervisors/register", data);
 
 
+
 export const getExternalSupervisorRequests = () =>
-    API.get("/external-supervisors/pending");
+    API.get("/admin/pending");
+
 
 
 export const approveExternalSupervisor = (id) =>
-    API.put(`/external-supervisors/${id}/approve`);
-
-
-export const rejectExternalSupervisor = (id, data) =>
-    API.put(`/external-supervisors/${id}/reject`, data);
-
-
-export const approveExternalSupervisorRequest = (id) =>
     API.put(`/admin/external-supervisor-requests/${id}/approve`);
 
 
-export const rejectExternalSupervisorRequest = (id, reason) =>
-    API.put(`/admin/external-supervisor-requests/${id}/reject`, {
-        rejection_reason: reason
-    });
 
-export const getPendingRequests = () => API.get("/admin/pending");
-
+export const rejectExternalSupervisor = (id, data) =>
+    API.put(
+        `/admin/external-supervisor-requests/${id}/reject`,
+        data
+    );

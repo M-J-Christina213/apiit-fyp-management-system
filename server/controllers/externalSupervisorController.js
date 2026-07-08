@@ -94,7 +94,6 @@ const registerExternalSupervisor = async (req, res) => {
                     title,
                     name: fullName,
                     email,
-                    password: hashedPassword,
                     university,
                     expertise,
                     research_interests: researchInterests,

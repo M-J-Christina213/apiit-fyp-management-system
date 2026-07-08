@@ -106,16 +106,19 @@ const ExternalSupervisorRegister = () => {
 
             if (response.data.success) {
 
-                setSuccess(
-                    response.data.message
-                );
+                setSuccess(response.data.message);
 
-
-                setTimeout(() => {
-
-                    navigate("/");
-
-                }, 3000);
+                setFormData({
+                    title: "",
+                    fullName: "",
+                    email: "",
+                    password: "",
+                    confirmPassword: "",
+                    university: "",
+                    expertise: "",
+                    researchInterests: "",
+                    preferredSlots: 3
+                });
 
             }
 

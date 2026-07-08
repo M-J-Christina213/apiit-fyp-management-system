@@ -224,7 +224,7 @@ const AdminDashboard = () => {
 
     try {
 
-      await approveExternalSupervisorRequest(id);
+      await approveExternalSupervisor(id);
 
       alert(
         "External supervisor approved successfully"
@@ -267,7 +267,7 @@ const AdminDashboard = () => {
 
     try {
 
-      await rejectExternalSupervisorRequest(
+      await rejectExternalSupervisor(
         id,
         reason
       );
@@ -358,8 +358,8 @@ const AdminDashboard = () => {
     },
 
     {
-      header: "Company",
-      accessor: "company"
+      header: "University",
+      accessor: "university"
     },
 
     {
