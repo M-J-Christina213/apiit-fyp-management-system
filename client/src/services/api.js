@@ -100,3 +100,4 @@ export const approveExternalSupervisor = (id) =>
 
 export const rejectExternalSupervisor = (id, data) =>
     API.put(`/external-supervisors/${id}/reject`, data);
+

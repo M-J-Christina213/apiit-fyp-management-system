@@ -10,7 +10,7 @@ import {
     Send
 } from "lucide-react";
 
-import { registerExternalSupervisor } from "../../api/api";
+import { registerExternalSupervisor } from "../../services/api";
 
 
 const ExternalSupervisorRegister = () => {

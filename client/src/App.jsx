@@ -1,12 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
-import Login from './pages/Login';
-import DashboardLayout from './components/layouts/DashboardLayout';
-import StudentDashboard from './pages/student/StudentDashboard';
-import SupervisorDashboard from './pages/supervisor/SupervisorDashboard';
-import PMDashboard from './pages/pm/PMDashboard';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import Login from './pages/auth/Login.jsx';
+import DashboardLayout from './components/layouts/DashboardLayout.jsx';
+import StudentDashboard from './pages/student/StudentDashboard.jsx';
+import SupervisorDashboard from './pages/supervisor/SupervisorDashboard.jsx';
+import PMDashboard from './pages/pm/PMDashboard.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import ExternalSupervisorRegister from './pages/auth/ExternalSupervisorRegister.jsx';
 
 import { getLoggedInUser } from './utils/auth';
 
@@ -61,6 +62,8 @@ const adminLinks = [
   { path: '/admin/roles', label: 'Roles', icon: Shield },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
+
+
 
 /* ===========================
    Protected Route
@@ -135,6 +138,11 @@ function App() {
 
         {/* Login */}
         <Route path="/" element={<LoginRoute />} />
+
+        <Route
+          path="/external-supervisor/register"
+          element={<ExternalSupervisorRegister />}
+        />
 
         {/* Student */}
         <Route element={<ProtectedRoute allowedRole="student" />}>

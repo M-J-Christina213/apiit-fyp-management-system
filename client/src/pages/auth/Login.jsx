@@ -283,6 +283,13 @@ const Login = () => {
                 </>
               )}
             </button>
+            <button
+              type="button"
+              onClick={() => navigate("/external-supervisor/register")}
+              className="text-sm text-navy-900 font-semibold"
+            >
+              Register as External Supervisor
+            </button>
           </form>
 
           {/* Quick Demo Access Box (Flat styling, no glassmorphism, no gradients) */}
