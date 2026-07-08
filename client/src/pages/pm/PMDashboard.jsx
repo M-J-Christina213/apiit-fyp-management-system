@@ -2777,7 +2777,11 @@ const PMDashboard = () => {
                     min="1"
                     required
                     value={editSupervisorPreferredSupervisionSlots}
-                    onChange={(e) => setEditSupervisorPreferredSupervisionSlots(parseInt(e.target.value, 10))}
+                    onChange={(e) =>
+                      setEditSupervisorPreferredSupervisionSlots(
+                        Number(e.target.value) || 1
+                      )
+                    }
                     className="block w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all focus:bg-white"
                   />
                 </div>
