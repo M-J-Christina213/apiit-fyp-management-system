@@ -287,6 +287,8 @@ const PMDashboard = () => {
   };
 
   const handleEditSupervisorSave = async () => {
+    console.log("SAVE ID:", editSupervisorId);
+
     try {
       await updateSupervisor(editSupervisorId, {
         title: editSupervisorTitle,
@@ -1324,14 +1326,25 @@ const PMDashboard = () => {
       };
 
       const openEditSupervisorModal = (row) => {
+
+        console.log("EDIT ROW:", row);
         setEditSupervisorId(row.id);
+        console.log("EDIT ID:", row.id);
+
+        setEditSupervisorId(row.id);
+
         setEditSupervisorTitle(row.title || '');
         setEditSupervisorName(row.name || '');
         setEditSupervisorEmail(row.email || '');
         setEditSupervisorExpertise(row.expertise || '');
         setEditSupervisorResearchInterests(row.research_interests || '');
         setEditSupervisorAdditionalInformation(row.additional_information || '');
-        setEditSupervisorPreferredSupervisionSlots(row.preferred_supervision_slots !== undefined ? row.preferred_supervision_slots : 3);
+        setEditSupervisorPreferredSupervisionSlots(
+          row.preferred_supervision_slots !== undefined
+            ? row.preferred_supervision_slots
+            : 3
+        );
+
         setShowEditSupervisor(true);
       };
 

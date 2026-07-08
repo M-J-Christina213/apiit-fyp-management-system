@@ -461,30 +461,14 @@ const approveLogsheet = async (req, res) => {
             return res.status(404).json({ message: "Supervisor not found." });
         }
 
-        if (!supervisor.signature_url) {
-            return res.status(400).json({ message: "Please upload your digital signature before approving logsheets." });
-        }
-
-        const originalPath = path.join("uploads", "logsheets", logsheet.file_path);
-        const signaturePath = path.join("uploads", "signatures", supervisor.signature_url);
-        const signedFilename = `signed-${Date.now()}-${logsheet.file_path}`;
-        const outputPath = path.join("uploads", "logsheets", signedFilename);
-
-        let signatureApplied = false;
-
-        // Stamp signature if PDF
-        if (logsheet.file_name.toLowerCase().endsWith(".pdf")) {
-            signatureApplied = await stampSignatureOnPdf(originalPath, signaturePath, outputPath);
-        }
-
+        // Signature is no longer required or applied on approval
         const updated = await prisma.logsheets.update({
             where: { id: logsheetId },
             data: {
                 status: "Approved",
                 approved_at: new Date(),
-                signature_applied: signatureApplied,
-                signed_file_url: signatureApplied ? signedFilename : null,
-                file_path: signatureApplied ? signedFilename : logsheet.file_path // Point to signed file if stamped
+                signature_applied: false,
+                signed_file_url: null
             }
         });
 

@@ -250,15 +250,11 @@ const SupervisorDashboard = () => {
   };
 
   const handleApproveLogsheet = async (log) => {
-    if (!signatureUrl) {
-      showToast("Please upload your digital signature before approving logsheets.", "error");
-      return;
-    }
     if (!window.confirm(`Approve logsheet for ${log.student_name}?`)) return;
     setActionLoading(true);
     try {
       await approveLogsheet(log.id, { supervisorId });
-      showToast("Logsheet approved and signature stamped successfully.");
+      showToast("Logsheet approved successfully.");
       await loadLogsheets();
     } catch (err) {
       const msg = err?.response?.data?.message || "Failed to approve logsheet.";
@@ -493,16 +489,7 @@ const SupervisorDashboard = () => {
             <p className="text-slate-500 mt-1">Review and approve meeting logsheets submitted by your supervised students.</p>
           </div>
 
-          {/* Signature warning banner */}
-          {!signatureUrl && (
-            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
-              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-800">Digital Signature Required</p>
-                <p className="text-xs text-amber-700 mt-0.5">You must upload your digital signature before you can approve any logsheets. Go to your <button onClick={() => navigate('/supervisor/profile')} className="underline font-semibold">Profile</button> to upload it.</p>
-              </div>
-            </div>
-          )}
+
 
           {logsheetLoading ? (
             <div className="flex justify-center items-center h-64 text-slate-400">
@@ -682,7 +669,7 @@ const SupervisorDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5" /> Signature uploaded</p>
-                    <p className="text-xs text-slate-500">Your signature will be automatically stamped on approved logsheets.</p>
+                    <p className="text-xs text-slate-500">Your signature is saved in your profile.</p>
                     <button
                       onClick={() => signatureInputRef.current?.click()}
                       className="text-xs px-3 py-1.5 border border-slate-300 hover:border-[#0C2340] text-slate-600 rounded-lg transition"
