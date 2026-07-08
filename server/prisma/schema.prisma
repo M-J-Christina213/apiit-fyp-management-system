@@ -105,6 +105,7 @@ model templates {
 
 model users {
   id            Int             @id @default(autoincrement())
+  name          String?  @db.VarChar(100) 
   email         String          @unique @db.VarChar(150)
   password      String?         @db.VarChar(255)
   role          String          @db.VarChar(20)
@@ -133,4 +134,21 @@ model logsheets {
   created_at       DateTime     @default(now())
   students         students     @relation(fields: [student_id], references: [id], onDelete: Cascade)
   supervisors      supervisors? @relation(fields: [supervisor_id], references: [id])
+}
+
+model external_supervisor_requests {
+  id                          Int      @id @default(autoincrement())
+  title                       String?  @db.VarChar(20)
+  name                        String   @db.VarChar(100)
+  email                       String   @unique @db.VarChar(100)
+  password                    String   @db.VarChar(255)
+  university                  String   @db.VarChar(150)
+  expertise                   String?
+  research_interests          String?
+  preferred_supervision_slots Int      @default(3)
+  status                      String   @default("Pending")
+  rejection_reason            String?
+  approved_at                 DateTime?
+  approved_by                 String?
+  created_at                  DateTime @default(now())
 }

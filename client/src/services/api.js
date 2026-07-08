@@ -81,3 +81,22 @@ export const rejectLogsheet = (id, data) => API.post(`/logsheets/supervisor/reje
 export const uploadSignature = (formData) => API.post("/logsheets/supervisor/signature", formData, {
     headers: { "Content-Type": "multipart/form-data" }
 });
+
+// ===============================
+// EXTERNAL SUPERVISOR
+// ===============================
+
+export const registerExternalSupervisor = (data) =>
+    API.post("/external-supervisors/register", data);
+
+
+export const getExternalSupervisorRequests = () =>
+    API.get("/external-supervisors/pending");
+
+
+export const approveExternalSupervisor = (id) =>
+    API.put(`/external-supervisors/${id}/approve`);
+
+
+export const rejectExternalSupervisor = (id, data) =>
+    API.put(`/external-supervisors/${id}/reject`, data);

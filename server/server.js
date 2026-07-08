@@ -13,6 +13,7 @@ const proposalRoutes = require("./routes/proposalRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const logsheetRoutes = require("./routes/logsheetRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const externalSupervisorRoutes = require("./routes/externalSupervisors");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/proposals", proposalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/logsheets", logsheetRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/externalSupervisors", externalSupervisorRoutes);
 
 const PORT = 5000;
 
