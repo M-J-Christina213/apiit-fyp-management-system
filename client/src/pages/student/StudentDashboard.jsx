@@ -94,6 +94,7 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const loggedIn = getLoggedInUser();
+
     if (loggedIn) {
       setCurrentUser(loggedIn);
     }
@@ -118,30 +119,39 @@ const StudentDashboard = () => {
 
         if (loggedIn?.id) {
           try {
-            const notifRes = await fetch(`http://localhost:5000/api/notifications/${loggedIn.id}`);
+            const notifRes = await fetch(
+              `http://localhost:5000/api/notifications/${loggedIn.id}`
+            );
+
             if (notifRes.ok) {
               const notifData = await notifRes.json();
               setDbNotifications(notifData);
             }
+
           } catch (notifErr) {
             console.error("Failed to load notifications:", notifErr);
           }
         }
 
-        const loggedIn = getLoggedInUser();
-        if (loggedIn) {
-          setCurrentUser(loggedIn);
-        }
 
         const myLogsheets = logsheetsRes.data || [];
 
         if (myLogsheets.length > 0) {
-          const sorted = [...myLogsheets].sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
+          const sorted = [...myLogsheets].sort(
+            (a, b) => new Date(b.meeting_date) - new Date(a.meeting_date)
+          );
+
           const lastDate = new Date(sorted[0].meeting_date);
-          const daysSince = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+
+          const daysSince = Math.floor(
+            (new Date() - lastDate) /
+            (1000 * 60 * 60 * 24)
+          );
+
           if (daysSince > 30) {
             setShowLogsheetAlert(true);
           }
+
         } else {
           setShowLogsheetAlert(true);
         }
@@ -152,7 +162,9 @@ const StudentDashboard = () => {
     };
 
     loadData();
+
   }, [path]);
+
 
   // Fetch templates when navigating to /student/templates
   useEffect(() => {
@@ -193,17 +205,18 @@ const StudentDashboard = () => {
 
 
   // Find current student record
-  const currentStudent = students?.find(
-    s => s.email === currentUser?.email
-  ) || {
-    id: 'CB014416',
-    name: 'Christina Wanigasekara',
-    email: 'CB014416@students.apiit.lk',
-    batch: '2024-Feb',
-    status: 'Proposal Pending',
-    topic: 'AI Powered FYP Management System',
-    supervisor: 'Mr. Kavin Kumar'
-  };
+  const currentStudent =
+    students?.find(
+      s => s.email?.toLowerCase() === currentUser?.email?.toLowerCase()
+    ) || {
+      id: "",
+      name: "",
+      email: "",
+      batch: "",
+      status: "",
+      topic: "",
+      supervisor: null
+    };
 
   // Find student's proposal request
   const myProposalRequest = proposals.find(
@@ -504,9 +517,9 @@ const StudentDashboard = () => {
     // ---------------- SUPERVISORS TAB ----------------
     if (path === '/student/supervisors') {
       const filteredSupervisors = supervisors.filter(s =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.expertise.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.interests.toLowerCase().includes(searchQuery.toLowerCase())
+        (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.expertise || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.interests || "").toLowerCase().includes(searchQuery.toLowerCase())
       );
 
       return (
@@ -1541,14 +1554,9 @@ const StudentDashboard = () => {
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-center justify-between">
             <div className="max-w-xl">
               <h3 className="font-bold text-slate-800">Academic Logsheet Templates</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Download the official logsheet template provided by the PM office. Ensure to fill this out, gather supervisor signature if necessary, and upload the signed PDF/Word document.</p>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Download the official logsheet template provided by the PM in templates section. Ensure to fill this out, gather supervisor signature if necessary, and upload the signed PDF/Word document.</p>
             </div>
-            <button
-              onClick={handleDownloadLogsheetTemplate}
-              className="px-5 py-2.5 bg-white border border-slate-300 text-navy-900 rounded-lg font-bold text-sm shadow-sm transition-all hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap select-none animate-pulse hover:animate-none"
-            >
-              <Download className="h-4 w-4 text-slate-500" /> Download Logsheet Template
-            </button>
+
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

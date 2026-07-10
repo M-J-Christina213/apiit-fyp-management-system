@@ -50,7 +50,8 @@ import {
   deleteTemplate,
   updateTemplate,
   viewTemplate,
-  downloadTemplate
+  downloadTemplate,
+  createSupervisor
 
 } from "../../services/api";
 
@@ -287,24 +288,46 @@ const PMDashboard = () => {
   };
 
   const handleEditSupervisorSave = async () => {
+
     console.log("SAVE ID:", editSupervisorId);
 
+    const supervisorData = {
+      title: editSupervisorTitle,
+      name: editSupervisorName,
+      email: editSupervisorEmail,
+      expertise: editSupervisorExpertise,
+      research_interests: editSupervisorResearchInterests,
+      additional_information: editSupervisorAdditionalInformation,
+      preferred_supervision_slots: editSupervisorPreferredSupervisionSlots
+    };
+
     try {
-      await updateSupervisor(editSupervisorId, {
-        title: editSupervisorTitle,
-        name: editSupervisorName,
-        email: editSupervisorEmail,
-        expertise: editSupervisorExpertise,
-        research_interests: editSupervisorResearchInterests,
-        additional_information: editSupervisorAdditionalInformation,
-        preferred_supervision_slots: editSupervisorPreferredSupervisionSlots
-      });
+
+      if (editSupervisorId) {
+
+        // UPDATE EXISTING SUPERVISOR
+        await updateSupervisor(editSupervisorId, supervisorData);
+
+      } else {
+
+        // CREATE NEW SUPERVISOR
+        await createSupervisor(supervisorData);
+
+      }
+
+
       const res = await getSupervisors();
       setSupervisors(res.data);
+
       setShowEditSupervisor(false);
+
+      setEditSupervisorId(null);
+
     } catch (error) {
-      console.error("Failed to update supervisor:", error);
-      alert("Failed to update supervisor.");
+
+      console.error("Failed to save supervisor:", error);
+      alert("Failed to save supervisor.");
+
     }
   };
 
@@ -2801,7 +2824,7 @@ const PMDashboard = () => {
                 form="edit-supervisor-form"
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg"
               >
-                Save Changes
+                {editSupervisorId ? "Update Supervisor" : "Add Supervisor"}
               </button>
             </div>
           </div>

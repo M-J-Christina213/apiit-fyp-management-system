@@ -10,6 +10,8 @@ export const uploadSupervisors = (data) => API.post("/supervisors/upload", data)
 export const clearAllSupervisors = () => API.delete("/supervisors");
 export const updateSupervisor = (id, data) => API.put(`/supervisors/${id}`, data);
 export const deleteSupervisor = (id) => API.delete(`/supervisors/${id}`);
+export const createSupervisor = (data) =>
+    API.post("/supervisors", data);
 export const getStudents = (params = {}) => API.get("/students", { params });
 export const allocateSupervisor = (id, data) => API.post(`/students/${id}/allocate-supervisor`, data);
 export const allocateAssessor = (id, data) => API.post(`/students/${id}/allocate-assessor`, data);

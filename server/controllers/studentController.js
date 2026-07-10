@@ -14,43 +14,70 @@ const getStudents = async (req, res) => {
             assessorName
         } = req.query;
 
-        // Build Prisma where clause dynamically based on provided query params
         const whereClause = {};
 
-        if (name && name !== 'All') whereClause.student_name = { contains: name, mode: 'insensitive' };
-        if (cbNo && cbNo !== 'All') whereClause.cb_no = { contains: cbNo, mode: 'insensitive' };
-
-        if ((batchIntake && batchIntake !== 'All') || (batchCode && batchCode !== 'All')) {
-            whereClause.batches = {};
-            if (batchIntake && batchIntake !== 'All') whereClause.batches.batch_intake = batchIntake;
-            if (batchCode && batchCode !== 'All') whereClause.batches.batch_code = batchCode;
+        if (name && name !== "All") {
+            whereClause.student_name = {
+                contains: name,
+                mode: "insensitive"
+            };
         }
 
-        if ((supervisorName && supervisorName !== 'All') ||
-            (allocationStatus && allocationStatus !== 'All') ||
-            (assessorName && assessorName !== 'All')) {
+        if (cbNo && cbNo !== "All") {
+            whereClause.cb_no = {
+                contains: cbNo,
+                mode: "insensitive"
+            };
+        }
 
+        if (
+            (batchIntake && batchIntake !== "All") ||
+            (batchCode && batchCode !== "All")
+        ) {
+            whereClause.batches = {};
+
+            if (batchIntake && batchIntake !== "All") {
+                whereClause.batches.batch_intake = batchIntake;
+            }
+
+            if (batchCode && batchCode !== "All") {
+                whereClause.batches.batch_code = batchCode;
+            }
+        }
+
+        if (
+            (supervisorName && supervisorName !== "All") ||
+            (allocationStatus && allocationStatus !== "All") ||
+            (assessorName && assessorName !== "All")
+        ) {
             whereClause.student_fyp_records = {
                 some: {}
             };
 
-            if (allocationStatus && allocationStatus !== 'All') {
-                if (allocationStatus.includes(',')) {
-                    whereClause.student_fyp_records.some.supervisor_confirmation_status = { in: allocationStatus.split(',') };
-                } else {
-                    whereClause.student_fyp_records.some.supervisor_confirmation_status = allocationStatus;
-                }
+            if (allocationStatus && allocationStatus !== "All") {
+                whereClause.student_fyp_records.some.supervisor_confirmation_status =
+                    allocationStatus.includes(",")
+                        ? {
+                            in: allocationStatus.split(",")
+                        }
+                        : allocationStatus;
             }
 
-            if (supervisorName && supervisorName !== 'All') {
+            if (supervisorName && supervisorName !== "All") {
                 whereClause.student_fyp_records.some.supervisors = {
-                    name: { contains: supervisorName, mode: 'insensitive' }
+                    name: {
+                        contains: supervisorName,
+                        mode: "insensitive"
+                    }
                 };
             }
 
-            if (assessorName && assessorName !== 'All') {
+            if (assessorName && assessorName !== "All") {
                 whereClause.student_fyp_records.some.assessors = {
-                    name: { contains: assessorName, mode: 'insensitive' }
+                    name: {
+                        contains: assessorName,
+                        mode: "insensitive"
+                    }
                 };
             }
         }
@@ -68,43 +95,70 @@ const getStudents = async (req, res) => {
             }
         });
 
+        // Fetch all users once
+        const users = await prisma.users.findMany();
+
         const formattedStudents = students.map((s) => {
-            const fypRecord = s.student_fyp_records?.[0]; // Taking the first record if exists
+
+            const fypRecord = s.student_fyp_records?.[0];
+
+            const user = users.find(u =>
+                u.email.toLowerCase().startsWith(s.cb_no.toLowerCase())
+            );
+
             return {
-                id: s.cb_no, // UI uses cb_no as ID/studentNo usually
+                id: s.cb_no,
                 studentNo: s.cb_no,
+
                 name: s.student_name,
-                batch: s.batches ? s.batches.batch_intake : null,
+
+                email: user?.email || null,
+
+                batch: s.batches?.batch_intake || null,
+
                 batchId: s.batch_id,
-                batchCode: s.batches ? s.batches.batch_code : null,
+
+                batchCode: s.batches?.batch_code || null,
+
                 topic: fypRecord?.tentative_topic || null,
-                supervisor: fypRecord?.supervisors
-                    ? `${fypRecord.supervisors.title || ""} ${fypRecord.supervisors.name}`.trim()
-                    : null,
 
-                supervisorExpertise: fypRecord?.supervisors?.expertise || "-",
-                supervisorConfirmationStatus: fypRecord?.supervisor_confirmation_status || "Pending",
-                assessor: fypRecord?.assessors
-                    ? `${fypRecord.assessors.title || ""} ${fypRecord.assessors.name}`.trim()
-                    : null,
+                supervisor:
+                    fypRecord?.supervisors
+                        ? `${fypRecord.supervisors.title || ""} ${fypRecord.supervisors.name}`.trim()
+                        : null,
 
-                assessorAssigned: !!fypRecord?.assessor_id,
+                supervisorExpertise:
+                    fypRecord?.supervisors?.expertise || "-",
+
+                supervisorConfirmationStatus:
+                    fypRecord?.supervisor_confirmation_status || "Pending",
+
+                assessor:
+                    fypRecord?.assessors
+                        ? `${fypRecord.assessors.title || ""} ${fypRecord.assessors.name}`.trim()
+                        : null,
+
+                assessorAssigned: !!fypRecord?.assessor_id
             };
         });
 
-        console.log(`[API Response] Returning ${formattedStudents.length} students matching criteria`);
+        console.log(
+            `[API Response] Returning ${formattedStudents.length} students`
+        );
+
         if (formattedStudents.length > 0) {
-            console.log(`[API Response] Sample student:`, formattedStudents[0]);
+            console.log(formattedStudents[0]);
         }
 
         res.json(formattedStudents);
+
     } catch (error) {
         console.error("Failed to fetch students:", error);
-        res.status(500).json({ message: "Failed to fetch students" });
+        res.status(500).json({
+            message: "Failed to fetch students"
+        });
     }
 };
-
-
 
 const getStudentById = async (req, res) => {
     try {

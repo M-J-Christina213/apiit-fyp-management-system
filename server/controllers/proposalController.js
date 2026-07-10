@@ -22,8 +22,8 @@ const formatProposal = (p) => {
         supervisorId: p.supervisor_id,
         student_name: p.students?.student_name || "N/A",
         student_cb_no: p.students?.cb_no || "N/A",
-        supervisor_name: p.supervisors 
-            ? `${p.supervisors.title || ""} ${p.supervisors.name}`.trim() 
+        supervisor_name: p.supervisors
+            ? `${p.supervisors.title || ""} ${p.supervisors.name}`.trim()
             : "N/A"
     };
 };
@@ -149,12 +149,15 @@ const getSupervisorRequests = async (req, res) => {
 
 const approveProposal = async (req, res) => {
     try {
+
+        // 1. Approve this proposal and save approval time
         const proposal = await prisma.proposal_requests.update({
             where: {
                 id: Number(req.params.id)
             },
             data: {
-                status: "Approved"
+                status: "Approved",
+                approved_at: new Date()
             },
             include: {
                 students: true,
@@ -162,17 +165,167 @@ const approveProposal = async (req, res) => {
             }
         });
 
-        await NotificationService.notifyStudent(
-            proposal.student_id,
-            "Proposal Approved",
-            "Your proposal has been approved by the supervisor."
+
+        // 2. Get all approved supervisors for this student
+        const approvedProposals =
+            await prisma.proposal_requests.findMany({
+
+                where: {
+                    student_id: proposal.student_id,
+                    status: "Approved"
+                },
+
+                orderBy: {
+                    approved_at: "asc"
+                }
+
+            });
+
+
+        // Safety check
+        const firstApproved = approvedProposals[0];
+
+
+        if (!firstApproved) {
+            return res.status(400).json({
+                error: "No approved proposal found"
+            });
+        }
+
+
+
+        // 3. Only earliest approved supervisor gets confirmed
+        if (firstApproved.id === proposal.id) {
+
+
+            // Check existing FYP record
+            const existingRecord =
+                await prisma.student_fyp_records.findFirst({
+
+                    where: {
+                        student_id: firstApproved.student_id
+                    }
+
+                });
+
+
+
+            if (existingRecord) {
+
+
+                await prisma.student_fyp_records.update({
+
+                    where: {
+                        id: existingRecord.id
+                    },
+
+                    data: {
+
+                        supervisor_id:
+                            firstApproved.supervisor_id,
+
+                        tentative_topic:
+                            firstApproved.proposed_topic,
+
+                        supervisor_confirmation_status:
+                            "Confirmed"
+
+                    }
+
+                });
+
+
+            } else {
+
+
+                await prisma.student_fyp_records.create({
+
+                    data: {
+
+                        student_id:
+                            firstApproved.student_id,
+
+                        supervisor_id:
+                            firstApproved.supervisor_id,
+
+                        tentative_topic:
+                            firstApproved.proposed_topic,
+
+                        supervisor_confirmation_status:
+                            "Confirmed"
+
+                    }
+
+                });
+
+            }
+
+
+
+            // 4. Decline all other supervisor requests
+            await prisma.proposal_requests.updateMany({
+
+                where: {
+
+                    student_id: firstApproved.student_id,
+
+                    id: {
+                        not: firstApproved.id
+                    }
+
+                },
+
+                data: {
+
+                    status: "Declined"
+
+                }
+
+            });
+
+
+
+            // 5. Notify student only once when confirmed
+            await NotificationService.notifyStudent(
+
+                firstApproved.student_id,
+
+                "Supervisor Confirmed",
+
+                `Your supervisor ${proposal.supervisors.name} has been confirmed.`
+
+            );
+
+
+        }
+
+
+
+        res.json({
+
+            message: "Proposal approved successfully",
+
+            confirmedSupervisor:
+                firstApproved.supervisor_id
+
+        });
+
+
+
+    } catch (err) {
+
+        console.error(
+            "Approve proposal error:",
+            err
         );
 
-        res.json(formatProposal(proposal));
-    } catch (err) {
+
         res.status(500).json({
-            error: "Failed"
+
+            error: "Failed to approve proposal"
+
         });
+
     }
 };
 
