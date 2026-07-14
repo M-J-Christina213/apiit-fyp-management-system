@@ -73,17 +73,13 @@ const registerExternalSupervisor = async (req, res) => {
 
             // Login account (Inactive)
             await tx.users.create({
-
                 data: {
-
                     name: fullName,
                     email,
                     password: hashedPassword,
-                    role: "supervisor",
+                    role: "external_supervisor",
                     is_active: false
-
                 }
-
             });
 
             // Registration request
@@ -189,6 +185,7 @@ const approveExternalSupervisor = async (req, res) => {
     try {
 
         const { id } = req.params;
+        const pmEmail = req.user?.email || "PM User"; // Fallback if auth middleware doesn't set user
 
         const request =
             await prisma.external_supervisor_requests.findUnique({
@@ -260,18 +257,15 @@ const approveExternalSupervisor = async (req, res) => {
 
             // Update request
             await tx.external_supervisor_requests.update({
-
                 where: {
                     id: Number(id)
                 },
-
                 data: {
-
                     status: "Approved",
-                    rejection_reason: null
-
+                    rejection_reason: null,
+                    approved_at: new Date(),
+                    approved_by: pmEmail
                 }
-
             });
 
         });
