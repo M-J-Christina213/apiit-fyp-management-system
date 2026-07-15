@@ -77,20 +77,22 @@ const ProtectedRoute = ({ allowedRole }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (user.role !== allowedRole) {
-    switch (user.role) {
+  // Normalize user role to lowercase to handle database inconsistencies (e.g., 'Student' vs 'student')
+  const normalizedUserRole = user.role.toLowerCase();
+  
+  // External supervisors use the supervisor dashboard layout
+  const effectiveRole = normalizedUserRole === 'external_supervisor' ? 'supervisor' : normalizedUserRole;
+
+  if (effectiveRole !== allowedRole.toLowerCase()) {
+    switch (effectiveRole) {
       case 'student':
         return <Navigate to="/student/dashboard" replace />;
-
       case 'supervisor':
         return <Navigate to="/supervisor/dashboard" replace />;
-
       case 'pm':
         return <Navigate to="/pm/dashboard" replace />;
-
       case 'admin':
         return <Navigate to="/admin/dashboard" replace />;
-
       default:
         return <Navigate to="/" replace />;
     }
@@ -107,19 +109,17 @@ const LoginRoute = () => {
   const user = getLoggedInUser();
 
   if (user) {
-    switch (user.role) {
+    const effectiveRole = user.role.toLowerCase() === 'external_supervisor' ? 'supervisor' : user.role.toLowerCase();
+    
+    switch (effectiveRole) {
       case 'student':
         return <Navigate to="/student/dashboard" replace />;
-
       case 'supervisor':
         return <Navigate to="/supervisor/dashboard" replace />;
-
       case 'pm':
         return <Navigate to="/pm/dashboard" replace />;
-
       case 'admin':
         return <Navigate to="/admin/dashboard" replace />;
-
       default:
         break;
     }

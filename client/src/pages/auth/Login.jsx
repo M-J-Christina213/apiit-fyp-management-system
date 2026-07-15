@@ -32,7 +32,7 @@ const Login = () => {
       if (message.eventType === EventType.LOGIN_SUCCESS && message.payload) {
         const payload = message.payload;
         const { idToken, accessToken, account } = payload;
-        
+
         setIsLoading(true);
         fetch('http://localhost:5000/api/auth/azure/login', {
           method: 'POST',
@@ -43,21 +43,21 @@ const Login = () => {
             name: account.name
           })
         })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) {
-            setError(data.message || 'Your account is not registered in FYPMS');
+          .then(res => res.json())
+          .then(data => {
+            if (!data.success) {
+              setError(data.message || 'Your account is not registered in FYPMS');
+              setIsLoading(false);
+            } else {
+              localStorage.setItem('fyp_current_user', JSON.stringify(data.user));
+              routeUser(data.user.role);
+            }
+          })
+          .catch(err => {
+            console.error("Backend validation error:", err);
+            setError('Backend validation failed');
             setIsLoading(false);
-          } else {
-            localStorage.setItem('fyp_current_user', JSON.stringify(data.user));
-            routeUser(data.user.role);
-          }
-        })
-        .catch(err => {
-          console.error("Backend validation error:", err);
-          setError('Backend validation failed');
-          setIsLoading(false);
-        });
+          });
       }
 
       if (message.eventType === EventType.LOGIN_FAILURE) {
@@ -74,7 +74,14 @@ const Login = () => {
   }, [instance]);
 
   const routeUser = (role) => {
-    switch (role) {
+    if (!role) {
+      navigate('/');
+      return;
+    }
+    
+    const normalizedRole = role.toLowerCase();
+    
+    switch (normalizedRole) {
       case 'student':
         navigate('/student/dashboard');
         break;
@@ -219,8 +226,8 @@ const Login = () => {
               {showExternalLogin ? "External Supervisor Login" : "University Login"}
             </h2>
             <p className="text-slate-500">
-              {showExternalLogin 
-                ? "Sign in using your registered external email." 
+              {showExternalLogin
+                ? "Sign in using your registered external email."
                 : "Sign in with your registered Microsoft Entra ID."}
             </p>
           </div>

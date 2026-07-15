@@ -135,7 +135,7 @@ const login = async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role,
+                role: user.role.toLowerCase(),
                 cbNo: user.cbNo
 
             }
@@ -207,7 +207,7 @@ const azureLogin = async (req, res) => {
                     id: user.id,
                     name: user.name,
                     email: user.email,
-                    role: user.role,
+                    role: user.role.toLowerCase(),
                     cbNo: user.cbNo
                 }
             });
