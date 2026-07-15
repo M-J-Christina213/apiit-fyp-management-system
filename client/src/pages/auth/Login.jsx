@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMsal } from "@azure/msal-react";
-import { EventType } from "@azure/msal-browser";
-import { loginRequest } from "../../config/msalConfig";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BookOpen,
   Users,
@@ -25,53 +22,44 @@ const Login = () => {
   const [showExternalLogin, setShowExternalLogin] = useState(false);
 
   const navigate = useNavigate();
-  const { instance } = useMsal();
+  const location = useLocation();
 
-  React.useEffect(() => {
-    const callbackId = instance.addEventCallback((message) => {
-      if (message.eventType === EventType.LOGIN_SUCCESS && message.payload) {
-        const payload = message.payload;
-        const { idToken, accessToken, account } = payload;
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errorParam = params.get('error');
+    const codeParam = params.get('code');
 
-        setIsLoading(true);
-        fetch('http://localhost:5000/api/auth/azure/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token: idToken || accessToken,
-            email: account.username,
-            name: account.name
-          })
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (!data.success) {
-              setError(data.message || 'Your account is not registered in FYPMS');
-              setIsLoading(false);
-            } else {
-              localStorage.setItem('fyp_current_user', JSON.stringify(data.user));
-              routeUser(data.user.role);
-            }
-          })
-          .catch(err => {
-            console.error("Backend validation error:", err);
-            setError('Backend validation failed');
-            setIsLoading(false);
-          });
-      }
+    if (errorParam) {
+      setError(errorParam);
+    } else if (codeParam) {
+      // We just returned from Microsoft with an authorization code
+      setIsLoading(true);
+      
+      // Clean up the URL to remove the code so it doesn't execute twice on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
 
-      if (message.eventType === EventType.LOGIN_FAILURE) {
-        setError(message.error?.message || "Azure login failed.");
+      fetch('http://localhost:5000/api/auth/azure/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: codeParam })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          setError(data.message || 'Azure login failed');
+          setIsLoading(false);
+        } else {
+          localStorage.setItem('fyp_current_user', JSON.stringify(data.user));
+          routeUser(data.user.role);
+        }
+      })
+      .catch(err => {
+        console.error("Callback verification error:", err);
+        setError('Unable to verify Azure login');
         setIsLoading(false);
-      }
-    });
-
-    return () => {
-      if (callbackId) {
-        instance.removeEventCallback(callbackId);
-      }
-    };
-  }, [instance]);
+      });
+    }
+  }, [location]);
 
   const routeUser = (role) => {
     if (!role) {
@@ -109,11 +97,7 @@ const Login = () => {
   const handleAzureLogin = () => {
     setIsLoading(true);
     setError('');
-    instance.loginRedirect(loginRequest).catch(error => {
-      console.error("Login error detail:", error);
-      setError(error instanceof Error ? error.message : 'Azure authentication failed');
-      setIsLoading(false);
-    });
+    window.location.href = 'http://localhost:5000/api/auth/azure/login';
   };
 
   const handleSubmit = async (e) => {

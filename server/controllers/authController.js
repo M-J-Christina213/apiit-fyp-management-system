@@ -165,60 +165,74 @@ const login = async (req, res) => {
 
 const azureLogin = async (req, res) => {
     try {
-        const { token, email, name } = req.body;
-        
-        if (!token || !email) {
-            return res.status(400).json({ success: false, message: "Token and email are required" });
-        }
+        const authCodeUrlParameters = {
+            scopes: ["User.Read"],
+            redirectUri: "http://localhost:5173",
+        };
 
-        // Verify token signature and audience
-        jwt.verify(token, getKey, {
-            audience: process.env.AZURE_CLIENT_ID
-        }, async function(err, decoded) {
-            if (err) {
-                console.error("JWT verification failed:", err.message);
-                return res.status(401).json({ success: false, message: "Invalid token" });
-            }
-
-            // Ensure the decoded token's email/upn matches the provided email, or at least we trust the provided email
-            const tokenEmail = decoded.preferred_username || decoded.upn || decoded.email;
-            const lookupEmail = tokenEmail || email;
-
-            // Find user in DB
-            const user = await prisma.users.findUnique({
-                where: { email: lookupEmail }
-            });
-
-            if (!user) {
-                return res.status(403).json({ success: false, message: "Your account is not registered in FYPMS" });
-            }
-
-            if (!user.is_active) {
-                return res.status(403).json({ success: false, message: "Your account has been disabled. Please contact the administrator." });
-            }
-
-            if (user.role === "external_supervisor") {
-                return res.status(403).json({ success: false, message: "External supervisors must use email login" });
-            }
-
-            return res.status(200).json({
-                success: true,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role.toLowerCase(),
-                    cbNo: user.cbNo
-                }
-            });
-        });
+        const response = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
+        res.redirect(response);
     } catch (error) {
         console.error("Azure login error:", error);
-        return res.status(500).json({ success: false, message: "Azure authentication failed" });
+        res.status(500).json({ success: false, message: "Azure authentication failed" });
+    }
+};
+
+const azureCallback = async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ success: false, message: "Authorization code is missing" });
+        }
+
+        const tokenRequest = {
+            code: code,
+            scopes: ["User.Read"],
+            redirectUri: "http://localhost:5173",
+        };
+
+        const response = await msalClient.acquireTokenByCode(tokenRequest);
+        const { account } = response;
+        
+        const email = account.username;
+
+        // Find user in DB
+        const user = await prisma.users.findUnique({
+            where: { email: email }
+        });
+
+        if (!user) {
+            return res.status(403).json({ success: false, message: "Your account is not registered in FYPMS" });
+        }
+
+        if (!user.is_active) {
+            return res.status(403).json({ success: false, message: "Your account has been disabled. Please contact the administrator." });
+        }
+
+        if (user.role === "external_supervisor") {
+            return res.status(403).json({ success: false, message: "External supervisors must use email login" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role.toLowerCase(),
+                cbNo: user.cbNo
+            }
+        });
+
+    } catch (error) {
+        console.error("Azure callback error:", error);
+        return res.status(500).json({ success: false, message: `Azure authentication failed: ${error.message}` });
     }
 };
 
 module.exports = {
     login,
-    azureLogin
+    azureLogin,
+    azureCallback
 };

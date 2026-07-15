@@ -12,7 +12,8 @@ const {
 router.post("/login", login);
 
 
-// Microsoft Entra ID SPA Login
-router.post("/azure/login", azureLogin);
+// Microsoft Entra ID Backend Login Flow
+router.get("/azure/login", azureLogin);
+router.post("/azure/callback", azureCallback);
 
 module.exports = router;

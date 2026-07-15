@@ -8,6 +8,7 @@ import SupervisorDashboard from './pages/supervisor/SupervisorDashboard.jsx';
 import PMDashboard from './pages/pm/PMDashboard.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ExternalSupervisorRegister from './pages/auth/ExternalSupervisorRegister.jsx';
+import AzureCallback from './pages/auth/AzureCallback.jsx';
 
 import { getLoggedInUser } from './utils/auth';
 
@@ -139,6 +140,7 @@ function App() {
 
         {/* Login */}
         <Route path="/" element={<LoginRoute />} />
+        <Route path="/azure-callback" element={<AzureCallback />} />
 
         <Route
           path="/external-supervisor/register"
