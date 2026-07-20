@@ -161,12 +161,14 @@ model external_supervisor_requests {
 }
 
 model viva_periods {
-  id         Int       @id @default(autoincrement())
-  type       String    @db.VarChar(50)
-  start_date DateTime  @db.Date
-  end_date   DateTime  @db.Date
-  status     String    @default("Draft") @db.VarChar(30)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+  id                 Int       @id @default(autoincrement())
+  type               String    @db.VarChar(50)
+  availability_start DateTime  @db.Date
+  availability_end   DateTime  @db.Date
+  viva_start         DateTime  @db.Date
+  viva_end           DateTime  @db.Date
+  status             String    @default("Draft") @db.VarChar(30)
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
   
   viva_schedules viva_schedules[]
 }

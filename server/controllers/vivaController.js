@@ -1,9 +1,9 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const vivaSchedulingService = require("../services/vivaSchedulingService");
+const schedulingService = require("../services/schedulingService");
 
-// Admin: Get all periods
-exports.getVivaPeriods = async (req, res) => {
+// Admin: Get all active stages
+exports.getVivaStages = async (req, res) => {
     try {
         const periods = await prisma.viva_periods.findMany({
             orderBy: { created_at: 'desc' }
@@ -16,14 +16,16 @@ exports.getVivaPeriods = async (req, res) => {
 
 // Admin: Create Viva Period
 exports.createVivaPeriod = async (req, res) => {
-    const { type, start_date, end_date } = req.body;
+    const { type, availability_start, availability_end, viva_start, viva_end } = req.body;
     try {
         const period = await prisma.viva_periods.create({
             data: {
                 type,
-                start_date: new Date(start_date),
-                end_date: new Date(end_date),
-                status: "Availability Collection"
+                availability_start: new Date(availability_start),
+                availability_end: new Date(availability_end),
+                viva_start: new Date(viva_start),
+                viva_end: new Date(viva_end),
+                status: "Active"
             }
         });
         res.status(201).json(period);
@@ -31,6 +33,23 @@ exports.createVivaPeriod = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Admin: Dashboard Stats
+exports.getDashboardStats = async (req, res) => {
+    try {
+        const activePeriods = await prisma.viva_periods.count({ where: { status: "Active" } });
+        const totalSchedules = await prisma.viva_schedules.count();
+        const totalAvailabilities = await prisma.viva_availabilities.count();
+        
+        res.status(200).json({
+            activePeriods,
+            totalSchedules,
+            totalAvailabilities
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 
 // Users: Submit Availability
 exports.submitAvailability = async (req, res) => {
@@ -42,8 +61,8 @@ exports.submitAvailability = async (req, res) => {
                 assessor_id,
                 student_id,
                 date: new Date(date),
-                start_time: new Date(`${date}T${start_time}Z`), // Simple format for now
-                end_time: new Date(`${date}T${end_time}Z`),
+                start_time: new Date(`${date}T${start_time}:00Z`),
+                end_time: new Date(`${date}T${end_time}:00Z`),
             }
         });
         res.status(201).json(avail);
@@ -52,11 +71,29 @@ exports.submitAvailability = async (req, res) => {
     }
 };
 
+// Users: Get Availability
+exports.getAvailability = async (req, res) => {
+    const { supervisor_id, assessor_id, student_id } = req.query;
+    try {
+        const query = {};
+        if (supervisor_id) query.supervisor_id = parseInt(supervisor_id);
+        if (assessor_id) query.assessor_id = parseInt(assessor_id);
+        if (student_id) query.student_id = parseInt(student_id);
+
+        const avail = await prisma.viva_availabilities.findMany({
+            where: query
+        });
+        res.status(200).json(avail);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Admin: Trigger Auto Scheduling
 exports.triggerAutoScheduling = async (req, res) => {
-    const { periodId } = req.params;
+    const { periodId } = req.body;
     try {
-        const schedules = await vivaSchedulingService.generateSchedules(periodId);
+        const schedules = await schedulingService.generateSchedules(periodId);
         res.status(200).json({ message: "Scheduling complete", schedules });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -77,21 +114,6 @@ exports.getSchedules = async (req, res) => {
             }
         });
         res.status(200).json(schedules);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Admin: Update Schedule (Confirm Venue)
-exports.updateSchedule = async (req, res) => {
-    const { id } = req.params;
-    const { venue, mode, status } = req.body;
-    try {
-        const schedule = await prisma.viva_schedules.update({
-            where: { id: parseInt(id) },
-            data: { venue, mode, status }
-        });
-        res.status(200).json(schedule);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

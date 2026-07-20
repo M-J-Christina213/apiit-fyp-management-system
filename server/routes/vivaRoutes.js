@@ -2,16 +2,23 @@ const express = require("express");
 const router = express.Router();
 const vivaController = require("../controllers/vivaController");
 
-// Admin: Periods
-router.get("/periods", vivaController.getVivaPeriods);
-router.post("/periods", vivaController.createVivaPeriod);
-router.post("/periods/:periodId/schedule", vivaController.triggerAutoScheduling);
+// Admin: Periods & Dashboard
+router.post("/create", vivaController.createVivaPeriod);
+router.get("/stages", vivaController.getVivaStages);
+router.get("/dashboard", vivaController.getDashboardStats);
+router.post("/generate", vivaController.triggerAutoScheduling);
 
-// All: Availability
-router.post("/availability", vivaController.submitAvailability);
+// Availability
+router.post("/supervisor/availability", vivaController.submitAvailability);
+router.get("/supervisor/availability", vivaController.getAvailability);
 
-// All: Schedules
+router.post("/assessor/availability", vivaController.submitAvailability);
+router.get("/assessor/availability", vivaController.getAvailability);
+
+router.post("/student/availability", vivaController.submitAvailability);
+router.get("/student/availability", vivaController.getAvailability);
+
+// Schedules
 router.get("/schedules", vivaController.getSchedules);
-router.put("/schedules/:id", vivaController.updateSchedule);
 
 module.exports = router;

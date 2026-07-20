@@ -6,8 +6,8 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   CalendarCheck,
-  ChevronRight,
-  Play
+  Play,
+  Plus
 } from 'lucide-react';
 import {
   PieChart,
@@ -20,24 +20,82 @@ import {
 
 const VivaAdminDashboard = () => {
   const [stats, setStats] = useState({
-    totalStudents: 120,
-    scheduledVivas: 110,
-    pendingAvailability: 10,
-    unscheduledStudents: 10,
-    conflicts: 2,
-    completedVivas: 80
+    activePeriods: 0,
+    totalSchedules: 0,
+    totalAvailabilities: 0
   });
 
-  const timelineData = [
-    { stage: 'Proposal Viva', status: 'Completed', color: 'bg-green-500' },
-    { stage: 'Midpoint Viva', status: 'Scheduling', color: 'bg-blue-500' },
-    { stage: 'Final Viva', status: 'Draft', color: 'bg-gray-300' }
-  ];
+  const [stages, setStages] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formData, setFormData] = useState({
+    type: 'Proposal Viva',
+    availability_start: '',
+    availability_end: '',
+    viva_start: '',
+    viva_end: ''
+  });
 
-  const progressData = [
-    { name: 'Scheduled', value: 110, color: '#3b82f6' },
-    { name: 'Pending', value: 10, color: '#f59e0b' }
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      const statsRes = await fetch('/api/viva/dashboard');
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      const stagesRes = await fetch('/api/viva/stages');
+      if (stagesRes.ok) {
+        const stagesData = await stagesRes.json();
+        setStages(stagesData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const handleCreatePeriod = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/viva/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        alert("Viva period created successfully!");
+        setShowCreateForm(false);
+        fetchDashboardData();
+      } else {
+        alert("Failed to create period");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error creating period");
+    }
+  };
+
+  const handleTriggerScheduling = async (periodId) => {
+    try {
+      const res = await fetch('/api/viva/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periodId })
+      });
+      if (res.ok) {
+        alert("Scheduling triggered successfully!");
+        fetchDashboardData();
+      } else {
+        alert("Scheduling failed");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error triggering schedule");
+    }
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen font-sans">
@@ -48,96 +106,82 @@ const VivaAdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Viva Scheduling Management</h1>
           <p className="text-gray-500 mt-1">Manage and automate university viva schedules</p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2">
-          <Play size={18} />
-          Trigger Auto Scheduling
-        </button>
+        <div className="flex gap-4">
+            <button 
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2">
+                <Plus size={18} />
+                Create Viva Period
+            </button>
+        </div>
       </div>
+
+      {showCreateForm && (
+        <form onSubmit={handleCreatePeriod} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+                <h3 className="text-lg font-semibold mb-4">Create New Viva Period</h3>
+            </div>
+            <div>
+                <label className="block text-sm mb-1 text-gray-600">Stage</label>
+                <select className="w-full border p-2 rounded" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                    <option>Proposal Viva</option>
+                    <option>Midpoint Viva</option>
+                    <option>Final Viva</option>
+                </select>
+            </div>
+            <div></div>
+            <div>
+                <label className="block text-sm mb-1 text-gray-600">Availability Start</label>
+                <input type="date" required className="w-full border p-2 rounded" value={formData.availability_start} onChange={e => setFormData({...formData, availability_start: e.target.value})} />
+            </div>
+            <div>
+                <label className="block text-sm mb-1 text-gray-600">Availability End</label>
+                <input type="date" required className="w-full border p-2 rounded" value={formData.availability_end} onChange={e => setFormData({...formData, availability_end: e.target.value})} />
+            </div>
+            <div>
+                <label className="block text-sm mb-1 text-gray-600">Viva Start</label>
+                <input type="date" required className="w-full border p-2 rounded" value={formData.viva_start} onChange={e => setFormData({...formData, viva_start: e.target.value})} />
+            </div>
+            <div>
+                <label className="block text-sm mb-1 text-gray-600">Viva End</label>
+                <input type="date" required className="w-full border p-2 rounded" value={formData.viva_end} onChange={e => setFormData({...formData, viva_end: e.target.value})} />
+            </div>
+            <div className="col-span-2">
+                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Create Period</button>
+            </div>
+        </form>
+      )}
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard icon={<Users />} title="Total Students" value={stats.totalStudents} color="text-blue-600" bg="bg-blue-100" />
-        <StatCard icon={<CalendarCheck />} title="Scheduled Vivas" value={stats.scheduledVivas} color="text-green-600" bg="bg-green-100" />
-        <StatCard icon={<Clock />} title="Pending Availability" value={stats.pendingAvailability} color="text-amber-600" bg="bg-amber-100" />
-        <StatCard icon={<CalendarDays />} title="Unscheduled Students" value={stats.unscheduledStudents} color="text-purple-600" bg="bg-purple-100" />
-        <StatCard icon={<AlertTriangle />} title="Detected Conflicts" value={stats.conflicts} color="text-red-600" bg="bg-red-100" alert />
-        <StatCard icon={<CheckCircle2 />} title="Completed Vivas" value={stats.completedVivas} color="text-teal-600" bg="bg-teal-100" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard icon={<CalendarCheck />} title="Active Periods" value={stats.activePeriods} color="text-green-600" bg="bg-green-100" />
+        <StatCard icon={<Users />} title="Total Availabilities Submitted" value={stats.totalAvailabilities} color="text-blue-600" bg="bg-blue-100" />
+        <StatCard icon={<Clock />} title="Total Generated Schedules" value={stats.totalSchedules} color="text-amber-600" bg="bg-amber-100" />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Timeline */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Viva Timeline</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Active Viva Periods</h2>
           <div className="space-y-6">
-            {timelineData.map((item, index) => (
-              <div key={index} className="flex items-center">
-                <div className={`w-3 h-3 rounded-full ${item.color} mr-4`}></div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-800">{item.stage}</h3>
+            {stages.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-4 border rounded-xl">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">{item.type}</h3>
+                  <p className="text-sm text-gray-500">
+                      Viva: {new Date(item.viva_start).toLocaleDateString()} to {new Date(item.viva_end).toLocaleDateString()}
+                  </p>
                 </div>
-                <div className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-                  {item.status}
+                <div className="flex gap-4 items-center">
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+                        {item.status}
+                    </span>
+                    <button onClick={() => handleTriggerScheduling(item.id)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm rounded-lg flex items-center gap-2">
+                        <Play size={14} /> Schedule
+                    </button>
                 </div>
               </div>
             ))}
+            {stages.length === 0 && <p className="text-gray-500">No active periods.</p>}
           </div>
-          
-          {/* Detailed Stages Stepper (Microsoft 365 Style) */}
-          <div className="mt-10 border-t pt-8">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Current Stage: Midpoint Viva</h3>
-            <div className="flex justify-between items-center relative">
-              <div className="absolute left-0 top-1/2 w-full h-0.5 bg-gray-200 -z-10 transform -translate-y-1/2"></div>
-              
-              <Step label="Draft" completed />
-              <Step label="Availability" completed />
-              <Step label="Auto Scheduling" active />
-              <Step label="Confirmed" />
-              <Step label="Completed" />
-            </div>
-          </div>
-        </div>
-
-        {/* Scheduling Progress */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Scheduling Progress</h2>
-          <p className="text-gray-500 text-sm mb-6">Current period: Midpoint Viva</p>
-          
-          <div className="flex-1 flex items-center justify-center min-h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={progressData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {progressData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36}/>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="mt-4 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Students</span>
-              <span className="font-semibold text-gray-900">120</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Availability Submitted</span>
-              <span className="font-semibold text-gray-900">115</span>
-            </div>
-          </div>
-        </div>
-        
       </div>
     </div>
   );
@@ -153,23 +197,6 @@ const StatCard = ({ icon, title, value, color, bg, alert }) => (
       <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
       <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
     </div>
-  </div>
-);
-
-const Step = ({ label, completed, active }) => (
-  <div className="flex flex-col items-center bg-white px-2">
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 transition-all duration-300
-      ${completed ? 'bg-blue-600 border-blue-600 text-white' : 
-        active ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-100' : 
-        'bg-white border-gray-300 text-gray-400'}
-    `}>
-      {completed ? <CheckCircle2 size={16} /> : <span className="text-xs"></span>}
-    </div>
-    <span className={`mt-3 text-xs font-medium text-center max-w-[80px]
-      ${completed || active ? 'text-gray-900' : 'text-gray-400'}
-    `}>
-      {label}
-    </span>
   </div>
 );
 
