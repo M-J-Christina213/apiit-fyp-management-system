@@ -7,8 +7,15 @@ import StudentDashboard from './pages/student/StudentDashboard.jsx';
 import SupervisorDashboard from './pages/supervisor/SupervisorDashboard.jsx';
 import PMDashboard from './pages/pm/PMDashboard.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AssessorDashboard from './pages/assessor/AssessorDashboard.jsx';
 import ExternalSupervisorRegister from './pages/auth/ExternalSupervisorRegister.jsx';
 import AzureCallback from './pages/auth/AzureCallback.jsx';
+
+import VivaAdminDashboard from './pages/viva/admin/VivaAdminDashboard.jsx';
+import SupervisorVivaDashboard from './pages/viva/supervisor/SupervisorVivaDashboard.jsx';
+import AssessorVivaDashboard from './pages/viva/assessor/AssessorVivaDashboard.jsx';
+import StudentVivaDashboard from './pages/viva/student/StudentVivaDashboard.jsx';
+import PMVivaDashboard from './pages/viva/pm/PMVivaDashboard.jsx';
 
 import { getLoggedInUser } from './utils/auth';
 
@@ -21,7 +28,8 @@ import {
   Layers,
   UserCheck,
   Shield,
-  FileCheck
+  FileCheck,
+  CalendarDays
 } from 'lucide-react';
 
 /* ===========================
@@ -34,6 +42,7 @@ const studentLinks = [
   { path: '/student/proposal', label: 'Proposal Submission', icon: FileText },
   { path: '/student/templates', label: 'Templates', icon: Layers },
   { path: '/student/logsheets', label: 'Logsheets', icon: FileText },
+  { path: '/student/viva', label: 'Viva Schedule', icon: CalendarDays },
   { path: '/student/notifications', label: 'Notifications', icon: Bell },
 ];
 
@@ -42,8 +51,15 @@ const supervisorLinks = [
   { path: '/supervisor/requests', label: 'Proposal Requests', icon: FileText },
   { path: '/supervisor/students', label: 'My Students', icon: Users },
   { path: '/supervisor/logsheets', label: 'Logsheets', icon: FileText },
+  { path: '/supervisor/viva', label: 'Viva Schedule', icon: CalendarDays },
   { path: '/supervisor/profile', label: 'Profile', icon: Settings },
   { path: '/supervisor/notifications', label: 'Notifications', icon: Bell },
+];
+
+const assessorLinks = [
+  { path: '/assessor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/assessor/viva', label: 'Viva Schedule', icon: CalendarDays },
+  { path: '/assessor/notifications', label: 'Notifications', icon: Bell },
 ];
 
 const pmLinks = [
@@ -55,6 +71,7 @@ const pmLinks = [
   { path: '/pm/assessors', label: 'Assessor Allocation', icon: FileCheck },
   { path: '/pm/templates', label: 'Templates', icon: Layers },
   { path: '/pm/reports', label: 'Reports', icon: FileText },
+  { path: '/pm/viva', label: 'Viva Schedules', icon: CalendarDays },
 ];
 
 const adminLinks = [
@@ -62,6 +79,7 @@ const adminLinks = [
   { path: '/admin/users', label: 'Users', icon: Users },
   { path: '/admin/external-supervisor-requests', label: 'External Supervisor Requests', icon: UserCheck },
   { path: '/admin/roles', label: 'Roles', icon: Shield },
+  { path: '/admin/viva', label: 'Viva Management', icon: CalendarDays },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -90,6 +108,8 @@ const ProtectedRoute = ({ allowedRole }) => {
         return <Navigate to="/student/dashboard" replace />;
       case 'supervisor':
         return <Navigate to="/supervisor/dashboard" replace />;
+      case 'assessor':
+        return <Navigate to="/assessor/dashboard" replace />;
       case 'pm':
         return <Navigate to="/pm/dashboard" replace />;
       case 'admin':
@@ -117,6 +137,8 @@ const LoginRoute = () => {
         return <Navigate to="/student/dashboard" replace />;
       case 'supervisor':
         return <Navigate to="/supervisor/dashboard" replace />;
+      case 'assessor':
+        return <Navigate to="/assessor/dashboard" replace />;
       case 'pm':
         return <Navigate to="/pm/dashboard" replace />;
       case 'admin':
@@ -163,6 +185,7 @@ function App() {
             <Route path="/student/proposal/new" element={<StudentDashboard />} />
             <Route path="/student/templates" element={<StudentDashboard />} />
             <Route path="/student/logsheets" element={<StudentDashboard />} />
+            <Route path="/student/viva" element={<StudentVivaDashboard />} />
             <Route path="/student/notifications" element={<StudentDashboard />} />
             <Route path="/student/*" element={<Navigate to="/student/dashboard" replace />} />
           </Route>
@@ -182,9 +205,26 @@ function App() {
             <Route path="/supervisor/requests" element={<SupervisorDashboard />} />
             <Route path="/supervisor/students" element={<SupervisorDashboard />} />
             <Route path="/supervisor/logsheets" element={<SupervisorDashboard />} />
+            <Route path="/supervisor/viva" element={<SupervisorVivaDashboard />} />
             <Route path="/supervisor/profile" element={<SupervisorDashboard />} />
             <Route path="/supervisor/notifications" element={<SupervisorDashboard />} />
             <Route path="/supervisor/*" element={<Navigate to="/supervisor/dashboard" replace />} />
+          </Route>
+        </Route>
+
+        {/* Assessor */}
+        <Route element={<ProtectedRoute allowedRole="assessor" />}>
+          <Route
+            element={
+              <DashboardLayout
+                links={assessorLinks}
+                title="Assessor Portal"
+              />
+            }
+          >
+            <Route path="/assessor/dashboard" element={<AssessorDashboard />} />
+            <Route path="/assessor/viva" element={<AssessorVivaDashboard />} />
+            <Route path="/assessor/*" element={<Navigate to="/assessor/dashboard" replace />} />
           </Route>
         </Route>
 
@@ -206,6 +246,7 @@ function App() {
             <Route path="/pm/assessors" element={<PMDashboard />} />
             <Route path="/pm/templates" element={<PMDashboard />} />
             <Route path="/pm/reports" element={<PMDashboard />} />
+            <Route path="/pm/viva" element={<PMVivaDashboard />} />
             <Route path="/pm/*" element={<Navigate to="/pm/dashboard" replace />} />
           </Route>
         </Route>
@@ -228,6 +269,7 @@ function App() {
               path="/admin/external-supervisor-requests"
               element={<AdminDashboard />}
             />
+            <Route path="/admin/viva" element={<VivaAdminDashboard />} />
             <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>

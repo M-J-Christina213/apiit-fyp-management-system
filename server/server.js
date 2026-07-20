@@ -16,6 +16,7 @@ const logsheetRoutes = require("./routes/logsheetRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const externalSupervisorRoutes = require("./routes/externalSupervisors");
 const adminRoutes = require("./routes/adminRoutes");
+const vivaRoutes = require("./routes/vivaRoutes");
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use(
     "/api/admin",
     adminRoutes
 );
+app.use("/api/viva", vivaRoutes);
 
 const PORT = 5000;
 
