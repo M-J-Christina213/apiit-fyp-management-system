@@ -35,7 +35,10 @@ async function generateSchedules(vivaPeriodId) {
 
         const createdSchedules = [];
 
-        // 2. Iterate and match (Simplified scheduling algorithm)
+        // Keep track of locally assigned slots during this run to prevent double-booking
+        const localAssignedSlots = new Set();
+
+        // 2. Iterate and match (Prioritize Earliest Slot)
         for (const student of students) {
             // Check if already scheduled
             const existingSchedule = await prisma.viva_schedules.findFirst({
@@ -50,40 +53,88 @@ async function generateSchedules(vivaPeriodId) {
             const assessor = fypRecord.assessors;
 
             if (!supervisor) continue; // Supervisor required
+            
+            const studentAvails = student.viva_availabilities || [];
+            
+            if (studentAvails.length === 0) continue; // Student must submit availability
 
             // Find common overlapping slots
             let assignedSlot = null;
 
-            // Simple intersection logic for demonstration
-            // Supervisor's availability is highest priority
-            for (const supAvail of supervisor.viva_availabilities) {
-                // If assessor exists, check if they overlap
+            // Sort supervisor availabilities by date and time (earliest first)
+            const sortedSupAvails = [...supervisor.viva_availabilities].sort((a, b) => {
+                if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
+                return a.start_time.getTime() - b.start_time.getTime();
+            });
+
+            for (const supAvail of sortedSupAvails) {
+                const slotKey = `${supAvail.date.toISOString()}_${supAvail.start_time.toISOString()}_${supAvail.end_time.toISOString()}`;
+                
+                // Check if this supervisor is already locally booked in this run
+                if (localAssignedSlots.has(`sup_${supervisor.id}_${slotKey}`)) continue;
+                
+                // Check assessor overlap and double-booking
                 let assessorOverlap = true;
-                if (assessor && assessor.viva_availabilities.length > 0) {
-                    assessorOverlap = assessor.viva_availabilities.some(a => 
-                        a.date.getTime() === supAvail.date.getTime() &&
-                        a.start_time.getTime() <= supAvail.start_time.getTime() &&
-                        a.end_time.getTime() >= supAvail.end_time.getTime()
-                    );
+                if (assessor) {
+                    if (assessor.viva_availabilities.length === 0) continue; // Assessor must submit if assigned
+                    
+                    if (localAssignedSlots.has(`assessor_${assessor.id}_${slotKey}`)) {
+                        assessorOverlap = false;
+                    } else {
+                        assessorOverlap = assessor.viva_availabilities.some(a => 
+                            a.date.getTime() === supAvail.date.getTime() &&
+                            a.start_time.getTime() <= supAvail.start_time.getTime() &&
+                            a.end_time.getTime() >= supAvail.end_time.getTime()
+                        );
+                    }
                 }
 
-                if (assessorOverlap) {
+                if (!assessorOverlap) continue;
+
+                // Check student overlap
+                const studentOverlap = studentAvails.some(a => 
+                    a.date.getTime() === supAvail.date.getTime() &&
+                    a.start_time.getTime() <= supAvail.start_time.getTime() &&
+                    a.end_time.getTime() >= supAvail.end_time.getTime()
+                );
+
+                if (studentOverlap) {
+                    // Check DB for existing schedules to prevent double booking globally
+                    const globalConflict = await prisma.viva_schedules.findFirst({
+                        where: {
+                            viva_period_id: period.id,
+                            date: supAvail.date,
+                            start_time: supAvail.start_time,
+                            end_time: supAvail.end_time,
+                            OR: [
+                                { supervisor_id: supervisor.id },
+                                { assessor_id: assessor ? assessor.id : undefined }
+                            ]
+                        }
+                    });
+
+                    if (globalConflict) continue;
+
                     // 3. Outlook Calendar Conflict Validation
                     const isSupFree = await graphService.checkCalendarAvailability(supervisor.email, supAvail.date, supAvail.start_time, supAvail.end_time);
                     let isAssessorFree = true;
                     if (assessor) {
                         isAssessorFree = await graphService.checkCalendarAvailability(assessor.email, supAvail.date, supAvail.start_time, supAvail.end_time);
                     }
+                    
+                    let isStudentFree = await graphService.checkCalendarAvailability(student.email, supAvail.date, supAvail.start_time, supAvail.end_time);
 
-                    if (isSupFree && isAssessorFree) {
+                    if (isSupFree && isAssessorFree && isStudentFree) {
                         assignedSlot = supAvail;
+                        localAssignedSlots.add(`sup_${supervisor.id}_${slotKey}`);
+                        if (assessor) localAssignedSlots.add(`assessor_${assessor.id}_${slotKey}`);
                         break;
                     }
                 }
             }
 
             if (assignedSlot) {
-                // 4. Create the event on MS Graph
+                // 4. Create the event on MS Graph (tentative online)
                 const eventDetails = {
                     title: `${period.type} - ${student.cb_no} - ${student.student_name}`,
                     date: assignedSlot.date,
@@ -110,11 +161,14 @@ async function generateSchedules(vivaPeriodId) {
                         venue: "Online",
                         teams_link: teamsLink,
                         outlook_event_id: eventId,
-                        status: "Scheduled"
+                        status: "Pending Admin Confirmation"
                     }
                 });
 
                 createdSchedules.push(newSchedule);
+            } else {
+                // Log that no common availability exists for this student
+                console.warn(`No common availability for student ${student.cb_no} (${student.id})`);
             }
         }
 

@@ -30,15 +30,48 @@ async function getAccessToken() {
  * In a real scenario, this would call `GET /users/{email}/calendar/schedule`
  */
 async function checkCalendarAvailability(userEmail, date, startTime, endTime) {
+    if (!userEmail) return true; // Default to free if no email
+
     try {
-        // const token = await getAccessToken();
-        // Call MS Graph API: https://graph.microsoft.com/v1.0/users/${userEmail}/calendar/getSchedule
+        const token = await getAccessToken();
+        const startDateTime = new Date(startTime).toISOString();
+        const endDateTime = new Date(endTime).toISOString();
+
+        const response = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/calendar/getSchedule`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'outlook.timezone="UTC"'
+            },
+            body: JSON.stringify({
+                schedules: [userEmail],
+                startTime: {
+                    dateTime: startDateTime,
+                    timeZone: "UTC"
+                },
+                endTime: {
+                    dateTime: endDateTime,
+                    timeZone: "UTC"
+                },
+                availabilityViewInterval: 60
+            })
+        });
+
+        if (!response.ok) {
+            console.warn(`Graph API error checking schedule for ${userEmail}: ${response.statusText}`);
+            return true; // Assume free on error to prevent blocking scheduling
+        }
+
+        const data = await response.json();
         
-        // MOCK LOGIC for development:
-        console.log(`Checking MS Graph availability for ${userEmail} on ${date} between ${startTime} and ${endTime}`);
-        
-        if (userEmail && userEmail.includes("busy")) {
-            return false; // Slot is occupied
+        // If the schedule exists and has items, check for conflicts
+        if (data && data.value && data.value.length > 0) {
+            const schedule = data.value[0];
+            if (schedule.scheduleItems && schedule.scheduleItems.length > 0) {
+                // If there are schedule items overlapping, they are busy
+                return false; 
+            }
         }
         
         return true; // Slot is free
@@ -54,20 +87,56 @@ async function checkCalendarAvailability(userEmail, date, startTime, endTime) {
 async function createCalendarEvent(eventDetails) {
     const { title, date, startTime, endTime, participants, isOnline, venue } = eventDetails;
     try {
-        // const token = await getAccessToken();
-        // Call MS Graph API: POST https://graph.microsoft.com/v1.0/users/{adminEmail}/calendar/events
-        
-        console.log(`Creating MS Graph Calendar Event: ${title}`);
-        
-        let teamsLink = null;
-        if (isOnline || venue === "Hybrid" || venue === "Online") {
-            // In MS Graph, setting isOnlineMeeting to true generates a Teams link.
-            teamsLink = `https://teams.microsoft.com/l/meetup-join/mock-meeting-${Date.now()}`;
+        const token = await getAccessToken();
+        const adminEmail = process.env.ADMIN_EMAIL;
+
+        if (!adminEmail) {
+            console.warn("ADMIN_EMAIL is not set. MS Graph Event creation will be skipped.");
+            return {
+                eventId: `mock-event-${Date.now()}`,
+                teamsLink: isOnline ? `https://teams.microsoft.com/l/meetup-join/mock-${Date.now()}` : null
+            };
         }
 
+        const attendees = participants.filter(Boolean).map(email => ({
+            emailAddress: { address: email },
+            type: "required"
+        }));
+
+        const event = {
+            subject: title,
+            start: { dateTime: new Date(startTime).toISOString(), timeZone: "UTC" },
+            end: { dateTime: new Date(endTime).toISOString(), timeZone: "UTC" },
+            attendees: attendees,
+            location: { displayName: venue || "TBD" }
+        };
+
+        if (isOnline || venue === "Hybrid" || venue === "Online") {
+            event.isOnlineMeeting = true;
+            event.onlineMeetingProvider = "teamsForBusiness";
+        }
+
+        console.log(`Creating MS Graph Calendar Event: ${title} via ${adminEmail}`);
+
+        const response = await fetch(`https://graph.microsoft.com/v1.0/users/${adminEmail}/events`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(event)
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`Failed to create event: ${response.statusText} - ${errorBody}`);
+        }
+
+        const data = await response.json();
+
         return {
-            eventId: `ms-graph-event-${Date.now()}`,
-            teamsLink: teamsLink
+            eventId: data.id,
+            teamsLink: data.onlineMeeting?.joinUrl || null
         };
     } catch (error) {
         console.error("Error creating calendar event:", error);
@@ -75,8 +144,27 @@ async function createCalendarEvent(eventDetails) {
     }
 }
 
+async function testConnection() {
+    try {
+        const token = await getAccessToken();
+        if (!token) return { status: 'error', message: 'Failed to acquire access token' };
+        
+        return { 
+            status: 'success', 
+            message: 'Successfully acquired Microsoft Graph App-Only token',
+            adminEmailConfigured: !!process.env.ADMIN_EMAIL
+        };
+    } catch (error) {
+        return { 
+            status: 'error', 
+            message: error.message || 'Error connecting to Microsoft Graph'
+        };
+    }
+}
+
 module.exports = {
     getAccessToken,
     checkCalendarAvailability,
-    createCalendarEvent
+    createCalendarEvent,
+    testConnection
 };

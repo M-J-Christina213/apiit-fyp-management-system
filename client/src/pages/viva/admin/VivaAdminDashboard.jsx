@@ -25,7 +25,10 @@ const VivaAdminDashboard = () => {
     totalAvailabilities: 0
   });
 
+  const [integrationStatus, setIntegrationStatus] = useState(null);
   const [stages, setStages] = useState([]);
+  const [expandedPeriodId, setExpandedPeriodId] = useState(null);
+  const [periodSchedules, setPeriodSchedules] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
     type: 'Proposal Viva',
@@ -43,10 +46,18 @@ const VivaAdminDashboard = () => {
         setStats(statsData);
       }
 
-      const stagesRes = await fetch('/api/viva/stages');
+      const stagesRes = await fetch('/api/viva/periods');
       if (stagesRes.ok) {
         const stagesData = await stagesRes.json();
         setStages(stagesData);
+      }
+      
+      const integrationRes = await fetch('/api/viva/integration-status');
+      if (integrationRes.ok) {
+          const integrationData = await integrationRes.json();
+          setIntegrationStatus(integrationData);
+      } else {
+          setIntegrationStatus({ status: 'error', message: 'Failed to fetch status' });
       }
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
@@ -80,14 +91,14 @@ const VivaAdminDashboard = () => {
 
   const handleTriggerScheduling = async (periodId) => {
     try {
-      const res = await fetch('/api/viva/generate', {
+      const res = await fetch(`/api/viva/periods/${periodId}/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ periodId })
+        headers: { 'Content-Type': 'application/json' }
       });
       if (res.ok) {
         alert("Scheduling triggered successfully!");
         fetchDashboardData();
+        if (expandedPeriodId === periodId) handleViewSchedules(periodId);
       } else {
         alert("Scheduling failed");
       }
@@ -95,6 +106,23 @@ const VivaAdminDashboard = () => {
       console.error(error);
       alert("Error triggering schedule");
     }
+  };
+
+  const handleViewSchedules = async (periodId) => {
+      if (expandedPeriodId === periodId) {
+          setExpandedPeriodId(null);
+          return;
+      }
+      try {
+          const res = await fetch(`/api/viva/periods/${periodId}/schedules`);
+          if (res.ok) {
+              const data = await res.json();
+              setPeriodSchedules(data);
+              setExpandedPeriodId(periodId);
+          }
+      } catch (error) {
+          console.error("Failed to load schedules", error);
+      }
   };
 
   return (
@@ -114,6 +142,38 @@ const VivaAdminDashboard = () => {
                 Create Viva Period
             </button>
         </div>
+      </div>
+
+      {/* Integration Status Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
+          <div>
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <CalendarDays size={20} className="text-blue-600" />
+                  Microsoft Graph Integration Status
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                  {integrationStatus ? integrationStatus.message : "Checking status..."}
+                  {!integrationStatus?.adminEmailConfigured && integrationStatus?.status === 'success' && (
+                      <span className="text-amber-600 font-medium ml-2">⚠️ ADMIN_EMAIL missing in .env</span>
+                  )}
+              </p>
+          </div>
+          <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-600">Status:</span>
+              {integrationStatus?.status === 'success' && integrationStatus?.adminEmailConfigured ? (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 flex items-center gap-1">
+                      <CheckCircle2 size={16} /> Active & Connected
+                  </span>
+              ) : integrationStatus?.status === 'success' ? (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700 flex items-center gap-1">
+                      <AlertTriangle size={16} /> Partially Connected
+                  </span>
+              ) : (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700 flex items-center gap-1">
+                      <AlertTriangle size={16} /> Disconnected
+                  </span>
+              )}
+          </div>
       </div>
 
       {showCreateForm && (
@@ -163,7 +223,8 @@ const VivaAdminDashboard = () => {
           <h2 className="text-xl font-bold text-gray-900 mb-6">Active Viva Periods</h2>
           <div className="space-y-6">
             {stages.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-xl">
+              <React.Fragment key={index}>
+              <div className="flex items-center justify-between p-4 border rounded-xl">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">{item.type}</h3>
                   <p className="text-sm text-gray-500">
@@ -174,11 +235,64 @@ const VivaAdminDashboard = () => {
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
                         {item.status}
                     </span>
+                    <button onClick={() => handleViewSchedules(item.id)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 text-sm rounded-lg font-medium transition-colors">
+                        {expandedPeriodId === item.id ? 'Hide Schedules' : 'View Schedules'}
+                    </button>
                     <button onClick={() => handleTriggerScheduling(item.id)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm rounded-lg flex items-center gap-2">
-                        <Play size={14} /> Schedule
+                        <Play size={14} /> Auto-Schedule
                     </button>
                 </div>
               </div>
+              
+              {expandedPeriodId === item.id && (
+                  <div className="p-4 bg-gray-50 border-t rounded-b-xl overflow-x-auto">
+                      <h4 className="font-semibold text-gray-700 mb-4">Generated Schedules</h4>
+                      {periodSchedules.length === 0 ? (
+                          <p className="text-gray-500 text-sm">No schedules generated yet.</p>
+                      ) : (
+                          <table className="w-full text-left text-sm">
+                              <thead className="bg-gray-100 text-gray-600">
+                                  <tr>
+                                      <th className="p-3 rounded-tl-lg">Student</th>
+                                      <th className="p-3">Date & Time</th>
+                                      <th className="p-3">Mode</th>
+                                      <th className="p-3">Outlook Event ID</th>
+                                      <th className="p-3 rounded-tr-lg">Teams Link</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  {periodSchedules.map((sch, i) => (
+                                      <tr key={i} className="border-b last:border-0 bg-white">
+                                          <td className="p-3">{sch.students?.student_name || `ID: ${sch.student_id}`}</td>
+                                          <td className="p-3">
+                                              {new Date(sch.date).toLocaleDateString()} <br/>
+                                              <span className="text-gray-500">{new Date(sch.start_time).toLocaleTimeString()} - {new Date(sch.end_time).toLocaleTimeString()}</span>
+                                          </td>
+                                          <td className="p-3 font-medium">
+                                              <span className={sch.mode === 'Online' ? 'text-blue-600' : 'text-purple-600'}>{sch.mode}</span>
+                                          </td>
+                                          <td className="p-3">
+                                              {sch.outlook_event_id ? (
+                                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded truncate max-w-[150px] inline-block" title={sch.outlook_event_id}>
+                                                      {sch.outlook_event_id.startsWith('mock') ? 'Mock: ' + sch.outlook_event_id.substring(0, 8) + '...' : sch.outlook_event_id.substring(0, 15) + '...'}
+                                                  </span>
+                                              ) : <span className="text-gray-400">-</span>}
+                                          </td>
+                                          <td className="p-3">
+                                              {sch.teams_link ? (
+                                                  <a href={sch.teams_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                      Join Teams
+                                                  </a>
+                                              ) : <span className="text-gray-400">-</span>}
+                                          </td>
+                                      </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      )}
+                  </div>
+              )}
+              </React.Fragment>
             ))}
             {stages.length === 0 && <p className="text-gray-500">No active periods.</p>}
           </div>
