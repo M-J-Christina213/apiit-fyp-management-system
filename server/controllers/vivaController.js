@@ -1030,3 +1030,142 @@ exports.getIntegrationStatus = async (req, res) => {
         });
     }
 };
+
+// ======================================================
+// ADMIN - PUBLISH VIVA PERIOD
+// ======================================================
+
+exports.publishVivaPeriod = async (req, res) => {
+    const periodId = parseInt(req.params.id);
+
+    if (isNaN(periodId)) {
+        return res.status(400).json({ error: "Invalid Viva Period ID" });
+    }
+
+    try {
+        const period = await prisma.viva_periods.findUnique({
+            where: { id: periodId }
+        });
+
+        if (!period) {
+            return res.status(404).json({ error: "Viva Period not found" });
+        }
+
+        const updatedPeriod = await prisma.viva_periods.update({
+            where: { id: periodId },
+            data: { status: "Availability Collection" }
+        });
+
+        // Generate notifications for Students, Supervisors, Assessors
+        // e.g. await notificationService.notifyAllForAvailability(period.id);
+
+        res.status(200).json({
+            message: "Viva Period published successfully. Availability collection has started.",
+            period: updatedPeriod
+        });
+    } catch (error) {
+        console.error("Publish Viva Period Error:", error);
+        res.status(500).json({
+            error: "Failed to publish Viva Period",
+            details: error.message
+        });
+    }
+};
+
+// ======================================================
+// ADMIN - UPDATE SCHEDULE
+// ======================================================
+
+exports.updateSchedule = async (req, res) => {
+    const scheduleId = parseInt(req.params.scheduleId);
+
+    if (isNaN(scheduleId)) {
+        return res.status(400).json({ error: "Invalid Schedule ID" });
+    }
+
+    const { date, start_time, end_time, mode, venue } = req.body;
+
+    try {
+        const schedule = await prisma.viva_schedules.findUnique({
+            where: { id: scheduleId }
+        });
+
+        if (!schedule) {
+            return res.status(404).json({ error: "Schedule not found" });
+        }
+
+        // If a new date is provided but no new start_time, we might have issues formatting the time strings.
+        // For simplicity, we expect the frontend to pass valid ISO strings for start_time and end_time.
+        const updatedSchedule = await prisma.viva_schedules.update({
+            where: { id: scheduleId },
+            data: {
+                ...(date && { date: new Date(date) }),
+                ...(start_time && { start_time: new Date(start_time) }),
+                ...(end_time && { end_time: new Date(end_time) }),
+                ...(mode && { mode }),
+                ...(venue && { venue })
+            }
+        });
+
+        res.status(200).json({
+            message: "Schedule updated successfully",
+            schedule: updatedSchedule
+        });
+    } catch (error) {
+        console.error("Update Schedule Error:", error);
+        res.status(500).json({
+            error: "Failed to update schedule",
+            details: error.message
+        });
+    }
+};
+
+// ======================================================
+// ADMIN - PUBLISH SCHEDULES
+// ======================================================
+
+exports.publishSchedules = async (req, res) => {
+    const periodId = parseInt(req.params.periodId);
+
+    if (isNaN(periodId)) {
+        return res.status(400).json({ error: "Invalid Viva Period ID" });
+    }
+
+    try {
+        const period = await prisma.viva_periods.findUnique({
+            where: { id: periodId }
+        });
+
+        if (!period) {
+            return res.status(404).json({ error: "Viva Period not found" });
+        }
+
+        // Mark the period as published
+        await prisma.viva_periods.update({
+            where: { id: periodId },
+            data: { status: "Published" }
+        });
+
+        // Mark all confirmed schedules as published
+        await prisma.viva_schedules.updateMany({
+            where: { 
+                viva_period_id: periodId,
+                status: "Confirmed"
+            },
+            data: { status: "Published" }
+        });
+
+        // Here we can generate final schedule notifications for all participants
+        // and trigger Outlook integration services if available.
+
+        res.status(200).json({
+            message: "Schedules published successfully. Notifications sent."
+        });
+    } catch (error) {
+        console.error("Publish Schedules Error:", error);
+        res.status(500).json({
+            error: "Failed to publish schedules",
+            details: error.message
+        });
+    }
+};

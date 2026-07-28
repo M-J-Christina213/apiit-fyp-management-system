@@ -1,37 +1,42 @@
 const express = require("express");
 const router = express.Router();
 const vivaController = require("../controllers/vivaController");
+const { verifyRole } = require("../middleware/roleMiddleware");
 
 // ======================================================
 // ADMIN - VIVA PERIOD MANAGEMENT
 // ======================================================
 
 // Create a new Viva Period
-router.post("/periods", vivaController.createVivaPeriod);
+router.post("/periods", verifyRole("admin"), vivaController.createVivaPeriod);
 
 // Get all Viva Periods
-router.get("/periods", vivaController.getVivaPeriods);
+router.get("/periods", verifyRole(["admin", "pm"]), vivaController.getVivaPeriods);
 
 // Get single Viva Period
-router.get("/periods/:id", vivaController.getVivaPeriodById);
+router.get("/periods/:id", verifyRole(["admin", "pm"]), vivaController.getVivaPeriodById);
 
 // Update Viva Period
-router.put("/periods/:id", vivaController.updateVivaPeriod);
+router.put("/periods/:id", verifyRole("admin"), vivaController.updateVivaPeriod);
 
 // Delete Viva Period
-router.delete("/periods/:id", vivaController.deleteVivaPeriod);
+router.delete("/periods/:id", verifyRole("admin"), vivaController.deleteVivaPeriod);
+
+// Publish Viva Period
+router.put("/periods/:id/publish", verifyRole("admin"), vivaController.publishVivaPeriod);
 
 
 // ======================================================
-// ADMIN - DASHBOARD
+// DASHBOARD
 // ======================================================
 
 // Dashboard statistics
-router.get("/dashboard", vivaController.getDashboardStats);
+router.get("/dashboard", verifyRole(["admin", "pm"]), vivaController.getDashboardStats);
 
 // Availability status for a specific Viva Period
 router.get(
     "/periods/:periodId/availability-status",
+    verifyRole("admin"),
     vivaController.getAvailabilityStatus
 );
 
@@ -40,7 +45,7 @@ router.get(
 // AVAILABILITY
 // ======================================================
 
-// Submit availability
+// Submit availability (allowed for specific roles or all, we allow anyone for now as ID checking handles authorization in controller)
 router.post(
     "/periods/:periodId/availability",
     vivaController.submitAvailability
@@ -49,6 +54,7 @@ router.post(
 // Get availability
 router.get(
     "/periods/:periodId/availability",
+    verifyRole(["admin", "pm"]),
     vivaController.getAvailability
 );
 
@@ -60,6 +66,7 @@ router.get(
 // Trigger automatic scheduling
 router.post(
     "/periods/:periodId/generate",
+    verifyRole("admin"),
     vivaController.triggerAutoScheduling
 );
 
@@ -71,16 +78,32 @@ router.post(
 // Get schedules
 router.get(
     "/periods/:periodId/schedules",
+    verifyRole(["admin", "pm"]),
     vivaController.getSchedules
 );
 
 // Confirm a schedule
 router.put(
     "/schedules/:scheduleId/confirm",
+    verifyRole("admin"),
     vivaController.confirmSchedule
 );
 
+// Update a schedule (manual edit)
+router.put(
+    "/schedules/:scheduleId",
+    verifyRole("admin"),
+    vivaController.updateSchedule
+);
+
+// Publish all schedules for a period
+router.put(
+    "/periods/:periodId/schedules/publish",
+    verifyRole("admin"),
+    vivaController.publishSchedules
+);
+
 // Get Integration Status
-router.get("/integration-status", vivaController.getIntegrationStatus);
+router.get("/integration-status", verifyRole("admin"), vivaController.getIntegrationStatus);
 
 module.exports = router;
