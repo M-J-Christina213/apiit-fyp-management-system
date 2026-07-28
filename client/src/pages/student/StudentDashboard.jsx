@@ -355,23 +355,39 @@ const StudentDashboard = () => {
     }
   };
 
+  // Determine if supervisor is confirmed for current student
+  const isSupervisorConfirmed = currentStudent?.supervisorConfirmationStatus === 'Confirmed' || currentStudent?.supervisorConfirmationStatus === 'Allocated' || !!currentStudent?.supervisor;
+
   // Available supervisors table columns
   const supervisorColumns = [
     {
       header: 'Supervisor Name',
-      render: (row) => `${row.title} ${row.name}`
+      render: (row) => `${row.title || ''} ${row.name}`.trim()
+    },
+    { header: 'Email', accessor: 'email' },
+    {
+      header: 'Type',
+      render: (row) => row.university ? (
+        <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">External</span>
+      ) : (
+        <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">Internal</span>
+      )
+    },
+    {
+      header: 'University',
+      render: (row) => row.university || '-'
     },
     { header: 'Expertise Areas', accessor: 'expertise' },
     { header: 'Research Interests', accessor: 'research_interests' },
     {
       header: 'Available Slots',
       render: (row) => (
-        <span className={`font-semibold ${row.availableSlots > 0 ? 'text-green-600' : 'text-red-500'}`}>
+        <span className={`font-semibold ${row.availableSlots > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
           {row.availableSlots} {row.availableSlots === 1 ? 'slot' : 'slots'}
         </span>
       )
     },
-    {
+    ...(!isSupervisorConfirmed ? [{
       header: 'Action',
       render: (row) => (
         <button
@@ -385,7 +401,7 @@ const StudentDashboard = () => {
           Select for Proposal
         </button>
       )
-    }
+    }] : [])
   ];
 
   // Render view depending on URL sub-path
@@ -1455,10 +1471,10 @@ const StudentDashboard = () => {
           header: 'Status',
           render: (row) => {
             const statusColors = {
-              'Approved': 'bg-green-100 text-green-700 border-green-200',
-              'Rejected': 'bg-red-100 text-red-700 border-red-200',
-              'Pending Review': 'bg-amber-100 text-amber-700 border-amber-200',
-              'Pending': 'bg-amber-100 text-amber-700 border-amber-200'
+              'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+              'Rejected': 'bg-rose-50 text-rose-700 border-rose-200',
+              'Pending Review': 'bg-sky-50 text-sky-700 border-sky-200',
+              'Pending': 'bg-amber-50 text-amber-700 border-amber-200'
             };
             const colorClass = statusColors[row.status] || 'bg-slate-100 text-slate-700 border-slate-200';
             return (
@@ -1685,182 +1701,282 @@ const StudentDashboard = () => {
               )}
             </div>
           </div>
-
-          {/* Modal */}
-          {showLogsheetModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-              <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-navy-700" />
-                    Submit Logsheet
-                  </h2>
-                  <button
-                    onClick={() => {
-                      setShowLogsheetModal(false);
-                      setLogDate('');
-                      setLogVenue('');
-                      setLogFile(null);
-                    }}
-                    className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="p-6 overflow-y-auto">
-                  <form id="logsheet-form" onSubmit={handleLogsheetSubmit} className="space-y-5">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-700">Meeting Date *</label>
-                      <input
-                        type="date"
-                        required
-                        value={logDate}
-                        onChange={(e) => setLogDate(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-700">Venue (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Teams, Office 305, Library Study Room"
-                        value={logVenue}
-                        onChange={(e) => setLogVenue(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-700">Upload Signed Logsheet (Mandatory PDF/DOC) *</label>
-                      <input
-                        type="file"
-                        required
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => setLogFile(e.target.files[0] || null)}
-                        className="w-full p-2 border border-slate-200 rounded text-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-navy-50 file:text-navy-700 hover:file:bg-navy-100 transition-all cursor-pointer text-slate-600"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1">Supported formats: PDF, DOC, DOCX. Max file size: 10MB.</p>
-                    </div>
-                  </form>
-                </div>
-
-                <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLogsheetModal(false);
-                      setLogDate('');
-                      setLogVenue('');
-                      setLogFile(null);
-                    }}
-                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    form="logsheet-form"
-                    className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-semibold rounded-lg transition-colors shadow-md select-none"
-                  >
-                    Submit Logsheet
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showViewModal && viewingProposal && (
-            <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-              <div className="bg-white rounded-xl w-[650px] p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
-                <div className="flex justify-between items-center border-b pb-3">
-                  <h2 className="text-xl font-bold text-slate-800">Proposal Details</h2>
-                  <button
-                    onClick={() => {
-                      setShowViewModal(false);
-                      setViewingProposal(null);
-                    }}
-                    className="text-slate-400 hover:text-slate-600 transition-colors text-lg"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Topic</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.proposed_topic || "N/A"}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Requested Supervisor</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.supervisor_name || "N/A"}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
-                    <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${viewingProposal.status === "Approved" ? "bg-green-100 text-green-700" :
-                      viewingProposal.status === "Rejected" ? "bg-red-100 text-red-700" :
-                        viewingProposal.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
-                          "bg-slate-100 text-slate-700"
-                      }`}>
-                      {viewingProposal.status || "Pending"}
-                    </span>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Submission Date</p>
-                    <p className="text-sm font-medium text-slate-700 mt-0.5">
-                      {viewingProposal.submitted_at ? new Date(viewingProposal.submitted_at).toLocaleDateString() : "N/A"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proposal PDF</p>
-                    {viewingProposal.proposal_pdf ? (
-                      <a
-                        href={`http://localhost:5000/uploads/${viewingProposal.proposal_pdf}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors underline"
-                      >
-                        Open/Download PDF
-                      </a>
-                    ) : (
-                      <p className="text-sm text-slate-500 mt-0.5">No file uploaded</p>
-                    )}
-                  </div>
-
-                  {viewingProposal.status === "Rejected" && viewingProposal.rejection_reason && (
-                    <div className="col-span-2 bg-red-50 border border-red-100 rounded-lg p-3.5">
-                      <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">Rejection Reason</p>
-                      <p className="text-sm text-red-700 mt-1 font-medium">{viewingProposal.rejection_reason}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t pt-4 flex justify-end">
-                  <button
-                    onClick={() => {
-                      setShowViewModal(false);
-                      setViewingProposal(null);
-                    }}
-                    className="px-5 py-2 text-sm font-semibold text-white bg-navy-900 hover:bg-navy-950 rounded-lg transition-colors shadow-md"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       );
     }
 
+    // ---------------- PROFILE TAB ----------------
+    if (path === '/student/profile') {
+      const studentName = currentUser?.name || currentStudent?.name || 'Student';
+      const studentCbNo = currentStudent?.id || currentUser?.cbNo || 'CB014416';
+      const studentEmail = currentUser?.email || currentStudent?.email || 'student@apiit.edu.lk';
+      const batchName = currentStudent?.batch || currentStudent?.intake || '2025-Sep';
+      const topicName = currentStudent?.topic || 'Tentative Topic';
+      const supervisorName = currentStudent?.supervisor || 'Pending';
+      const assessorName = currentStudent?.assessor || 'Pending';
+
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Student Profile</h1>
+            <p className="text-sm text-slate-500">Manage your profile details and view your FYP registration record.</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6 max-w-3xl">
+            {/* Header & Avatar */}
+            <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
+              <div className="relative group">
+                <div className="h-20 w-20 rounded-full bg-navy-900 text-white font-bold text-2xl flex items-center justify-center border-2 border-navy-800 shadow-md">
+                  {studentName.charAt(0)}
+                </div>
+                <label className="absolute inset-0 bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-xs font-semibold">
+                  Change
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      alert("Profile picture updated successfully!");
+                    }
+                  }} />
+                </label>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">{studentName}</h2>
+                <p className="text-sm font-mono text-slate-500">{studentCbNo}</p>
+                <span className="inline-block mt-2 px-3 py-1 bg-navy-50 text-navy-800 border border-navy-200 text-xs font-bold rounded-full">
+                  {studentStage} Stage
+                </span>
+              </div>
+            </div>
+
+            {/* Read-Only Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Student Name</span>
+                <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">{studentName}</p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">CB Number</span>
+                <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono">{studentCbNo}</p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
+                <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">{studentEmail}</p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Batch Intake</span>
+                <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">{batchName}</p>
+              </div>
+
+              <div className="col-span-2 space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tentative / Confirmed Topic</span>
+                <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">{topicName}</p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirmed Supervisor</span>
+                <p className={`font-semibold p-2.5 border rounded-lg ${supervisorName === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-800 border-slate-200'}`}>
+                  {supervisorName}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirmed Assessor</span>
+                <p className={`font-semibold p-2.5 border rounded-lg ${assessorName === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-800 border-slate-200'}`}>
+                  {assessorName}
+                </p>
+              </div>
+            </div>
+
+            {/* Admin Disclaimer Notice */}
+            <div className="bg-navy-50 border border-navy-200 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-navy-700 shrink-0 mt-0.5" />
+              <p className="text-xs text-navy-900 leading-relaxed font-medium">
+                If your name needs to be changed, please submit a request to the Administrator stating the reason.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return null;
   };
 
-  return renderContent();
+  return (
+    <>
+      {renderContent()}
+
+      {/* Modal */}
+      {showLogsheetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="h-5 w-5 text-navy-700" />
+                Submit Logsheet
+              </h2>
+              <button
+                onClick={() => {
+                  setShowLogsheetModal(false);
+                  setLogDate('');
+                  setLogVenue('');
+                  setLogFile(null);
+                }}
+                className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
+              <form id="logsheet-form" onSubmit={handleLogsheetSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Meeting Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={logDate}
+                    onChange={(e) => setLogDate(e.target.value)}
+                    className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Venue (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Teams, Office 305, Library Study Room"
+                    value={logVenue}
+                    onChange={(e) => setLogVenue(e.target.value)}
+                    className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Upload Signed Logsheet (Mandatory PDF/DOC) *</label>
+                  <input
+                    type="file"
+                    required
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => setLogFile(e.target.files[0] || null)}
+                    className="w-full p-2 border border-slate-200 rounded text-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-navy-50 file:text-navy-700 hover:file:bg-navy-100 transition-all cursor-pointer text-slate-600"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Supported formats: PDF, DOC, DOCX. Max file size: 10MB.</p>
+                </div>
+              </form>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogsheetModal(false);
+                  setLogDate('');
+                  setLogVenue('');
+                  setLogFile(null);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="logsheet-form"
+                className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-semibold rounded-lg transition-colors shadow-md select-none"
+              >
+                Submit Logsheet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showViewModal && viewingProposal && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl w-[650px] p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h2 className="text-xl font-bold text-slate-800">Proposal Details</h2>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setViewingProposal(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Topic</p>
+                <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.proposed_topic || "N/A"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Requested Supervisor</p>
+                <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.supervisor_name || "N/A"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
+                <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${viewingProposal.status === "Approved" ? "bg-green-100 text-green-700" :
+                  viewingProposal.status === "Rejected" ? "bg-red-100 text-red-700" :
+                    viewingProposal.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-slate-100 text-slate-700"
+                  }`}>
+                  {viewingProposal.status || "Pending"}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Submission Date</p>
+                <p className="text-sm font-medium text-slate-700 mt-0.5">
+                  {viewingProposal.submitted_at ? new Date(viewingProposal.submitted_at).toLocaleDateString() : "N/A"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proposal PDF</p>
+                {viewingProposal.proposal_pdf ? (
+                  <a
+                    href={`http://localhost:5000/uploads/${viewingProposal.proposal_pdf}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors underline"
+                  >
+                    Open/Download PDF
+                  </a>
+                ) : (
+                  <p className="text-sm text-slate-500 mt-0.5">No file uploaded</p>
+                )}
+              </div>
+
+              {viewingProposal.status === "Rejected" && viewingProposal.rejection_reason && (
+                <div className="col-span-2 bg-red-50 border border-red-100 rounded-lg p-3.5">
+                  <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">Rejection Reason</p>
+                  <p className="text-sm text-red-700 mt-1 font-medium">{viewingProposal.rejection_reason}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t pt-4 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setViewingProposal(null);
+                }}
+                className="px-5 py-2 text-sm font-semibold text-white bg-navy-900 hover:bg-navy-950 rounded-lg transition-colors shadow-md"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default StudentDashboard;

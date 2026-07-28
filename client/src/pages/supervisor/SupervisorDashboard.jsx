@@ -451,14 +451,56 @@ const SupervisorDashboard = () => {
 
     // ── MY STUDENTS TAB ──────────────────────────────────────────────────────
     if (path === '/supervisor/students') {
+      const supervisedStudents = students.filter(s => s.supervisor === currentSupervisor.name || s.supervisorId === currentSupervisor.id);
+      const assessedStudents = students.filter(s => s.assessor === `${currentSupervisor.title || ''} ${currentSupervisor.name}`.trim() || s.assessorId === currentSupervisor.id);
+
+      const studentColumns = [
+        { header: 'Student Number', accessor: 'id' },
+        { header: 'Student Name', accessor: 'name' },
+        { header: 'Batch Intake', render: (row) => row.intake || row.batch || '-' },
+        { header: 'Project Topic', render: (row) => row.topic || 'Tentative Topic' },
+        { header: 'Confirmation Status', render: (row) => (
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+            row.supervisorConfirmationStatus === 'Confirmed' || row.supervisorConfirmationStatus === 'Allocated'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-amber-50 text-amber-700 border-amber-200'
+          }`}>
+            {row.supervisorConfirmationStatus || 'Confirmed'}
+          </span>
+        )}
+      ];
+
       return (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">My Supervisees</h1>
-            <p className="text-sm text-slate-500">List of students currently assigned to you for fyp project guidance.</p>
+            <h1 className="text-2xl font-bold text-slate-800">My Students Dashboard</h1>
+            <p className="text-sm text-slate-500">Overview of students under your direct project supervision and assessment allocation.</p>
           </div>
-          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-            <DataTable columns={studentOverviewColumns} data={myStudents} />
+
+          {/* Section 1: Supervised Students */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-6">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-navy-700" /> Section 1: Supervised Students ({supervisedStudents.length})
+                </h2>
+                <p className="text-xs text-slate-500">Students assigned to you for ongoing FYP project guidance and logsheet approvals.</p>
+              </div>
+            </div>
+            <DataTable columns={studentColumns} data={supervisedStudents} />
+          </div>
+
+          {/* Section 2: Assessed Students */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-6">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-purple-700" /> Section 2: Assessed Students ({assessedStudents.length})
+                </h2>
+                <p className="text-xs text-slate-500">Students assigned to you as an independent evaluator/assessor.</p>
+              </div>
+            </div>
+            <DataTable columns={studentColumns} data={assessedStudents} />
           </div>
         </div>
       );
@@ -715,8 +757,8 @@ const SupervisorDashboard = () => {
                   <input type="text" required value={interests} onChange={(e) => setInterests(e.target.value)} className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Available FYP Match Slots</label>
-                  <input type="number" required min={0} max={12} value={slots} onChange={(e) => setSlots(e.target.value)} className="block w-32 p-2.5 bg-white border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900" />
+                  <label className="text-sm font-semibold text-slate-700">Preferred Supervision Slots (Min: 3)</label>
+                  <input type="number" required min={3} max={20} value={slots} onChange={(e) => setSlots(Math.max(3, parseInt(e.target.value, 10) || 3))} className="block w-32 p-2.5 bg-white border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900" />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="submit" className="px-4 py-2 bg-[#0C2340] hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors">Save Profile Changes</button>

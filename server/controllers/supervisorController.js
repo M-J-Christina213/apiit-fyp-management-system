@@ -97,8 +97,7 @@ const createSupervisor = async (req, res) => {
                 research_interests,
                 additional_information,
 
-                preferred_supervision_slots:
-                    parseInt(preferred_supervision_slots, 10) || 3
+                preferred_supervision_slots: Math.max(3, parseInt(preferred_supervision_slots, 10) || 3)
 
             }
 
@@ -206,32 +205,7 @@ const uploadSupervisors = async (req, res) => {
                         sup.additional_information,
 
 
-                    preferred_supervision_slots:
-                        sup.preferred_supervision_slots || 3
-
-                },
-
-
-                create: {
-
-                    title: sup.title,
-
-                    name: sup.name,
-
-                    email: sup.email,
-
-                    expertise: sup.expertise,
-
-                    research_interests:
-                        sup.research_interests,
-
-
-                    additional_information:
-                        sup.additional_information,
-
-
-                    preferred_supervision_slots:
-                        sup.preferred_supervision_slots || 3
+                    preferred_supervision_slots: Math.max(3, parseInt(sup.preferred_supervision_slots, 10) || 3)
 
                 }
 
@@ -445,11 +419,7 @@ const updateSupervisor = async (req, res) => {
                 additional_information,
 
 
-                preferred_supervision_slots:
-                    parseInt(
-                        preferred_supervision_slots,
-                        10
-                    ) || 3
+                preferred_supervision_slots: Math.max(3, parseInt(preferred_supervision_slots, 10) || 3)
 
             }
 

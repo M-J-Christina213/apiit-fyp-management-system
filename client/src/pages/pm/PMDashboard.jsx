@@ -112,6 +112,18 @@ const PMDashboard = () => {
   const [assessorPoolFromDB, setAssessorPoolFromDB] = useState([]);
   const [assessorSearchTerm, setAssessorSearchTerm] = useState('');
   const [showAssessors, setShowAssessors] = useState(false);
+  const [assessorSearchQuery, setAssessorSearchQuery] = useState('');
+  const [assessorFilterExpertise, setAssessorFilterExpertise] = useState('');
+  const [assessorFilterType, setAssessorFilterType] = useState('');
+  const [assessorFilterAvailable, setAssessorFilterAvailable] = useState('');
+  const [assessorSortBy, setAssessorSortBy] = useState('name');
+
+  // External Supervisor Requests state
+  const [externalRequests, setExternalRequests] = useState([]);
+  const [externalReqSearch, setExternalReqSearch] = useState('');
+  const [externalReqFilterStatus, setExternalReqFilterStatus] = useState('All');
+  const [rejectingReqId, setRejectingReqId] = useState(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
 
   // Allocation Filtering state
   const [searchTerm, setSearchTerm] = useState('');
@@ -358,6 +370,18 @@ const PMDashboard = () => {
             getProposalRequests(),
             getBatches()
           ]);
+
+        if (path === '/pm/external-supervisors') {
+          try {
+            const extRes = await fetch("http://localhost:5000/api/external-supervisors/pending");
+            if (extRes.ok) {
+              const extData = await extRes.json();
+              setExternalRequests(extData.data || []);
+            }
+          } catch (extErr) {
+            console.error("Failed to fetch external supervisor requests:", extErr);
+          }
+        }
 
         console.log("BATCHES FROM BACKEND");
         console.log(batchRes.data);
@@ -1869,291 +1893,258 @@ const PMDashboard = () => {
 
     // ---------------- ASSESSOR ALLOCATION WORKSPACE TAB ----------------
     if (path === '/pm/assessors') {
-      const assessorEligibleStudents = students.filter(s => !s.assessorAssigned); // Backend filters for Confirmed status
-
-      const assessorTableColumns = [
-        { header: 'Batch Intake', render: (row) => batches.find(b => b.id === row.batchId)?.intake || row.intake || row.batch || '-' },
-        { header: 'Batch Code', accessor: 'batchCode' },
-        { header: 'Student Name', accessor: 'name' },
-        { header: 'Student Number', accessor: 'id' },
-        { header: 'Project Topic', render: (row) => row.topic || '-' },
-        { header: 'Confirmed Supervisor', render: (row) => row.supervisor || '-' },
-
-        {
-          header: 'Action',
-          render: (row) => (
-            <button
-              onClick={() => setAllocStudentId(row.id)}
-              className="px-3 py-1.5 text-xs bg-navy-900 text-white rounded hover:bg-navy-950 transition-colors font-medium shadow-sm"
-            >
-              Assign Assessor
-            </button>
-          )
-        }
-      ];
-
-      const assessorPoolColumns = [
-        {
-          header: 'Title',
-          accessor: 'title'
-        },
-        {
-          header: 'Name',
-          accessor: 'name'
-        },
-        {
-          header: 'Email',
-          accessor: 'email'
-        },
-        {
-          header: 'Expertise',
-          accessor: 'expertise'
-        },
-        {
-          header: 'Research Interests',
-          accessor: 'research_interests'
-        }
-      ];
+      const assessorEligibleStudents = students.filter(s => {
+        const batch = batches.find(b => b.id === s.batchId);
+        return batch?.stage !== 'Midpoint' && batch?.stage !== 'Final';
+      });
 
       const selectedStudentForAssessor = allocStudentId ? students.find(s => s.id === allocStudentId) : null;
 
-      const handleAssessorAllocateSubmit = async (e) => {
-        e.preventDefault();
+      // Filtering & Sorting State for Assessor Cards
+      const filteredAndSortedAssessors = assessors.filter(a => {
+        const matchesSearch = !assessorSearchQuery || 
+          a.name?.toLowerCase().includes(assessorSearchQuery.toLowerCase()) ||
+          a.email?.toLowerCase().includes(assessorSearchQuery.toLowerCase()) ||
+          a.expertise?.toLowerCase().includes(assessorSearchQuery.toLowerCase()) ||
+          a.research_interests?.toLowerCase().includes(assessorSearchQuery.toLowerCase());
 
-        if (!allocStudentId || !allocAssessorId) {
-          alert("Please select an assessor.");
-          return;
-        }
+        const matchesExpertise = !assessorFilterExpertise || a.expertise?.toLowerCase().includes(assessorFilterExpertise.toLowerCase());
+        const matchesType = !assessorFilterType || (assessorFilterType === 'Internal' ? !a.university : !!a.university);
+        const matchesAvailable = !assessorFilterAvailable || (assessorFilterAvailable === 'available' ? (a.availableSlots ?? 3) > 0 : true);
 
+        return matchesSearch && matchesExpertise && matchesType && matchesAvailable;
+      }).sort((a, b) => {
+        if (assessorSortBy === 'slots') return (b.availableSlots ?? 3) - (a.availableSlots ?? 3);
+        if (assessorSortBy === 'load') return (a.assignedStudentsCount || 0) - (b.assignedStudentsCount || 0);
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+      const handleRemoveAssessor = async (studentId) => {
+        if (!window.confirm("Are you sure you want to remove the assigned assessor from this student?")) return;
         try {
-          const res = await fetch(
-            `http://localhost:5000/api/students/${allocStudentId}/allocate-assessor`,
-            {
+          const res = await fetch(`http://localhost:5000/api/students/${studentId}/allocate-assessor`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ assessorId: null })
+          });
+          if (res.ok) {
+            setStudents(prev => prev.map(s => s.id === studentId ? { ...s, assessor: null, assessorAssigned: false } : s));
+            alert("Assessor unassigned successfully.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Failed to unassign assessor.");
+        }
+      };
+
+      const handleClearAllAssessors = async () => {
+        if (!window.confirm("Are you sure you want to clear ALL assigned assessors across eligible students?")) return;
+        try {
+          for (const s of students.filter(st => st.assessorAssigned)) {
+            await fetch(`http://localhost:5000/api/students/${s.id}/allocate-assessor`, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                assessorId: Number(allocAssessorId),
-              }),
-            }
-          );
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ assessorId: null })
+            });
+          }
+          setStudents(prev => prev.map(s => ({ ...s, assessor: null, assessorAssigned: false })));
+          alert("All assigned assessors cleared.");
+        } catch (err) {
+          console.error(err);
+          alert("Failed to clear assessors.");
+        }
+      };
 
+      const handleAssessorAllocateSubmit = async (assessorId) => {
+        if (!allocStudentId || !assessorId) return;
+        try {
+          const res = await fetch(`http://localhost:5000/api/students/${allocStudentId}/allocate-assessor`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ assessorId: Number(assessorId) })
+          });
           const data = await res.json();
-
           if (!res.ok) {
             alert(data.message || "Failed to assign assessor.");
             return;
           }
-
-          const assessor = assessors.find(
-            (a) => Number(a.id) === Number(allocAssessorId)
-          );
-
-          setStudents((prev) =>
-            prev.map((student) =>
-              student.id === allocStudentId
-                ? {
-                  ...student,
-                  assessor: `${assessor?.title || ""} ${assessor?.name || ""}`.trim(),
-                  assessorAssigned: true,
-                }
-                : student
-            )
-          );
+          const assessor = assessors.find(a => Number(a.id) === Number(assessorId));
+          setStudents(prev => prev.map(student => student.id === allocStudentId ? {
+            ...student,
+            assessor: `${assessor?.title || ""} ${assessor?.name || ""}`.trim(),
+            assessorAssigned: true
+          } : student));
 
           setAssessorAllocSuccess(true);
-
           setTimeout(() => {
             setAssessorAllocSuccess(false);
             setAllocStudentId("");
-            setAllocAssessorId("");
-          }, 1500);
+          }, 1200);
         } catch (err) {
           console.error(err);
           alert("Failed to assign assessor.");
         }
       };
 
-      const handleAssessorUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-          const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data);
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const json = XLSX.utils.sheet_to_json(sheet);
-
-          const payload = json.map((row) => ({
-            title: row.Title || "",
-            name: row.Name || "",
-            email: row.Email || "",
-            expertise: row.Expertise || "",
-            research_interests: row["Research Interests"] || ""
-          }));
-
-
-          const res = await fetch("http://localhost:5000/api/assessors/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-
-          const result = await res.json();
-
-          alert(`Uploaded ${result.count} assessors`);
-
-
-          setAssessors();
-
-          e.target.value = null;
-
-        } catch (error) {
-          console.error(error);
-          alert("Upload failed");
-        }
-      };
-
-
-
       return (
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Assessor Allocation</h1>
-            <p className="text-sm text-slate-500">Assign assessors to students with confirmed supervisors.</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Assessor Allocation Workspace</h1>
+              <p className="text-sm text-slate-500">Manage and allocate qualified faculty assessors to student final year projects.</p>
+            </div>
+            <button
+              onClick={handleClearAllAssessors}
+              className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" /> Clear All Assigned Assessors
+            </button>
           </div>
 
-          {/* Assessor Upload Section */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowAssessors(!showAssessors)}
-                className="px-4 py-2 bg-navy-900 text-white rounded font-medium hover:bg-navy-950"
-              >
-                {showAssessors ? 'Hide Assessor List' : 'View Assessor List'}
-              </button>
-            </div>
-            <div className="space-y-2 max-w-xl">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Upload className="h-5 w-5 text-navy-700" />
-                Assessor Pool Upload
-              </h2>
-              <p className="text-sm text-slate-500">
-                Upload the assessor list. Expected columns: Title, Name, Email.
-              </p>
-              <div className="text-xs font-semibold text-slate-600 bg-slate-50 p-2 rounded inline-block mt-2">
-                Assessors Imported: {assessorPoolFromDB.length}
-              </div>
-            </div>
-            <div className="shrink-0 relative group">
-              <input
-                type="file"
-                accept=".xlsx, .xls, .csv"
-                onChange={handleAssessorUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-              <button className="px-4 py-2 bg-navy-900 text-white rounded font-bold text-sm shadow-md transition-all hover:bg-navy-950 flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Choose Excel File
-              </button>
-            </div>
-          </div>
-
-          {showAssessors && assessorPoolFromDB.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                <h3 className="font-bold text-slate-800">
-                  Assessor Pool ({assessorPoolFromDB.length})
-                </h3>
-              </div>
-
-              <DataTable
-                columns={assessorPoolColumns}
-                data={assessorPoolFromDB}
-              />
-            </div>
-          )}
-
-          {!selectedStudentForAssessor ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="font-bold text-slate-800">Eligible Students ({assessorEligibleStudents.length})</h3>
-                {FilterControls()}
-              </div>
-              <div className="p-0">
-                <DataTable columns={assessorTableColumns} data={assessorEligibleStudents} />
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 max-w-2xl">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">Assign Assessor for: {selectedStudentForAssessor.name}</h3>
-                  <div className="text-sm text-slate-500 space-y-1">
-                    <p>
-                      {selectedStudentForAssessor.id} • {selectedStudentForAssessor.topic}
-                    </p>
-
-                    <p>
-                      <span className="font-semibold">Assessor:</span>{" "}
-                      {selectedStudentForAssessor.assessor || "-"}
-                    </p>
-
-                    <p>
-                      <span className="font-semibold">Supervisor:</span>{" "}
-                      {selectedStudentForAssessor.supervisor || "-"}
-                    </p>
-
-                    <p>
-                      <span className="font-semibold">Area of Expertise:</span>{" "}
-                      {selectedStudentForAssessor.supervisorExpertise || "-"}
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => setAllocStudentId('')} className="text-sm font-bold text-navy-600 hover:text-navy-900">
-                  Cancel
-                </button>
-              </div>
-
-              {assessorAllocSuccess ? (
-                <div className="text-center p-6 space-y-3 border border-green-200 bg-green-50 rounded-lg">
-                  <div className="mx-auto h-12 w-12 rounded bg-green-100 flex items-center justify-center text-green-600 border border-green-200">
-                    <CheckCircle className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-bold text-green-800">Assessor Assigned</h3>
-                </div>
-              ) : (
-                <form onSubmit={handleAssessorAllocateSubmit} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Select Assessor *</label>
-                    <select
-                      required
-                      value={allocAssessorId}
-                      onChange={(e) => setAllocAssessorId(e.target.value)}
-                      className="block w-full p-2.5 bg-white border border-slate-200 rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                    >
-                      <option value="">-- Choose assessor --</option>
-                      {assessors.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.title} {a.name} - {a.expertise || "-"}
-                        </option>
-                      ))}
-                      {assessors.length === 0 && (
-                        <option disabled>Please upload assessors first</option>
+          {/* Student Selector / Active Target */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 className="font-bold text-slate-800 text-lg">Select Student for Assessor Allocation</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {students.map(st => (
+                <div 
+                  key={st.id} 
+                  className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                    allocStudentId === st.id 
+                      ? 'border-navy-900 bg-navy-50/50 shadow-md ring-2 ring-navy-900/20' 
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                  onClick={() => setAllocStudentId(st.id)}
+                >
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-start">
+                      <span className="font-mono text-xs font-bold text-navy-700 bg-navy-100 px-2 py-0.5 rounded">{st.id}</span>
+                      {st.assessorAssigned ? (
+                        <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">Assigned</span>
+                      ) : (
+                        <span className="text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">Pending</span>
                       )}
-                    </select>
+                    </div>
+                    <h4 className="font-bold text-slate-800">{st.name}</h4>
+                    <p className="text-xs text-slate-500 line-clamp-1">Topic: {st.topic || 'Tentative Topic'}</p>
+                    {st.assessor && (
+                      <p className="text-xs text-slate-600 font-medium pt-1">
+                        Current Assessor: <span className="text-navy-900 font-semibold">{st.assessor}</span>
+                      </p>
+                    )}
                   </div>
-                  <button
-                    type="submit"
-                    disabled={assessors.length === 0}
-                    className="px-5 py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors disabled:opacity-50"
-                  >
-                    Confirm Assignment
-                  </button>
-                </form>
+                  {st.assessorAssigned && (
+                    <div className="pt-3 border-t border-slate-100 mt-3 flex justify-end">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemoveAssessor(st.id); }}
+                        className="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:underline flex items-center gap-1"
+                      >
+                        <X className="h-3.5 w-3.5" /> Remove Assessor
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Assessor Filters & Search */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Available Assessor Pool</h3>
+                <p className="text-xs text-slate-500">Filter and select an assessor for the active student.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search assessors..."
+                    value={assessorSearchQuery}
+                    onChange={(e) => setAssessorSearchQuery(e.target.value)}
+                    className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-navy-900 w-full sm:w-64"
+                  />
+                </div>
+                <select
+                  value={assessorFilterType}
+                  onChange={(e) => setAssessorFilterType(e.target.value)}
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none"
+                >
+                  <option value="">All Types (Internal & External)</option>
+                  <option value="Internal">Internal Faculty Only</option>
+                  <option value="External">External Assessors Only</option>
+                </select>
+                <select
+                  value={assessorSortBy}
+                  onChange={(e) => setAssessorSortBy(e.target.value)}
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none"
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="slots">Sort by Available Slots</option>
+                  <option value="load">Sort by Current Workload</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Assessor Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-2">
+              {filteredAndSortedAssessors.map(ass => (
+                <div key={ass.id} className="bg-slate-50/50 border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-base">{ass.title} {ass.name}</h4>
+                        <p className="text-xs text-slate-500">{ass.email}</p>
+                      </div>
+                      {ass.university ? (
+                        <span className="text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">External</span>
+                      ) : (
+                        <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">Internal</span>
+                      )}
+                    </div>
+
+                    {ass.university && (
+                      <p className="text-xs font-semibold text-purple-900 bg-purple-50/50 px-2.5 py-1 rounded-md">
+                        University: {ass.university}
+                      </p>
+                    )}
+
+                    <div className="space-y-1 text-xs text-slate-600">
+                      <p><span className="font-semibold text-slate-700">Area of Expertise:</span> {ass.expertise || 'General Computer Science'}</p>
+                      <p><span className="font-semibold text-slate-700">Research Interests:</span> {ass.research_interests || 'Artificial Intelligence, Software Engineering'}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Available Slots</span>
+                        <span className="font-bold text-emerald-700 text-sm">{ass.availableSlots ?? 3}</span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Assigned Load</span>
+                        <span className="font-bold text-slate-800 text-sm">{ass.assignedStudentsCount || 0} Students</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedStudentForAssessor && (
+                    <button
+                      onClick={() => handleAssessorAllocateSubmit(ass.id)}
+                      className="w-full py-2.5 bg-navy-900 hover:bg-navy-950 text-white rounded-lg font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <UserCheck className="h-4 w-4" /> Assign to {selectedStudentForAssessor.name.split(' ')[0]}
+                    </button>
+                  )}
+                </div>
+              ))}
+              {filteredAndSortedAssessors.length === 0 && (
+                <div className="col-span-full py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <UserCheck className="h-10 w-10 text-slate-300 mx-auto mb-2" />
+                  <p className="font-bold text-slate-700">No assessors match your criteria.</p>
+                  <p className="text-xs text-slate-400">Try adjusting your search query or filter options.</p>
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       );
     }
@@ -2441,42 +2432,282 @@ const PMDashboard = () => {
 
 
 
-    // ---------------- REPORTS TAB ----------------
-    if (path === '/pm/reports') {
-      const reports = [
-        { title: "FYP Student Supervisor Allocation Audit Log", format: "Excel Spreadsheet", size: "320 KB", date: "2026-06-13" },
-        { title: "Active Supervisor Capacity & Slot Distribution Analysis", format: "PDF Document", size: "1.4 MB", date: "2026-06-10" },
-        { title: "Interim Milestone Proposal Status Progression Report", format: "PDF Document", size: "890 KB", date: "2026-06-05" },
-      ];
+    // ---------------- EXTERNAL SUPERVISOR REQUESTS TAB ----------------
+    if (path === '/pm/external-supervisors') {
+      const filteredRequests = externalRequests.filter(req => {
+        const matchesSearch = !externalReqSearch || 
+          req.name?.toLowerCase().includes(externalReqSearch.toLowerCase()) ||
+          req.email?.toLowerCase().includes(externalReqSearch.toLowerCase()) ||
+          req.university?.toLowerCase().includes(externalReqSearch.toLowerCase());
+        const matchesStatus = externalReqFilterStatus === 'All' || req.status === externalReqFilterStatus;
+        return matchesSearch && matchesStatus;
+      });
+
+      const handleApproveReq = async (id) => {
+        if (!window.confirm("Approve this external supervisor registration request? Account will be activated.")) return;
+        try {
+          const res = await fetch(`http://localhost:5000/api/external-supervisors/${id}/approve`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" }
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert("External supervisor approved successfully!");
+            setExternalRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+          } else {
+            alert(data.message || "Approval failed");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Approval failed");
+        }
+      };
+
+      const handleRejectReqSubmit = async () => {
+        if (!rejectingReqId || !rejectionReasonInput.trim()) {
+          alert("Please enter a valid rejection reason.");
+          return;
+        }
+        try {
+          const res = await fetch(`http://localhost:5000/api/external-supervisors/${rejectingReqId}/reject`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rejectionReason: rejectionReasonInput })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert("Registration request rejected.");
+            setExternalRequests(prev => prev.map(r => r.id === rejectingReqId ? { ...r, status: 'Rejected', rejection_reason: rejectionReasonInput } : r));
+            setRejectingReqId(null);
+            setRejectionReasonInput('');
+          } else {
+            alert(data.message || "Rejection failed");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Rejection failed");
+        }
+      };
 
       return (
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Management Reports</h1>
-            <p className="text-sm text-slate-500">Download system audit audits and capacity logs.</p>
+            <h1 className="text-2xl font-bold text-slate-800">External Supervisor Registration Requests</h1>
+            <p className="text-sm text-slate-500">Review, verify, and approve external supervisor applications to grant portal access.</p>
           </div>
 
-          <div className="bg-white rounded border border-slate-200 shadow-sm divide-y divide-slate-200">
-            {reports.map((rep, idx) => (
-              <div key={idx} className="p-4 md:p-5 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-slate-800">{rep.title}</h4>
-                  <div className="flex gap-4 text-xs text-slate-500 font-medium">
-                    <span>Format: {rep.format}</span>
-                    <span>•</span>
-                    <span>Size: {rep.size}</span>
-                    <span>•</span>
-                    <span>Generated: {rep.date}</span>
+          {/* Filter Controls */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="relative flex-1 w-full sm:w-auto">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or university..."
+                value={externalReqSearch}
+                onChange={(e) => setExternalReqSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-full focus:outline-none focus:border-navy-900"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500">Status:</span>
+              <select
+                value={externalReqFilterStatus}
+                onChange={(e) => setExternalReqFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none"
+              >
+                <option value="All">All Requests</option>
+                <option value="Pending">Pending Only</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Requests Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {filteredRequests.map(req => (
+              <div key={req.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-lg">{req.title || ''} {req.name}</h3>
+                      <p className="text-xs text-slate-500">{req.email}</p>
+                    </div>
+                    {req.status === 'Approved' ? (
+                      <span className="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">Approved</span>
+                    ) : req.status === 'Rejected' ? (
+                      <span className="px-2.5 py-1 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 rounded-full">Rejected</span>
+                    ) : (
+                      <span className="px-2.5 py-1 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-full">Pending PM Review</span>
+                    )}
                   </div>
+
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1 text-xs">
+                    <p><span className="font-semibold text-slate-700">University / Institution:</span> {req.university}</p>
+                    <p><span className="font-semibold text-slate-700">Area of Expertise:</span> {req.expertise || 'Not specified'}</p>
+                    <p><span className="font-semibold text-slate-700">Research Interests:</span> {req.research_interests || 'Not specified'}</p>
+                    <p><span className="font-semibold text-slate-700">Requested Supervision Slots:</span> {req.preferred_supervision_slots || 3}</p>
+                  </div>
+
+                  {req.rejection_reason && (
+                    <div className="bg-rose-50 p-3 rounded-lg border border-rose-100 text-xs text-rose-800">
+                      <span className="font-bold">Rejection Reason:</span> {req.rejection_reason}
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => alert(`Downloading: ${rep.title}`)}
-                  className="flex items-center gap-1 px-3 py-1.5 border border-slate-300 hover:border-navy-900 rounded text-xs font-bold bg-white"
-                >
-                  <Download className="h-4 w-4" /> Download
-                </button>
+
+                {req.status === 'Pending' && (
+                  <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      onClick={() => handleApproveReq(req.id)}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <UserCheck className="h-4 w-4" /> Approve Application
+                    </button>
+                    <button
+                      onClick={() => setRejectingReqId(req.id)}
+                      className="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <X className="h-4 w-4" /> Reject Request
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
+            {filteredRequests.length === 0 && (
+              <div className="col-span-full py-12 text-center bg-white rounded-xl border border-dashed border-slate-200">
+                <UserCheck className="h-10 w-10 text-slate-300 mx-auto mb-2" />
+                <p className="font-bold text-slate-700">No external supervisor requests found.</p>
+                <p className="text-xs text-slate-400">All applications have been reviewed or no requests match your filter.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Rejection Modal */}
+          {rejectingReqId && (
+            <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+                <h3 className="text-lg font-bold text-slate-800">Reject External Supervisor Request</h3>
+                <p className="text-xs text-slate-500">Please state the reason for rejecting this application.</p>
+                <textarea
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  placeholder="Enter detailed reason for rejection..."
+                  className="w-full h-28 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-navy-900 resize-none"
+                />
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => { setRejectingReqId(null); setRejectionReasonInput(''); }}
+                    className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRejectReqSubmit}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold"
+                  >
+                    Confirm Rejection
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ---------------- REPORTS TAB (FYP Progression Analytics Hub) ----------------
+    if (path === '/pm/reports') {
+      const totalStudentsCount = students.length;
+      const allocatedSupervisorCount = students.filter(s => s.supervisor).length;
+      const allocatedAssessorCount = students.filter(s => s.assessorAssigned).length;
+      const totalBatchesCount = batches.length;
+
+      const handleExportAnalyticsCSV = () => {
+        const headers = ["Student ID", "Name", "Batch Intake", "Stage", "Supervisor", "Assessor", "Topic"];
+        const rows = students.map(s => [
+          s.id,
+          `"${s.name}"`,
+          `"${s.intake || s.batch || '-'}"`,
+          `"${batches.find(b => b.id === s.batchId)?.stage || 'Proposal'}"`,
+          `"${s.supervisor || 'Pending'}"`,
+          `"${s.assessor || 'Pending'}"`,
+          `"${s.topic || 'Pending'}"`
+        ]);
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "fyp_progression_analytics_report.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">FYP Progression Analytics Hub</h1>
+              <p className="text-sm text-slate-500">Live operational metrics, supervisor/assessor allocation progress, and batch lifecycle tracking.</p>
+            </div>
+            <button
+              onClick={handleExportAnalyticsCSV}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-sm transition-all flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" /> Export Analytics CSV
+            </button>
+          </div>
+
+          {/* Key KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Enrolled Students</span>
+              <p className="text-3xl font-bold text-slate-800">{totalStudentsCount}</p>
+              <p className="text-xs text-slate-500">Across {totalBatchesCount} active intakes</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Supervisor Allocation</span>
+              <p className="text-3xl font-bold text-emerald-700">{totalStudentsCount > 0 ? Math.round((allocatedSupervisorCount / totalStudentsCount) * 100) : 0}%</p>
+              <p className="text-xs text-emerald-600 font-semibold">{allocatedSupervisorCount} of {totalStudentsCount} Assigned</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Assessor Allocation</span>
+              <p className="text-3xl font-bold text-blue-700">{totalStudentsCount > 0 ? Math.round((allocatedAssessorCount / totalStudentsCount) * 100) : 0}%</p>
+              <p className="text-xs text-blue-600 font-semibold">{allocatedAssessorCount} of {totalStudentsCount} Assigned</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Active Faculty Members</span>
+              <p className="text-3xl font-bold text-purple-700">{supervisors.length}</p>
+              <p className="text-xs text-purple-600 font-semibold">{assessors.length} Assessors Registered</p>
+            </div>
+          </div>
+
+          {/* Progression Summary Table */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800">Batch Stage Progress Overview</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {batches.map(b => (
+                  <div key={b.id} className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-bold text-slate-800 text-base">{b.intake || b.name}</h4>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-navy-100 text-navy-800">{b.stage || 'Proposal'}</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-slate-600">
+                      <p><span className="font-semibold">Batch Code:</span> {b.code || b.batchCode || '-'}</p>
+                      <p><span className="font-semibold">Total Students:</span> {students.filter(s => s.batchId === b.id).length}</p>
+                      <p><span className="font-semibold">Start Date:</span> {b.startDate || '-'}</p>
+                    </div>
+                  </div>
+                ))}
+                {batches.length === 0 && (
+                  <p className="text-xs text-slate-400 col-span-full">No active batch records found.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       );

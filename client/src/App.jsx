@@ -43,7 +43,7 @@ const studentLinks = [
   { path: '/student/templates', label: 'Templates', icon: Layers },
   { path: '/student/logsheets', label: 'Logsheets', icon: FileText },
   { path: '/student/viva', label: 'Viva Schedule', icon: CalendarDays },
-  { path: '/student/notifications', label: 'Notifications', icon: Bell },
+  { path: '/student/profile', label: 'Profile', icon: Settings },
 ];
 
 const supervisorLinks = [
@@ -53,13 +53,11 @@ const supervisorLinks = [
   { path: '/supervisor/logsheets', label: 'Logsheets', icon: FileText },
   { path: '/supervisor/viva', label: 'Viva Schedule', icon: CalendarDays },
   { path: '/supervisor/profile', label: 'Profile', icon: Settings },
-  { path: '/supervisor/notifications', label: 'Notifications', icon: Bell },
 ];
 
 const assessorLinks = [
   { path: '/assessor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/assessor/viva', label: 'Viva Schedule', icon: CalendarDays },
-  { path: '/assessor/notifications', label: 'Notifications', icon: Bell },
 ];
 
 const pmLinks = [
@@ -67,6 +65,7 @@ const pmLinks = [
   { path: '/pm/batches', label: 'Batches', icon: Layers },
   { path: '/pm/students', label: 'Students', icon: Users },
   { path: '/pm/supervisors', label: 'Supervisors', icon: UserCheck },
+  { path: '/pm/external-supervisors', label: 'External Requests', icon: UserCheck },
   { path: '/pm/allocation', label: 'Supervisor Allocation', icon: Shield },
   { path: '/pm/assessors', label: 'Assessor Allocation', icon: FileCheck },
   { path: '/pm/templates', label: 'Templates', icon: Layers },
@@ -77,7 +76,6 @@ const pmLinks = [
 const adminLinks = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/users', label: 'Users', icon: Users },
-  { path: '/admin/external-supervisor-requests', label: 'External Supervisor Requests', icon: UserCheck },
   { path: '/admin/roles', label: 'Roles', icon: Shield },
   { path: '/admin/viva', label: 'Viva Management', icon: CalendarDays },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
@@ -186,7 +184,7 @@ function App() {
             <Route path="/student/templates" element={<StudentDashboard />} />
             <Route path="/student/logsheets" element={<StudentDashboard />} />
             <Route path="/student/viva" element={<StudentVivaDashboard />} />
-            <Route path="/student/notifications" element={<StudentDashboard />} />
+            <Route path="/student/profile" element={<StudentDashboard />} />
             <Route path="/student/*" element={<Navigate to="/student/dashboard" replace />} />
           </Route>
         </Route>
@@ -207,7 +205,6 @@ function App() {
             <Route path="/supervisor/logsheets" element={<SupervisorDashboard />} />
             <Route path="/supervisor/viva" element={<SupervisorVivaDashboard />} />
             <Route path="/supervisor/profile" element={<SupervisorDashboard />} />
-            <Route path="/supervisor/notifications" element={<SupervisorDashboard />} />
             <Route path="/supervisor/*" element={<Navigate to="/supervisor/dashboard" replace />} />
           </Route>
         </Route>
@@ -242,6 +239,7 @@ function App() {
             <Route path="/pm/batches" element={<PMDashboard />} />
             <Route path="/pm/students" element={<PMDashboard />} />
             <Route path="/pm/supervisors" element={<PMDashboard />} />
+            <Route path="/pm/external-supervisors" element={<PMDashboard />} />
             <Route path="/pm/allocation" element={<PMDashboard />} />
             <Route path="/pm/assessors" element={<PMDashboard />} />
             <Route path="/pm/templates" element={<PMDashboard />} />
