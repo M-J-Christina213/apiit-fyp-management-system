@@ -11,42 +11,66 @@ import {
 } from 'lucide-react';
 
 const SupervisorVivaDashboard = () => {
+  // Test User
+  const supervisorId = 1;
+
   const [selectedDate, setSelectedDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('12:00');
   
   const [activePeriod, setActivePeriod] = useState(null);
+  const [upcomingVivas, setUpcomingVivas] = useState([]);
+  const [submittedSlots, setSubmittedSlots] = useState([]);
 
-  const upcomingVivas = [
-    { id: 1, student: 'John Perera', cb: 'CB00123', type: 'Proposal Viva', date: '2026-07-25', time: '10:00 AM', mode: 'Online', venue: 'Microsoft Teams' },
-    { id: 2, student: 'Kamal Silva', cb: 'CB00124', type: 'Proposal Viva', date: '2026-07-25', time: '11:00 AM', mode: 'Physical', venue: 'APIIT Lab 3' }
-  ];
+  const fetchDashboardData = async () => {
+      try {
+          const res = await fetch(`/api/viva/my-dashboard/supervisor/${supervisorId}`);
+          if (res.ok) {
+              const data = await res.json();
+              const active = data.periods.find(p => p.status === 'Availability Collection' || p.status === 'Scheduling');
+              if (active) {
+                  setActivePeriod(active);
+                  const startDateStr = new Date(active.availability_start).toISOString().split('T')[0];
+                  setSelectedDate(startDateStr);
+              }
+              setSubmittedSlots(data.availabilities);
+              
+              const finalized = data.schedules.filter(s => s.status === 'FINALIZED' || s.status === 'PUBLISHED' || s.status === 'CONFIRMED' || s.status === 'AUTO_SCHEDULED');
+              setUpcomingVivas(finalized);
+          }
+      } catch (error) {
+          console.error("Failed to fetch dashboard data", error);
+      }
+  };
 
   useEffect(() => {
-      // Fetch active Viva period for availability collection
-      const fetchActivePeriod = async () => {
-          try {
-              // We pass a dummy pm/admin header just to get periods if the backend route requires it, 
-              // but ideally supervisors should be able to get active periods.
-              const res = await fetch('/api/viva/periods', {
-                  headers: { 'x-user-role': 'pm' } // Workaround to fetch for now
-              });
-              if (res.ok) {
-                  const periods = await res.json();
-                  const active = periods.find(p => p.status === 'Availability Collection');
-                  if (active) {
-                      setActivePeriod(active);
-                      // Set default date to start of availability
-                      const startDateStr = new Date(active.availability_start).toISOString().split('T')[0];
-                      setSelectedDate(startDateStr);
-                  }
-              }
-          } catch (error) {
-              console.error("Failed to fetch active periods", error);
-          }
-      };
-      fetchActivePeriod();
+      fetchDashboardData();
   }, []);
+
+  const handleSubmit = async () => {
+    if (!activePeriod || !selectedDate || !startTime || !endTime) return alert("Please fill all fields");
+    try {
+      const res = await fetch(`/api/viva/periods/${activePeriod.id}/availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supervisor_id: supervisorId,
+          date: selectedDate,
+          start_time: startTime,
+          end_time: endTime
+        })
+      });
+      if (res.ok) {
+        alert("Availability submitted successfully");
+        fetchDashboardData();
+      } else {
+        const err = await res.json();
+        alert("Failed to submit: " + (err.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const minDate = activePeriod ? new Date(activePeriod.availability_start).toISOString().split('T')[0] : '';
   const maxDate = activePeriod ? new Date(activePeriod.availability_end).toISOString().split('T')[0] : '';
@@ -118,6 +142,7 @@ const SupervisorVivaDashboard = () => {
             </div>
 
             <button 
+                onClick={handleSubmit}
                 disabled={!activePeriod}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white p-3 rounded-lg font-medium shadow-sm transition-all flex items-center justify-center gap-2">
               <Plus size={18} />
@@ -125,7 +150,16 @@ const SupervisorVivaDashboard = () => {
             </button>
             
             <div className="pt-4 mt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-500 flex items-center gap-1.5">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Submitted Slots ({activePeriod?.type || 'No active period'})</h4>
+              <ul className="space-y-2">
+                {submittedSlots.map(slot => (
+                  <li key={slot.id} className="text-sm bg-gray-50 p-2 rounded border border-gray-100 flex justify-between">
+                    <span>{new Date(slot.date).toLocaleDateString()} {new Date(slot.start_time).toLocaleTimeString()} - {new Date(slot.end_time).toLocaleTimeString()}</span>
+                  </li>
+                ))}
+                {submittedSlots.length === 0 && <span className="text-xs text-gray-500">None submitted</span>}
+              </ul>
+              <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-4">
                 <CheckCircle size={14} className="text-green-500"/>
                 Automatically synced with your Outlook Calendar
               </p>
@@ -152,31 +186,39 @@ const SupervisorVivaDashboard = () => {
                   {upcomingVivas.map((viva) => (
                     <tr key={viva.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-4">
-                        <p className="font-semibold text-gray-900">{viva.student}</p>
-                        <p className="text-sm text-gray-500">{viva.cb} • {viva.type}</p>
+                        <p className="font-semibold text-gray-900">{viva.students?.student_name}</p>
+                        <p className="text-sm text-gray-500">{viva.students?.cb_no} • {viva.viva_periods?.type}</p>
                       </td>
                       <td className="py-4">
-                        <p className="text-gray-900 flex items-center gap-1.5"><CalendarIcon size={14}/> {viva.date}</p>
-                        <p className="text-sm text-gray-500 flex items-center gap-1.5"><Clock size={14}/> {viva.time}</p>
+                        <p className="text-gray-900 flex items-center gap-1.5"><CalendarIcon size={14}/> {new Date(viva.date).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500 flex items-center gap-1.5"><Clock size={14}/> {new Date(viva.start_time).toLocaleTimeString()} - {new Date(viva.end_time).toLocaleTimeString()}</p>
                       </td>
                       <td className="py-4">
                         <div className="flex items-center gap-1.5 mb-1">
                           {viva.mode === 'Online' ? <Video size={16} className="text-blue-500"/> : <MapPin size={16} className="text-green-500"/>}
                           <span className={`text-sm font-medium ${viva.mode === 'Online' ? 'text-blue-600' : 'text-green-600'}`}>
-                            {viva.mode}
+                            {viva.mode || 'TBD'}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500">{viva.venue}</p>
+                        <p className="text-sm text-gray-500">{viva.venue || 'TBD'}</p>
                       </td>
                       <td className="py-4">
-                        {viva.mode === 'Online' && (
-                           <button className="text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md font-medium transition-colors">
+                        {viva.teams_link && (
+                           <a href={viva.teams_link} target="_blank" rel="noopener noreferrer" className="text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md font-medium transition-colors">
                              Join Teams
-                           </button>
+                           </a>
+                        )}
+                        {viva.outlook_event_id && (
+                            <p className="text-xs text-gray-500 mt-2">Outlook integration: Mock mode ({viva.outlook_event_id.substring(0,8)})</p>
                         )}
                       </td>
                     </tr>
                   ))}
+                  {upcomingVivas.length === 0 && (
+                      <tr>
+                          <td colSpan="4" className="text-center py-6 text-gray-500">No scheduled vivas found.</td>
+                      </tr>
+                  )}
                 </tbody>
               </table>
             </div>

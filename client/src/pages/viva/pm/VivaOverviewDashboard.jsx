@@ -67,8 +67,7 @@ const VivaOverviewDashboard = () => {
   };
 
   const handleExport = (periodId) => {
-      // In a full implementation, this would trigger a CSV/Excel download
-      alert(`Exporting schedules for period ID: ${periodId}`);
+      window.open(`/api/viva/periods/${periodId}/export`, '_blank');
   };
 
   const filteredSchedules = periodSchedules.filter(sch => 

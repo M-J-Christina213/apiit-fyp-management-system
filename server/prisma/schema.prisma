@@ -167,6 +167,9 @@ model viva_periods {
   availability_end   DateTime  @db.Date
   viva_start         DateTime  @db.Date
   viva_end           DateTime  @db.Date
+  daily_start_time   String?   @db.VarChar(10)
+  daily_end_time     String?   @db.VarChar(10)
+  duration_mins      Int       @default(30)
   status             String    @default("Draft") @db.VarChar(30)
   created_at         DateTime? @default(now()) @db.Timestamp(6)
 
@@ -203,6 +206,7 @@ model viva_schedules {
   date             DateTime? @db.Date
   start_time       DateTime? @db.Time(6)
   end_time         DateTime? @db.Time(6)
+  duration_mins    Int       @default(30)
   mode             String?   @db.VarChar(20)
   venue            String?   @db.VarChar(100)
   teams_link       String?

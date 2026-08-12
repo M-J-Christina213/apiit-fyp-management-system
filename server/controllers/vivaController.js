@@ -96,56 +96,64 @@ exports.createVivaPeriod = async (req, res) => {
 
     const {
         type,
-        availability_start,
-        availability_end,
-        viva_start,
-        viva_end
+        startDate,
+        endDate,
+        dailyStartTime,
+        dailyEndTime,
+        slotDuration
     } = req.body;
 
     // Basic validation
     if (
         !type ||
-        !availability_start ||
-        !availability_end ||
-        !viva_start ||
-        !viva_end
+        !startDate ||
+        !endDate ||
+        !dailyStartTime ||
+        !dailyEndTime ||
+        !slotDuration
     ) {
         return res.status(400).json({
             error: "All Viva Period fields are required"
         });
     }
 
-    const availabilityStart = new Date(availability_start);
-    const availabilityEnd = new Date(availability_end);
-    const vivaStart = new Date(viva_start);
-    const vivaEnd = new Date(viva_end);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-    if (
-        isNaN(availabilityStart) ||
-        isNaN(availabilityEnd) ||
-        isNaN(vivaStart) ||
-        isNaN(vivaEnd)
-    ) {
+    if (isNaN(start) || isNaN(end)) {
         return res.status(400).json({
             error: "Invalid date format"
         });
     }
 
-    if (availabilityStart > availabilityEnd) {
+    if (start > end) {
         return res.status(400).json({
-            error: "Availability start date must be before availability end date"
+            error: "End date must be after or equal to start date."
         });
     }
 
-    if (vivaStart > vivaEnd) {
+    const [startHour, startMin] = dailyStartTime.split(":").map(Number);
+    const [endHour, endMin] = dailyEndTime.split(":").map(Number);
+    const startTimeMins = startHour * 60 + startMin;
+    const endTimeMins = endHour * 60 + endMin;
+
+    if (endTimeMins <= startTimeMins) {
         return res.status(400).json({
-            error: "Viva start date must be before Viva end date"
+            error: "Daily end time must be after daily start time."
         });
     }
 
-    if (availabilityEnd > vivaStart) {
+    const duration = parseInt(slotDuration, 10);
+    if (![15, 30, 45, 60].includes(duration)) {
         return res.status(400).json({
-            error: "Availability collection period must end before the Viva period begins"
+            error: "Time slot duration must be 15, 30, 45, or 60 minutes."
+        });
+    }
+
+    const totalAvailableMins = endTimeMins - startTimeMins;
+    if (totalAvailableMins % duration !== 0) {
+        return res.status(400).json({
+            error: "Time range must be divisible by the selected slot duration."
         });
     }
 
@@ -154,10 +162,13 @@ exports.createVivaPeriod = async (req, res) => {
         const period = await prisma.viva_periods.create({
             data: {
                 type,
-                availability_start: availabilityStart,
-                availability_end: availabilityEnd,
-                viva_start: vivaStart,
-                viva_end: vivaEnd,
+                availability_start: start,
+                availability_end: end,
+                viva_start: start,
+                viva_end: end,
+                daily_start_time: dailyStartTime,
+                daily_end_time: dailyEndTime,
+                duration_mins: duration,
 
                 // Initial state
                 status: "Draft"
@@ -197,10 +208,11 @@ exports.updateVivaPeriod = async (req, res) => {
 
     const {
         type,
-        availability_start,
-        availability_end,
-        viva_start,
-        viva_end,
+        startDate,
+        endDate,
+        dailyStartTime,
+        dailyEndTime,
+        slotDuration,
         status
     } = req.body;
 
@@ -219,36 +231,32 @@ exports.updateVivaPeriod = async (req, res) => {
             });
         }
 
+        const updatedData = { ... (type && { type }), ... (status && { status }) };
+
+        if (startDate) {
+            updatedData.availability_start = new Date(startDate);
+            updatedData.viva_start = new Date(startDate);
+        }
+        if (endDate) {
+            updatedData.availability_end = new Date(endDate);
+            updatedData.viva_end = new Date(endDate);
+        }
+        if (dailyStartTime) {
+            updatedData.daily_start_time = dailyStartTime;
+        }
+        if (dailyEndTime) {
+            updatedData.daily_end_time = dailyEndTime;
+        }
+        if (slotDuration) {
+            updatedData.duration_mins = parseInt(slotDuration, 10);
+        }
+
         const updatedPeriod =
             await prisma.viva_periods.update({
                 where: {
                     id: periodId
                 },
-                data: {
-                    ...(type && { type }),
-
-                    ...(availability_start && {
-                        availability_start:
-                            new Date(availability_start)
-                    }),
-
-                    ...(availability_end && {
-                        availability_end:
-                            new Date(availability_end)
-                    }),
-
-                    ...(viva_start && {
-                        viva_start:
-                            new Date(viva_start)
-                    }),
-
-                    ...(viva_end && {
-                        viva_end:
-                            new Date(viva_end)
-                    }),
-
-                    ...(status && { status })
-                }
+                data: updatedData
             });
 
         res.status(200).json({
@@ -1018,8 +1026,8 @@ exports.confirmSchedule = async (req, res) => {
 
 exports.getIntegrationStatus = async (req, res) => {
     try {
-        const graphService = require("../services/graphService");
-        const status = await graphService.testConnection();
+        const outlookService = require("../services/mockOutlookService");
+        const status = await outlookService.testConnection();
         res.status(200).json(status);
     } catch (error) {
         console.error("Get Integration Status Error:", error);
@@ -1165,6 +1173,159 @@ exports.publishSchedules = async (req, res) => {
         console.error("Publish Schedules Error:", error);
         res.status(500).json({
             error: "Failed to publish schedules",
+            details: error.message
+        });
+    }
+};
+
+// ======================================================
+// ADMIN - FINALIZE SCHEDULE
+// ======================================================
+
+exports.finalizeSchedule = async (req, res) => {
+    const scheduleId = parseInt(req.params.scheduleId);
+
+    if (isNaN(scheduleId)) {
+        return res.status(400).json({ error: "Invalid Schedule ID" });
+    }
+
+    try {
+        const schedule = await prisma.viva_schedules.findUnique({
+            where: { id: scheduleId },
+            include: {
+                students: true,
+                supervisors: true,
+                assessors: true,
+                viva_periods: true
+            }
+        });
+
+        if (!schedule) {
+            return res.status(404).json({ error: "Schedule not found" });
+        }
+        
+        // Mock Notifications
+        const message = `Your ${schedule.viva_periods.type} has been scheduled for ${new Date(schedule.date).toLocaleDateString()} at ${new Date(schedule.start_time).toLocaleTimeString()}.`;
+        console.log(`[Mock Notification] ${message} sent to ${[schedule.students.email, schedule.supervisors?.email, schedule.assessors?.email].filter(Boolean).join(', ')}`);
+
+        // Update Schedule Status
+        const updatedSchedule = await prisma.viva_schedules.update({
+            where: { id: scheduleId },
+            data: {
+                status: "FINALIZED"
+            }
+        });
+
+        res.status(200).json({
+            message: "Schedule finalized successfully",
+            schedule: updatedSchedule
+        });
+    } catch (error) {
+        console.error("Finalize Schedule Error:", error);
+        res.status(500).json({
+            error: "Failed to finalize schedule",
+            details: error.message
+        });
+    }
+};
+
+// ======================================================
+// ADMIN/PM - EXPORT SCHEDULES
+// ======================================================
+
+exports.exportSchedules = async (req, res) => {
+    const periodId = parseInt(req.params.id);
+
+    if (isNaN(periodId)) {
+        return res.status(400).json({ error: "Invalid Viva Period ID" });
+    }
+
+    try {
+        const schedules = await prisma.viva_schedules.findMany({
+            where: { viva_period_id: periodId, status: "FINALIZED" },
+            include: {
+                students: true,
+                supervisors: true,
+                assessors: true,
+                viva_periods: true
+            },
+            orderBy: [{ date: "asc" }, { start_time: "asc" }]
+        });
+
+        // Generate CSV string
+        let csv = "Stage,Student Name,Student ID,Supervisor,Assessor,Date,Start Time,End Time,Duration,Mode,Venue,Teams Link,Outlook Event ID,Status\n";
+        
+        schedules.forEach(sch => {
+            csv += `"${sch.viva_periods.type}","${sch.students.student_name}","${sch.students.cb_no}","${sch.supervisors?.name || ''}","${sch.assessors?.name || ''}","${sch.date ? new Date(sch.date).toLocaleDateString() : ''}","${sch.start_time ? new Date(sch.start_time).toLocaleTimeString() : ''}","${sch.end_time ? new Date(sch.end_time).toLocaleTimeString() : ''}","${sch.duration_mins}","${sch.mode || ''}","${sch.venue || ''}","${sch.teams_link || ''}","${sch.outlook_event_id || ''}","${sch.status}"\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="viva-schedules-${periodId}.csv"`);
+        res.status(200).send(csv);
+
+    } catch (error) {
+        console.error("Export Schedules Error:", error);
+        res.status(500).json({
+            error: "Failed to export schedules",
+            details: error.message
+        });
+    }
+};
+
+// ======================================================
+// PARTICIPANT - GET MY DASHBOARD
+// ======================================================
+
+exports.getMyDashboard = async (req, res) => {
+    const { role, id } = req.params;
+    const userId = parseInt(id);
+
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid User ID" });
+    }
+
+    try {
+        const periods = await prisma.viva_periods.findMany({
+            where: {
+                status: {
+                    not: "Draft"
+                }
+            },
+            orderBy: {
+                created_at: "desc"
+            }
+        });
+
+        const filterField = role === 'student' ? 'student_id' : role === 'supervisor' ? 'supervisor_id' : 'assessor_id';
+
+        const availabilities = await prisma.viva_availabilities.findMany({
+            where: {
+                [filterField]: userId
+            }
+        });
+
+        const schedules = await prisma.viva_schedules.findMany({
+            where: {
+                [filterField]: userId
+            },
+            include: {
+                viva_periods: true,
+                students: true,
+                supervisors: true,
+                assessors: true
+            }
+        });
+
+        res.status(200).json({
+            periods,
+            availabilities,
+            schedules
+        });
+
+    } catch (error) {
+        console.error("Get My Dashboard Error:", error);
+        res.status(500).json({
+            error: "Failed to fetch dashboard data",
             details: error.message
         });
     }

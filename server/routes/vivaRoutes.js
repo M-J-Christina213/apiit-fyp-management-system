@@ -103,7 +103,21 @@ router.put(
     vivaController.publishSchedules
 );
 
-// Get Integration Status
-router.get("/integration-status", verifyRole("admin"), vivaController.getIntegrationStatus);
+// Finalize a schedule
+router.put(
+    "/schedules/:scheduleId/finalize",
+    verifyRole("admin"),
+    vivaController.finalizeSchedule
+);
+
+// Export schedules for a period
+router.get(
+    "/periods/:id/export",
+    verifyRole(["admin", "pm"]),
+    vivaController.exportSchedules
+);
+
+// Get My Dashboard Data (Student, Supervisor, Assessor)
+router.get("/my-dashboard/:role/:id", vivaController.getMyDashboard);
 
 module.exports = router;

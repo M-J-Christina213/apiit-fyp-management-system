@@ -1,66 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  CalendarDays, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle2, 
-  CalendarCheck,
-  Play,
-  Plus
-} from 'lucide-react';
+import React, { useEffect, useState } from "react";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend
-} from 'recharts';
+  CalendarDays,
+  Clock3,
+  Users,
+  CalendarCheck,
+  Plus,
+  Play,
+  Eye,
+  Send,
+  X,
+  ChevronDown,
+  Settings2,
+} from "lucide-react";
 
-const VivaAdminDashboard = () => {
+const VivaManagementDashboard = () => {
   const [stats, setStats] = useState({
     activePeriods: 0,
+    totalAvailabilities: 0,
     totalSchedules: 0,
-    totalAvailabilities: 0
   });
 
-  const [integrationStatus, setIntegrationStatus] = useState(null);
-  const [stages, setStages] = useState([]);
-  const [expandedPeriodId, setExpandedPeriodId] = useState(null);
-  const [periodSchedules, setPeriodSchedules] = useState([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [periods, setPeriods] = useState([]);
+  const [expandedPeriod, setExpandedPeriod] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   const [formData, setFormData] = useState({
-    type: 'Proposal Viva',
-    availability_start: '',
-    availability_end: '',
-    viva_start: '',
-    viva_end: ''
+    type: "Proposal Viva",
+    start_date: "",
+    end_date: "",
+    daily_start_time: "08:00",
+    daily_end_time: "19:00",
+    slot_duration: "30",
   });
+
+  const adminHeaders = {
+    "Content-Type": "application/json",
+    "x-user-role": "admin",
+  };
+
+  // ----------------------------------------------------
+  // FETCH DASHBOARD
+  // ----------------------------------------------------
 
   const fetchDashboardData = async () => {
     try {
-      const statsRes = await fetch('/api/viva/dashboard');
+      const statsRes = await fetch("/api/viva/dashboard", {
+        headers: adminHeaders,
+      });
+
       if (statsRes.ok) {
         const statsData = await statsRes.json();
-        setStats(statsData);
+
+        setStats({
+          activePeriods: statsData.activePeriods || 0,
+          totalAvailabilities: statsData.totalAvailabilities || 0,
+          totalSchedules: statsData.totalSchedules || 0,
+        });
       }
 
-      const stagesRes = await fetch('/api/viva/periods');
-      if (stagesRes.ok) {
-        const stagesData = await stagesRes.json();
-        setStages(stagesData);
-      }
-      
-      const integrationRes = await fetch('/api/viva/integration-status');
-      if (integrationRes.ok) {
-          const integrationData = await integrationRes.json();
-          setIntegrationStatus(integrationData);
-      } else {
-          setIntegrationStatus({ status: 'error', message: 'Failed to fetch status' });
+      const periodsRes = await fetch("/api/viva/periods", {
+        headers: adminHeaders,
+      });
+
+      if (periodsRes.ok) {
+        const periodsData = await periodsRes.json();
+        setPeriods(periodsData);
       }
     } catch (error) {
-      console.error("Failed to fetch dashboard data", error);
+      console.error("Failed to load viva dashboard:", error);
     }
   };
 
@@ -68,250 +77,1076 @@ const VivaAdminDashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // ----------------------------------------------------
+  // CREATE PERIOD
+  // ----------------------------------------------------
+
   const handleCreatePeriod = async (e) => {
     e.preventDefault();
+
+    if (formData.start_date > formData.end_date) {
+      alert("End date cannot be before start date.");
+      return;
+    }
+
     try {
-      const res = await fetch('/api/viva/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+      const res = await fetch("/api/viva/periods", {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({
+          type: formData.type,
+          startDate: formData.start_date,
+          endDate: formData.end_date,
+          dailyStartTime: formData.daily_start_time,
+          dailyEndTime: formData.daily_end_time,
+          slotDuration: Number(formData.slot_duration),
+        }),
       });
-      if (res.ok) {
-        alert("Viva period created successfully!");
-        setShowCreateForm(false);
-        fetchDashboardData();
-      } else {
-        alert("Failed to create period");
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        alert(error.error || "Failed to create Viva period.");
+        return;
       }
+
+      alert("Viva period created successfully.");
+
+      setShowCreateModal(false);
+
+      setFormData({
+        type: "Proposal Viva",
+        start_date: "",
+        end_date: "",
+        daily_start_time: "08:00",
+        daily_end_time: "19:00",
+        slot_duration: "30",
+      });
+
+      fetchDashboardData();
     } catch (error) {
       console.error(error);
-      alert("Error creating period");
+      alert("Error creating Viva period.");
     }
   };
 
-  const handleTriggerScheduling = async (periodId) => {
+  // ----------------------------------------------------
+  // PUBLISH PERIOD
+  // ----------------------------------------------------
+
+  const handlePublishPeriod = async (periodId) => {
     try {
-      const res = await fetch(`/api/viva/periods/${periodId}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (res.ok) {
-        alert("Scheduling triggered successfully!");
-        fetchDashboardData();
-        if (expandedPeriodId === periodId) handleViewSchedules(periodId);
-      } else {
-        alert("Scheduling failed");
+      const res = await fetch(
+        `/api/viva/periods/${periodId}/publish`,
+        {
+          method: "PUT",
+          headers: adminHeaders,
+        }
+      );
+
+      if (!res.ok) {
+        alert("Failed to publish Viva period.");
+        return;
       }
+
+      alert(
+        "Viva period published. Students, supervisors and assessors can now submit availability."
+      );
+
+      fetchDashboardData();
     } catch (error) {
       console.error(error);
-      alert("Error triggering schedule");
+      alert("Error publishing Viva period.");
     }
   };
 
-  const handleViewSchedules = async (periodId) => {
-      if (expandedPeriodId === periodId) {
-          setExpandedPeriodId(null);
-          return;
+  // ----------------------------------------------------
+  // AUTO SCHEDULE
+  // ----------------------------------------------------
+
+  const handleAutoSchedule = async (periodId) => {
+    try {
+      const res = await fetch(
+        `/api/viva/periods/${periodId}/generate`,
+        {
+          method: "POST",
+          headers: adminHeaders,
+        }
+      );
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        alert(error.error || "Scheduling failed.");
+        return;
       }
-      try {
-          const res = await fetch(`/api/viva/periods/${periodId}/schedules`);
-          if (res.ok) {
-              const data = await res.json();
-              setPeriodSchedules(data);
-              setExpandedPeriodId(periodId);
-          }
-      } catch (error) {
-          console.error("Failed to load schedules", error);
+
+      alert("Viva schedules generated successfully.");
+
+      fetchDashboardData();
+
+      if (expandedPeriod === periodId) {
+        loadSchedules(periodId);
       }
+    } catch (error) {
+      console.error(error);
+      alert("Error generating schedules.");
+    }
   };
+
+  // ----------------------------------------------------
+  // VIEW SCHEDULES
+  // ----------------------------------------------------
+
+  const loadSchedules = async (periodId) => {
+    if (expandedPeriod === periodId) {
+      setExpandedPeriod(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/viva/periods/${periodId}/schedules`,
+        {
+          headers: adminHeaders,
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+
+        setSchedules(data);
+        setExpandedPeriod(periodId);
+      }
+    } catch (error) {
+      console.error("Failed to load schedules:", error);
+    }
+  };
+
+  // ----------------------------------------------------
+  // PUBLISH SCHEDULES
+  // ----------------------------------------------------
+
+  const handlePublishSchedules = async (periodId) => {
+    try {
+      const res = await fetch(
+        `/api/viva/periods/${periodId}/schedules/publish`,
+        {
+          method: "PUT",
+          headers: adminHeaders,
+        }
+      );
+
+      if (!res.ok) {
+        alert("Failed to publish schedules.");
+        return;
+      }
+
+      alert(
+        "Schedules published successfully. Participants can now view their Viva schedule."
+      );
+
+      fetchDashboardData();
+      loadSchedules(periodId);
+    } catch (error) {
+      console.error(error);
+      alert("Error publishing schedules.");
+    }
+  };
+
+  // ----------------------------------------------------
+  // FORMAT DATE
+  // ----------------------------------------------------
+
+  const formatDate = (date) => {
+    if (!date) return "—";
+
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // ----------------------------------------------------
+  // FORMAT TIME
+  // ----------------------------------------------------
+
+  const formatTime = (time) => {
+    if (!time) return "—";
+
+    const [hours, minutes] = time.split(":");
+
+    const date = new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes);
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  // ----------------------------------------------------
+  // UI
+  // ----------------------------------------------------
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen font-sans">
-      
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Viva Scheduling Management</h1>
-          <p className="text-gray-500 mt-1">Manage and automate university viva schedules</p>
-        </div>
-        <div className="flex gap-4">
-            <button 
-                onClick={() => setShowCreateForm(!showCreateForm)}
-                className="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2">
-                <Plus size={18} />
-                Create Viva Period
-            </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-slate-50 p-6 lg:p-8">
 
-      {/* Integration Status Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
+      {/* PAGE HEADER */}
+      <div className="max-w-7xl mx-auto">
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+
           <div>
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <CalendarDays size={20} className="text-blue-600" />
-                  Microsoft Graph Integration Status
+            <h1 className="text-3xl font-bold text-slate-900">
+              Viva Scheduling
+            </h1>
+
+            <p className="text-slate-500 mt-1">
+              Create Viva periods, collect availability and generate schedules.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold shadow-sm transition"
+          >
+            <Plus size={18} />
+            Create Viva Period
+          </button>
+
+        </div>
+
+        {/* ------------------------------------------------ */}
+        {/* STATS */}
+        {/* ------------------------------------------------ */}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+          <StatCard
+            icon={<CalendarCheck size={22} />}
+            title="Active Viva Periods"
+            value={stats.activePeriods}
+            iconBg="bg-indigo-100"
+            iconColor="text-indigo-600"
+          />
+
+          <StatCard
+            icon={<Users size={22} />}
+            title="Availabilities Submitted"
+            value={stats.totalAvailabilities}
+            iconBg="bg-emerald-100"
+            iconColor="text-emerald-600"
+          />
+
+          <StatCard
+            icon={<Clock3 size={22} />}
+            title="Generated Schedules"
+            value={stats.totalSchedules}
+            iconBg="bg-amber-100"
+            iconColor="text-amber-600"
+          />
+
+        </div>
+
+        {/* ------------------------------------------------ */}
+        {/* EXPLANATION CARD */}
+        {/* ------------------------------------------------ */}
+
+        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-8">
+
+          <div className="flex gap-4">
+
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <CalendarDays size={20} />
+            </div>
+
+            <div>
+
+              <h3 className="font-semibold text-indigo-900">
+                How Viva availability works
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                  {integrationStatus ? integrationStatus.message : "Checking status..."}
-                  {!integrationStatus?.adminEmailConfigured && integrationStatus?.status === 'success' && (
-                      <span className="text-amber-600 font-medium ml-2">⚠️ ADMIN_EMAIL missing in .env</span>
-                  )}
+
+              <p className="text-sm text-indigo-700 mt-1 leading-relaxed">
+                The Viva period defines the dates and daily hours during which
+                Viva sessions can be scheduled. Students, supervisors and
+                assessors will select the specific time slots they are
+                available for.
               </p>
+
+            </div>
+
           </div>
-          <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">Status:</span>
-              {integrationStatus?.status === 'success' && integrationStatus?.adminEmailConfigured ? (
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 flex items-center gap-1">
-                      <CheckCircle2 size={16} /> Active & Connected
-                  </span>
-              ) : integrationStatus?.status === 'success' ? (
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700 flex items-center gap-1">
-                      <AlertTriangle size={16} /> Partially Connected
-                  </span>
-              ) : (
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700 flex items-center gap-1">
-                      <AlertTriangle size={16} /> Disconnected
-                  </span>
-              )}
+
+        </div>
+
+        {/* ------------------------------------------------ */}
+        {/* ACTIVE PERIODS */}
+        {/* ------------------------------------------------ */}
+
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
+
+          <div className="px-6 py-5 border-b border-slate-200">
+
+            <h2 className="text-xl font-bold text-slate-900">
+              Viva Periods
+            </h2>
+
+            <p className="text-sm text-slate-500 mt-1">
+              Manage current and upcoming Viva scheduling periods.
+            </p>
+
           </div>
+
+          <div className="p-6">
+
+            {periods.length === 0 ? (
+
+              <div className="text-center py-16">
+
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                  <CalendarDays size={30} />
+                </div>
+
+                <h3 className="text-lg font-semibold text-slate-800">
+                  No Viva periods yet
+                </h3>
+
+                <p className="text-sm text-slate-500 mt-1 mb-5">
+                  Create a Viva period to start collecting availability.
+                </p>
+
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium"
+                >
+                  <Plus size={16} />
+                  Create Viva Period
+                </button>
+
+              </div>
+
+            ) : (
+
+              <div className="space-y-4">
+
+                {periods.map((period) => (
+
+                  <div
+                    key={period.id}
+                    className="border border-slate-200 rounded-xl overflow-hidden"
+                  >
+
+                    {/* PERIOD HEADER */}
+
+                    <div className="p-5">
+
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+                        <div className="flex gap-4">
+
+                          <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                            <CalendarDays size={22} />
+                          </div>
+
+                          <div>
+
+                            <div className="flex items-center gap-3 flex-wrap">
+
+                              <h3 className="font-bold text-lg text-slate-900">
+                                {period.type}
+                              </h3>
+
+                              <StatusBadge status={period.status} />
+
+                            </div>
+
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-3 text-sm text-slate-500">
+
+                              <span>
+                                <strong className="text-slate-700">
+                                  Dates:
+                                </strong>{" "}
+                                {formatDate(period.start_date)} –{" "}
+                                {formatDate(period.end_date)}
+                              </span>
+
+                              <span>
+                                <strong className="text-slate-700">
+                                  Daily hours:
+                                </strong>{" "}
+                                {formatTime(period.daily_start_time)} –{" "}
+                                {formatTime(period.daily_end_time)}
+                              </span>
+
+                              <span>
+                                <strong className="text-slate-700">
+                                  Slot:
+                                </strong>{" "}
+                                {period.slot_duration || 30} minutes
+                              </span>
+
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                        {/* ACTIONS */}
+
+                        <div className="flex flex-wrap gap-2">
+
+                          {period.status === "Draft" && (
+
+                            <button
+                              onClick={() =>
+                                handlePublishPeriod(period.id)
+                              }
+                              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                            >
+                              <Send size={15} />
+                              Publish
+                            </button>
+
+                          )}
+
+                          {(period.status ===
+                            "Availability Collection" ||
+                            period.status === "Scheduling") && (
+
+                              <button
+                                onClick={() =>
+                                  handleAutoSchedule(period.id)
+                                }
+                                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                              >
+                                <Play size={15} />
+                                Auto-Schedule
+                              </button>
+
+                            )}
+
+                          <button
+                            onClick={() =>
+                              loadSchedules(period.id)
+                            }
+                            className="inline-flex items-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium"
+                          >
+                            <Eye size={15} />
+
+                            {expandedPeriod === period.id
+                              ? "Hide"
+                              : "View"}{" "}
+                            Schedules
+
+                            <ChevronDown
+                              size={15}
+                              className={
+                                expandedPeriod === period.id
+                                  ? "rotate-180 transition"
+                                  : "transition"
+                              }
+                            />
+
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* ------------------------------------------------ */}
+                    {/* SCHEDULES */}
+                    {/* ------------------------------------------------ */}
+
+                    {expandedPeriod === period.id && (
+
+                      <div className="border-t border-slate-200 bg-slate-50 p-5">
+
+                        <div className="flex items-center justify-between mb-4">
+
+                          <div>
+
+                            <h4 className="font-semibold text-slate-900">
+                              Generated Schedules
+                            </h4>
+
+                            <p className="text-sm text-slate-500">
+                              Review automatically generated Viva sessions.
+                            </p>
+
+                          </div>
+
+                          {schedules.length > 0 && (
+
+                            <button
+                              onClick={() =>
+                                handlePublishSchedules(period.id)
+                              }
+                              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                            >
+                              <Send size={15} />
+                              Publish Schedules
+                            </button>
+
+                          )}
+
+                        </div>
+
+                        {schedules.length === 0 ? (
+
+                          <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center">
+
+                            <Clock3
+                              size={30}
+                              className="mx-auto text-slate-400 mb-3"
+                            />
+
+                            <p className="font-medium text-slate-700">
+                              No schedules generated
+                            </p>
+
+                            <p className="text-sm text-slate-500 mt-1">
+                              Generate schedules after availability
+                              collection is complete.
+                            </p>
+
+                          </div>
+
+                        ) : (
+
+                          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+
+                            <div className="overflow-x-auto">
+
+                              <table className="w-full text-sm">
+
+                                <thead className="bg-slate-100">
+
+                                  <tr>
+
+                                    <th className="text-left px-5 py-3 font-semibold text-slate-600">
+                                      Student
+                                    </th>
+
+                                    <th className="text-left px-5 py-3 font-semibold text-slate-600">
+                                      Date
+                                    </th>
+
+                                    <th className="text-left px-5 py-3 font-semibold text-slate-600">
+                                      Time
+                                    </th>
+
+                                    <th className="text-left px-5 py-3 font-semibold text-slate-600">
+                                      Mode
+                                    </th>
+
+                                    <th className="text-left px-5 py-3 font-semibold text-slate-600">
+                                      Status
+                                    </th>
+
+                                  </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                  {schedules.map((schedule) => (
+
+                                    <tr
+                                      key={schedule.id}
+                                      className="border-t border-slate-100 hover:bg-slate-50"
+                                    >
+
+                                      <td className="px-5 py-4 font-medium text-slate-900">
+
+                                        {schedule.students
+                                          ?.student_name ||
+                                          `Student ${schedule.student_id}`}
+
+                                      </td>
+
+                                      <td className="px-5 py-4 text-slate-600">
+
+                                        {formatDate(schedule.date)}
+
+                                      </td>
+
+                                      <td className="px-5 py-4 text-slate-600">
+
+                                        {schedule.start_time &&
+                                          schedule.end_time
+                                          ? `${formatTime(
+                                            schedule.start_time
+                                          )} – ${formatTime(
+                                            schedule.end_time
+                                          )}`
+                                          : "—"}
+
+                                      </td>
+
+                                      <td className="px-5 py-4">
+
+                                        <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">
+                                          {schedule.mode || "Online"}
+                                        </span>
+
+                                      </td>
+
+                                      <td className="px-5 py-4">
+
+                                        <StatusBadge
+                                          status={
+                                            schedule.status
+                                          }
+                                        />
+
+                                      </td>
+
+                                    </tr>
+
+                                  ))}
+
+                                </tbody>
+
+                              </table>
+
+                            </div>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
       </div>
 
-      {showCreateForm && (
-        <form onSubmit={handleCreatePeriod} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-                <h3 className="text-lg font-semibold mb-4">Create New Viva Period</h3>
+      {/* ====================================================== */}
+      {/* CREATE VIVA PERIOD MODAL */}
+      {/* ====================================================== */}
+
+      {showCreateModal && (
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+          {/* BACKDROP */}
+
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => setShowCreateModal(false)}
+          />
+
+          {/* MODAL */}
+
+          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl">
+
+            {/* MODAL HEADER */}
+
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+
+              <div>
+
+                <h2 className="text-xl font-bold text-slate-900">
+                  Create Viva Period
+                </h2>
+
+                <p className="text-sm text-slate-500 mt-1">
+                  Define when Viva sessions can be scheduled.
+                </p>
+
+              </div>
+
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"
+              >
+                <X size={20} />
+              </button>
+
             </div>
-            <div>
-                <label className="block text-sm mb-1 text-gray-600">Stage</label>
-                <select className="w-full border p-2 rounded" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-                    <option>Proposal Viva</option>
-                    <option>Midpoint Viva</option>
-                    <option>Final Viva</option>
+
+            {/* FORM */}
+
+            <form
+              onSubmit={handleCreatePeriod}
+              className="p-6 space-y-6"
+            >
+
+              {/* VIVA TYPE */}
+
+              <div>
+
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Viva Type
+                </label>
+
+                <select
+                  value={formData.type}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      type: e.target.value,
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                >
+
+                  <option>Proposal Viva</option>
+                  <option>Midpoint Viva</option>
+                  <option>Final Viva</option>
+
                 </select>
-            </div>
-            <div></div>
-            <div>
-                <label className="block text-sm mb-1 text-gray-600">Availability Start</label>
-                <input type="date" required className="w-full border p-2 rounded" value={formData.availability_start} onChange={e => setFormData({...formData, availability_start: e.target.value})} />
-            </div>
-            <div>
-                <label className="block text-sm mb-1 text-gray-600">Availability End</label>
-                <input type="date" required className="w-full border p-2 rounded" value={formData.availability_end} onChange={e => setFormData({...formData, availability_end: e.target.value})} />
-            </div>
-            <div>
-                <label className="block text-sm mb-1 text-gray-600">Viva Start</label>
-                <input type="date" required className="w-full border p-2 rounded" value={formData.viva_start} onChange={e => setFormData({...formData, viva_start: e.target.value})} />
-            </div>
-            <div>
-                <label className="block text-sm mb-1 text-gray-600">Viva End</label>
-                <input type="date" required className="w-full border p-2 rounded" value={formData.viva_end} onChange={e => setFormData({...formData, viva_end: e.target.value})} />
-            </div>
-            <div className="col-span-2">
-                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Create Period</button>
-            </div>
-        </form>
+
+              </div>
+
+              {/* DATE RANGE */}
+
+              <div>
+
+                <div className="flex items-center gap-2 mb-3">
+
+                  <CalendarDays
+                    size={18}
+                    className="text-indigo-600"
+                  />
+
+                  <h3 className="font-semibold text-slate-800">
+                    Viva Period
+                  </h3>
+
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div>
+
+                    <label className="block text-sm text-slate-600 mb-1">
+                      Start Date
+                    </label>
+
+                    <input
+                      type="date"
+                      required
+                      value={formData.start_date}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          start_date: e.target.value,
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <label className="block text-sm text-slate-600 mb-1">
+                      End Date
+                    </label>
+
+                    <input
+                      type="date"
+                      required
+                      value={formData.end_date}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          end_date: e.target.value,
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
+                  </div>
+
+                </div>
+
+                <p className="text-xs text-slate-500 mt-2">
+                  Example: 12 August – 22 August. Viva sessions can be
+                  scheduled on any selected date within this period.
+                </p>
+
+              </div>
+
+              {/* DAILY HOURS */}
+
+              <div>
+
+                <div className="flex items-center gap-2 mb-3">
+
+                  <Clock3
+                    size={18}
+                    className="text-indigo-600"
+                  />
+
+                  <h3 className="font-semibold text-slate-800">
+                    Daily Available Hours
+                  </h3>
+
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div>
+
+                    <label className="block text-sm text-slate-600 mb-1">
+                      From
+                    </label>
+
+                    <input
+                      type="time"
+                      required
+                      value={formData.daily_start_time}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          daily_start_time: e.target.value,
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <label className="block text-sm text-slate-600 mb-1">
+                      Until
+                    </label>
+
+                    <input
+                      type="time"
+                      required
+                      value={formData.daily_end_time}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          daily_end_time: e.target.value,
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
+                  </div>
+
+                </div>
+
+                <p className="text-xs text-slate-500 mt-2">
+                  Example: 8:00 AM – 7:00 PM. Participants will see
+                  selectable time slots within these hours.
+                </p>
+
+              </div>
+
+              {/* SLOT DURATION */}
+
+              <div>
+
+                <div className="flex items-center gap-2 mb-3">
+
+                  <Settings2
+                    size={18}
+                    className="text-indigo-600"
+                  />
+
+                  <h3 className="font-semibold text-slate-800">
+                    Time Slot Duration
+                  </h3>
+
+                </div>
+
+                <select
+                  value={formData.slot_duration}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      slot_duration: e.target.value,
+                    })
+                  }
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+
+                </select>
+
+                <p className="text-xs text-slate-500 mt-2">
+                  This determines the time slots participants can select.
+                </p>
+
+              </div>
+
+              {/* PREVIEW */}
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  Example
+                </p>
+
+                <p className="text-sm text-slate-700">
+
+                  <strong>{formData.type}</strong> will run from{" "}
+
+                  <strong>
+                    {formData.start_date || "12 Aug"}
+                  </strong>{" "}
+
+                  to{" "}
+
+                  <strong>
+                    {formData.end_date || "22 Aug"}
+                  </strong>{" "}
+
+                  with available slots between{" "}
+
+                  <strong>
+                    {formatTime(formData.daily_start_time)}
+                  </strong>{" "}
+
+                  and{" "}
+
+                  <strong>
+                    {formatTime(formData.daily_end_time)}
+                  </strong>
+                  .
+
+                </p>
+
+              </div>
+
+              {/* BUTTONS */}
+
+              <div className="flex justify-end gap-3 pt-2">
+
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                >
+                  Create Viva Period
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+
       )}
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard icon={<CalendarCheck />} title="Active Periods" value={stats.activePeriods} color="text-green-600" bg="bg-green-100" />
-        <StatCard icon={<Users />} title="Total Availabilities Submitted" value={stats.totalAvailabilities} color="text-blue-600" bg="bg-blue-100" />
-        <StatCard icon={<Clock />} title="Total Generated Schedules" value={stats.totalSchedules} color="text-amber-600" bg="bg-amber-100" />
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Active Viva Periods</h2>
-          <div className="space-y-6">
-            {stages.map((item, index) => (
-              <React.Fragment key={index}>
-              <div className="flex items-center justify-between p-4 border rounded-xl">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{item.type}</h3>
-                  <p className="text-sm text-gray-500">
-                      Viva: {new Date(item.viva_start).toLocaleDateString()} to {new Date(item.viva_end).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex gap-4 items-center">
-                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-                        {item.status}
-                    </span>
-                    <button onClick={() => handleViewSchedules(item.id)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 text-sm rounded-lg font-medium transition-colors">
-                        {expandedPeriodId === item.id ? 'Hide Schedules' : 'View Schedules'}
-                    </button>
-                    <button onClick={() => handleTriggerScheduling(item.id)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm rounded-lg flex items-center gap-2">
-                        <Play size={14} /> Auto-Schedule
-                    </button>
-                </div>
-              </div>
-              
-              {expandedPeriodId === item.id && (
-                  <div className="p-4 bg-gray-50 border-t rounded-b-xl overflow-x-auto">
-                      <h4 className="font-semibold text-gray-700 mb-4">Generated Schedules</h4>
-                      {periodSchedules.length === 0 ? (
-                          <p className="text-gray-500 text-sm">No schedules generated yet.</p>
-                      ) : (
-                          <table className="w-full text-left text-sm">
-                              <thead className="bg-gray-100 text-gray-600">
-                                  <tr>
-                                      <th className="p-3 rounded-tl-lg">Student</th>
-                                      <th className="p-3">Date & Time</th>
-                                      <th className="p-3">Mode</th>
-                                      <th className="p-3">Outlook Event ID</th>
-                                      <th className="p-3 rounded-tr-lg">Teams Link</th>
-                                  </tr>
-                              </thead>
-                              <tbody>
-                                  {periodSchedules.map((sch, i) => (
-                                      <tr key={i} className="border-b last:border-0 bg-white">
-                                          <td className="p-3">{sch.students?.student_name || `ID: ${sch.student_id}`}</td>
-                                          <td className="p-3">
-                                              {new Date(sch.date).toLocaleDateString()} <br/>
-                                              <span className="text-gray-500">{new Date(sch.start_time).toLocaleTimeString()} - {new Date(sch.end_time).toLocaleTimeString()}</span>
-                                          </td>
-                                          <td className="p-3 font-medium">
-                                              <span className={sch.mode === 'Online' ? 'text-blue-600' : 'text-purple-600'}>{sch.mode}</span>
-                                          </td>
-                                          <td className="p-3">
-                                              {sch.outlook_event_id ? (
-                                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded truncate max-w-[150px] inline-block" title={sch.outlook_event_id}>
-                                                      {sch.outlook_event_id.startsWith('mock') ? 'Mock: ' + sch.outlook_event_id.substring(0, 8) + '...' : sch.outlook_event_id.substring(0, 15) + '...'}
-                                                  </span>
-                                              ) : <span className="text-gray-400">-</span>}
-                                          </td>
-                                          <td className="p-3">
-                                              {sch.teams_link ? (
-                                                  <a href={sch.teams_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                                      Join Teams
-                                                  </a>
-                                              ) : <span className="text-gray-400">-</span>}
-                                          </td>
-                                      </tr>
-                                  ))}
-                              </tbody>
-                          </table>
-                      )}
-                  </div>
-              )}
-              </React.Fragment>
-            ))}
-            {stages.length === 0 && <p className="text-gray-500">No active periods.</p>}
-          </div>
-      </div>
     </div>
   );
 };
 
-// Sub-components
-const StatCard = ({ icon, title, value, color, bg, alert }) => (
-  <div className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 cursor-default ${alert ? 'ring-1 ring-red-400' : ''}`}>
-    <div className={`p-4 rounded-xl ${bg} ${color}`}>
-      {icon}
+
+// ==========================================================
+// STAT CARD
+// ==========================================================
+
+const StatCard = ({
+  icon,
+  title,
+  value,
+  iconBg,
+  iconColor,
+}) => (
+
+  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+
+    <div className="flex items-center justify-between">
+
+      <div>
+
+        <p className="text-sm font-medium text-slate-500">
+          {title}
+        </p>
+
+        <p className="text-3xl font-bold text-slate-900 mt-2">
+          {value}
+        </p>
+
+      </div>
+
+      <div
+        className={`w-12 h-12 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center`}
+      >
+        {icon}
+      </div>
+
     </div>
-    <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
-    </div>
+
   </div>
+
 );
 
-export default VivaAdminDashboard;
+
+// ==========================================================
+// STATUS BADGE
+// ==========================================================
+
+const StatusBadge = ({ status }) => {
+
+  const styles = {
+
+    Draft:
+      "bg-slate-100 text-slate-600",
+
+    "Availability Collection":
+      "bg-blue-100 text-blue-700",
+
+    Scheduling:
+      "bg-amber-100 text-amber-700",
+
+    Scheduled:
+      "bg-indigo-100 text-indigo-700",
+
+    Published:
+      "bg-emerald-100 text-emerald-700",
+
+    Completed:
+      "bg-slate-100 text-slate-600",
+
+  };
+
+  return (
+
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${styles[status] || "bg-slate-100 text-slate-600"
+        }`}
+    >
+      {status || "Draft"}
+    </span>
+
+  );
+};
+
+export default VivaManagementDashboard;
