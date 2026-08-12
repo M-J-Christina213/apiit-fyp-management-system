@@ -372,10 +372,77 @@ const deleteBatch = async (req, res) => {
     }
 };
 
+const addStudentToBatch = async (req, res) => {
+    try {
+        const { id } = req.params; // batch id
+        const { studentName, cbNumber } = req.body;
+        
+        if (!studentName || !cbNumber) {
+             return res.status(400).json({ message: "Student Name and CB Number are required" });
+        }
+        
+        const cbNo = cbNumber.toUpperCase();
+
+        const existingStudent = await prisma.students.findUnique({ where: { cb_no: cbNo } });
+        if (existingStudent && existingStudent.batch_id === parseInt(id, 10)) {
+            return res.status(400).json({ message: "Student is already in this batch" });
+        }
+
+        const student = await prisma.students.upsert({
+            where: { cb_no: cbNo },
+            update: {
+                student_name: studentName,
+                batch_id: parseInt(id, 10)
+            },
+            create: {
+                cb_no: cbNo,
+                student_name: studentName,
+                batch_id: parseInt(id, 10)
+            }
+        });
+        
+        // Ensure FYP record exists
+        const existingFyp = await prisma.student_fyp_records.findFirst({
+            where: { student_id: student.id }
+        });
+        
+        if (!existingFyp) {
+            await prisma.student_fyp_records.create({
+                data: {
+                    student_id: student.id,
+                    supervisor_confirmation_status: "Pending"
+                }
+            });
+        }
+        
+        // Ensure User exists
+        const email = `${cbNo}@students.apiit.lk`.toLowerCase();
+        const existingUser = await prisma.users.findUnique({
+            where: { email } 
+        });
+        
+        if (!existingUser) {
+            await prisma.users.create({
+                data: {
+                    email,
+                    password: bcrypt.hashSync("123@abc", 10),
+                    role: "student"
+                }
+            });
+        }
+        
+        res.status(201).json(student);
+    } catch (error) {
+        console.error("Failed to add student to batch:", error);
+        res.status(500).json({ message: "Failed to add student to batch" });
+    }
+};
+
 module.exports = {
     getBatches,
     createBatch,
     updateBatchStage,
     updateBatch,
-    deleteBatch
+    deleteBatch,
+    addStudentToBatch
 };

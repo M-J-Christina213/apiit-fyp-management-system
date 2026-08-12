@@ -50,6 +50,7 @@ export const createBatch = (batchData) => API.post("/batches", batchData);
 export const updateBatchStage = (batchId, stage) => API.put(`/batches/${batchId}/stage`, { stage });
 export const updateBatch = (batchId, batchData) => API.put(`/batches/${batchId}`, batchData);
 export const deleteBatch = (batchId) => API.delete(`/batches/${batchId}`);
+export const addStudentToBatch = (batchId, data) => API.post(`/batches/${batchId}/students`, data);
 // TEMPLATES
 export const getTemplates = () => API.get("/templates");
 export const uploadTemplate = (formData) => API.post("/templates/upload", formData, {

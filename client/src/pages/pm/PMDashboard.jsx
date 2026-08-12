@@ -51,8 +51,8 @@ import {
   updateTemplate,
   viewTemplate,
   downloadTemplate,
-  createSupervisor
-
+  createSupervisor,
+  addStudentToBatch
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
@@ -88,6 +88,12 @@ const PMDashboard = () => {
   const [editBatchDate, setEditBatchDate] = useState('');
   const [editBatchCode, setEditBatchCode] = useState('');
   const [editBatchStage, setEditBatchStage] = useState('');
+
+  // Add Student to Batch states
+  const [addStudentName, setAddStudentName] = useState('');
+  const [addStudentCB, setAddStudentCB] = useState('');
+  const [addStudentBatchId, setAddStudentBatchId] = useState('');
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
 
   // Edit Supervisor states
   const [showEditSupervisor, setShowEditSupervisor] = useState(false);
@@ -276,9 +282,32 @@ const PMDashboard = () => {
     setEditBatchId(batch.id);
     setEditBatchName(batch.intake);
     setEditBatchDate(batch.startDate || '');
-    setEditBatchCode(batch.batchCode || '');
+    setEditBatchCode(batch.batchCode);
     setEditBatchStage(batch.stage || 'Proposal');
+    setAddStudentBatchId(batch.id);
     setShowEditBatch(true);
+  };
+
+  const handleAddStudentToBatch = async (e) => {
+    e.preventDefault();
+    if (!addStudentName || !addStudentCB || !addStudentBatchId) {
+      alert("Please fill in all fields.");
+      return;
+    }
+    try {
+      setIsAddingStudent(true);
+      await addStudentToBatch(addStudentBatchId, { studentName: addStudentName, cbNumber: addStudentCB });
+      alert("Student added successfully!");
+      setAddStudentName('');
+      setAddStudentCB('');
+      const [batchRes, stuRes] = await Promise.all([getBatches(), getStudents()]);
+      setBatches(batchRes.data);
+      setStudents(stuRes.data);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to add student.");
+    } finally {
+      setIsAddingStudent(false);
+    }
   };
 
   const handleEditBatchSubmit = async (e) => {
@@ -2923,6 +2952,61 @@ const PMDashboard = () => {
                   </select>
                 </div>
               </form>
+              
+              <div className="mt-8 border-t border-slate-200 pt-6">
+                <h4 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-blue-600" />
+                  Add Student to Batch
+                </h4>
+                <form id="add-student-to-batch-form" onSubmit={handleAddStudentToBatch} className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Student Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={addStudentName}
+                      onChange={(e) => setAddStudentName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="block w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">CB Number</label>
+                    <input
+                      type="text"
+                      required
+                      value={addStudentCB}
+                      onChange={(e) => setAddStudentCB(e.target.value)}
+                      placeholder="e.g. CB000000"
+                      className="block w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Batch Code</label>
+                    <select
+                      required
+                      value={addStudentBatchId}
+                      onChange={(e) => setAddStudentBatchId(e.target.value)}
+                      className="block w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-navy-600 focus:ring-1 focus:ring-navy-600 transition-all"
+                    >
+                      <option value="">Select a batch</option>
+                      {batches.map(b => (
+                        <option key={b.id} value={b.id}>{b.batchCode || b.intake}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={isAddingStudent}
+                      className="px-4 py-2 bg-navy-800 hover:bg-navy-900 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-70 flex items-center gap-2"
+                    >
+                      {isAddingStudent && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Add Student
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
 
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
