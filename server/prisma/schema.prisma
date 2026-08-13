@@ -28,7 +28,8 @@ model batches {
   start_fyp_date DateTime   @db.Date
   stage          String?    @default("Proposal") @db.VarChar(20)
   created_at     DateTime?  @default(now()) @db.Timestamp(6)
-  students       students[]
+  students            students[]
+  viva_period_batches viva_period_batches[]
 }
 
 model notifications {
@@ -163,18 +164,28 @@ model external_supervisor_requests {
 model viva_periods {
   id                 Int       @id @default(autoincrement())
   type               String    @db.VarChar(50)
-  availability_start DateTime  @db.Date
-  availability_end   DateTime  @db.Date
-  viva_start         DateTime  @db.Date
-  viva_end           DateTime  @db.Date
+  intake             String?   @db.VarChar(50)
+  start_date         DateTime  @db.Date
+  end_date           DateTime  @db.Date
   daily_start_time   String?   @db.VarChar(10)
   daily_end_time     String?   @db.VarChar(10)
-  duration_mins      Int       @default(30)
+  slot_duration      Int       @default(30)
   status             String    @default("Draft") @db.VarChar(30)
   created_at         DateTime? @default(now()) @db.Timestamp(6)
 
+  viva_period_batches viva_period_batches[]
   viva_availabilities viva_availabilities[]
   viva_schedules      viva_schedules[]
+}
+
+model viva_period_batches {
+  viva_period_id Int
+  batch_id       Int
+
+  viva_periods viva_periods @relation(fields: [viva_period_id], references: [id], onDelete: Cascade)
+  batches      batches      @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  @@id([viva_period_id, batch_id])
 }
 
 model viva_availabilities {
@@ -209,8 +220,6 @@ model viva_schedules {
   duration_mins    Int       @default(30)
   mode             String?   @db.VarChar(20)
   venue            String?   @db.VarChar(100)
-  teams_link       String?
-  outlook_event_id String?
   status           String    @default("Pending") @db.VarChar(30)
   created_at       DateTime? @default(now()) @db.Timestamp(6)
 

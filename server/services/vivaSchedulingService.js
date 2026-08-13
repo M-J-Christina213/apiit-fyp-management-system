@@ -1,6 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const outlookService = require("./mockOutlookService");
 
 /**
  * The Automatic Scheduling Engine logic.
@@ -158,16 +157,7 @@ async function generateSchedules(vivaPeriodId) {
 
                         if (hasGlobalConflict) continue;
 
-                        // 3. Outlook Calendar Conflict Validation (Mocked)
-                        const isSupFree = await outlookService.checkCalendarAvailability(supervisor.email, supAvail.date, slot.start, slot.end);
-                        let isAssessorFree = true;
-                        if (assessor) {
-                            isAssessorFree = await outlookService.checkCalendarAvailability(assessor.email, supAvail.date, slot.start, slot.end);
-                        }
-                        
-                        let isStudentFree = await outlookService.checkCalendarAvailability(student.email, supAvail.date, slot.start, slot.end);
-
-                        if (isSupFree && isAssessorFree && isStudentFree) {
+                        if (studentOverlap) {
                             assignedSlot = {
                                 date: supAvail.date,
                                 start_time: slot.start,
@@ -222,7 +212,7 @@ async function generateSchedules(vivaPeriodId) {
         // Update period status
         await prisma.viva_periods.update({
             where: { id: period.id },
-            data: { status: "Scheduled" }
+            data: { status: "SCHEDULE_GENERATED" }
         });
 
         return createdSchedules;
