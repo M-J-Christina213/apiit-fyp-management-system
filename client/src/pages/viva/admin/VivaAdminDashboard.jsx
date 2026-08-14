@@ -12,7 +12,7 @@ const VivaAdminDashboard = () => {
   const [availabilityStatus, setAvailabilityStatus] = useState(null);
   
   const [formData, setFormData] = useState({
-    type: "Proposal Viva", intake: "", batches: [], start_date: "", end_date: "", daily_start_time: "08:00", daily_end_time: "19:00", slot_duration: "30"
+    intake: "", batches: [], start_date: "", end_date: "", daily_start_time: "08:00", daily_end_time: "19:00", slot_duration: "30"
   });
 
   const adminHeaders = { "Content-Type": "application/json", "x-user-role": "admin" };
@@ -23,7 +23,7 @@ const VivaAdminDashboard = () => {
       if (statsRes.ok) setStats(await statsRes.json());
       const periodsRes = await fetch("/api/viva/periods", { headers: adminHeaders });
       if (periodsRes.ok) setPeriods(await periodsRes.json());
-      const batchesRes = await fetch("/api/batches", { headers: adminHeaders });
+      const batchesRes = await fetch("/api/viva/batches-with-students", { headers: adminHeaders });
       if (batchesRes.ok) setBatches(await batchesRes.json());
     } catch (error) { console.error("Failed to load viva dashboard:", error); }
   };
@@ -50,7 +50,7 @@ const VivaAdminDashboard = () => {
       if (!res.ok) throw new Error((await res.json()).error || "Failed to create Viva period.");
       alert("Viva period created successfully.");
       setShowCreateModal(false);
-      setFormData({ type: "Proposal Viva", intake: "", batches: [], start_date: "", end_date: "", daily_start_time: "08:00", daily_end_time: "19:00", slot_duration: "30" });
+      setFormData({ intake: "", batches: [], start_date: "", end_date: "", daily_start_time: "08:00", daily_end_time: "19:00", slot_duration: "30" });
       fetchDashboardData();
     } catch (error) { alert(error.message); }
   };
@@ -177,7 +177,13 @@ const VivaAdminDashboard = () => {
                 {schedules.length === 0 ? (
                   <p style={{ color: '#6b7280' }}>No schedules generated yet.</p>
                 ) : (
-                  <div className="viva-table-container">
+                  <>
+                    {schedules.some(s => s.status === 'MANUAL_REQUIRED') && (
+                      <div style={{ background: '#fef2f2', color: '#991b1b', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #f87171' }}>
+                        <strong>Attention:</strong> Some schedules could not be generated automatically because no common availability was found. You must manually assign slots for these students.
+                      </div>
+                    )}
+                    <div className="viva-table-container">
                     <table className="viva-table">
                       <thead>
                         <tr>
@@ -213,6 +219,7 @@ const VivaAdminDashboard = () => {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </div>
             )}
@@ -229,14 +236,7 @@ const VivaAdminDashboard = () => {
             </div>
 
             <form onSubmit={handleCreatePeriod}>
-              <div className="viva-form-group">
-                <label className="viva-form-label">Viva Type</label>
-                <select className="viva-form-select" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-                  <option>Proposal Viva</option>
-                  <option>Midpoint Viva</option>
-                  <option>Final Viva</option>
-                </select>
-              </div>
+
 
               <div className="viva-form-group">
                 <label className="viva-form-label">Intake</label>
@@ -253,9 +253,37 @@ const VivaAdminDashboard = () => {
                     {filteredBatches.map(b => (
                       <label key={b.id} className="viva-checkbox-label">
                         <input type="checkbox" checked={formData.batches.includes(b.id)} onChange={() => toggleBatch(b.id)} />
-                        {b.batch_code}
+                        {b.batch_code} ({b.stage})
                       </label>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {formData.batches.length > 0 && (
+                <div className="viva-form-group" style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                  <label className="viva-form-label" style={{ marginBottom: '1rem' }}>Students included in this Viva</label>
+                  {filteredBatches.filter(b => formData.batches.includes(b.id)).map(b => (
+                    <div key={b.id} style={{ marginBottom: '1rem' }}>
+                      <p style={{ fontWeight: '600', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>
+                        {b.batch_code} — {b.students?.length || 0} students
+                      </p>
+                      {b.students?.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                          {b.students.map(s => (
+                            <div key={s.id} style={{ fontSize: '0.875rem', color: '#4b5563' }}>
+                              {s.student_name} <span style={{ color: '#9ca3af' }}>({s.cb_no})</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>No students in this batch.</p>
+                      )}
+                    </div>
+                  ))}
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '2px solid #e5e7eb', fontWeight: '600', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Total Batches: {formData.batches.length}</span>
+                    <span>Total Students: {filteredBatches.filter(b => formData.batches.includes(b.id)).reduce((acc, b) => acc + (b.students?.length || 0), 0)}</span>
                   </div>
                 </div>
               )}

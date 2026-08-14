@@ -3,6 +3,24 @@ const prisma = new PrismaClient();
 const schedulingService = require("../services/vivaSchedulingService");
 
 // ======================================================
+// ADMIN - GET BATCHES WITH STUDENTS FOR VIVA CREATE
+// ======================================================
+exports.getBatchesWithStudents = async (req, res) => {
+    try {
+        const batches = await prisma.batches.findMany({
+            include: {
+                students: {
+                    select: { id: true, student_name: true, cb_no: true }
+                }
+            }
+        });
+        res.status(200).json(batches);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch batches", details: error.message });
+    }
+};
+
+// ======================================================
 // ADMIN - GET ALL VIVA PERIODS
 // ======================================================
 exports.getVivaPeriods = async (req, res) => {
@@ -56,10 +74,10 @@ exports.getVivaPeriodById = async (req, res) => {
 // ADMIN - CREATE VIVA PERIOD
 // ======================================================
 exports.createVivaPeriod = async (req, res) => {
-    const { type, intake, batches, start_date, end_date, daily_start_time, daily_end_time, slot_duration } = req.body;
+    const { intake, batches, start_date, end_date, daily_start_time, daily_end_time, slot_duration } = req.body;
 
-    if (!type || !intake || !batches || !batches.length || !start_date || !end_date || !daily_start_time || !daily_end_time || !slot_duration) {
-        return res.status(400).json({ error: "All Viva Period fields are required" });
+    if (!intake || !batches || !batches.length || !start_date || !end_date || !daily_start_time || !daily_end_time || !slot_duration) {
+        return res.status(400).json({ error: "Missing required Viva Period fields." });
     }
 
     const start = new Date(start_date);
@@ -78,6 +96,20 @@ exports.createVivaPeriod = async (req, res) => {
     if (![15, 30, 45, 60].includes(duration)) return res.status(400).json({ error: "Time slot duration must be 15, 30, 45, or 60 minutes." });
 
     try {
+        // Fetch batches to validate stage
+        const dbBatches = await prisma.batches.findMany({
+            where: { id: { in: batches } }
+        });
+        
+        if (dbBatches.length === 0) return res.status(400).json({ error: "Selected batches do not exist." });
+        
+        const stages = [...new Set(dbBatches.map(b => b.stage))];
+        if (stages.length > 1) {
+            return res.status(400).json({ error: "Selected batches belong to different FYP stages. Please select batches belonging to the same Viva stage." });
+        }
+        
+        const type = `${stages[0]} Viva`;
+
         const period = await prisma.viva_periods.create({
             data: {
                 type,
@@ -423,66 +455,174 @@ exports.exportSchedules = async (req, res) => {
 };
 
 // ======================================================
-// PARTICIPANT - GET MY DASHBOARD
+// PARTICIPANT - GET MY PERIODS (resolves by email)
 // ======================================================
-exports.getMyDashboard = async (req, res) => {
-    const { role, id } = req.params;
-    const userId = parseInt(id);
-    if (isNaN(userId)) return res.status(400).json({ error: "Invalid User ID" });
+exports.getMyPeriods = async (req, res) => {
+    const role = req.headers['x-user-role'];
+    const email = req.headers['x-user-email'];
+
+    if (!role || !email) {
+        return res.status(400).json({ error: "Role and email headers are required" });
+    }
+
+    console.log(`[DEBUG] getMyPeriods - role: ${role}, email: ${email}`);
 
     try {
         let periods = [];
+        let participantId = null;
+
         if (role === 'student') {
-            const student = await prisma.students.findUnique({ where: { id: userId } });
-            if (student?.batch_id) {
-                periods = await prisma.viva_periods.findMany({
-                    where: { 
-                        viva_period_batches: { some: { batch_id: student.batch_id } },
-                        status: { not: "Draft" }
-                    },
-                    orderBy: { created_at: "desc" }
+            // Derive cb_no from email prefix (matches existing StudentDashboard pattern)
+            const cbNo = email.split('@')[0].toUpperCase();
+            console.log(`[DEBUG] Looking up student with cb_no: ${cbNo}`);
+
+            const student = await prisma.students.findUnique({ where: { cb_no: cbNo } });
+            console.log(`[DEBUG] Student found:`, student ? `id=${student.id}, batch_id=${student.batch_id}` : 'NOT FOUND');
+
+            if (!student?.batch_id) {
+                return res.status(200).json({ periods: [], availabilities: [], schedules: [], participantId: null });
+            }
+
+            participantId = student.id;
+
+            const allPeriods = await prisma.viva_periods.findMany({
+                where: { status: { not: 'Draft' } },
+                include: {
+                    viva_period_batches: { include: { batches: { include: { students: { select: { id: true, student_name: true, cb_no: true } } } } } }
+                },
+                orderBy: { start_date: 'asc' }
+            });
+
+            console.log(`[DEBUG] Total non-draft periods: ${allPeriods.length}`);
+            allPeriods.forEach(p => {
+                const batchIds = p.viva_period_batches.map(vpb => vpb.batch_id);
+                console.log(`[DEBUG] Period ${p.id} (${p.type}) batchIds:`, batchIds, `student.batch_id:`, student.batch_id);
+            });
+
+            periods = allPeriods.filter(p =>
+                p.viva_period_batches.some(vpb => vpb.batch_id === student.batch_id)
+            );
+            console.log(`[DEBUG] Periods matching student batch: ${periods.length}`);
+
+        } else if (role === 'academic') {
+            const supervisor = await prisma.supervisors.findUnique({ where: { email } });
+            const assessor = await prisma.assessors.findUnique({ where: { email } });
+
+            const supervisorId = supervisor ? supervisor.id : null;
+            const assessorId = assessor ? assessor.id : null;
+
+            console.log(`[DEBUG] Academic staff found: SupervisorID=${supervisorId}, AssessorID=${assessorId}`);
+
+            if (!supervisorId && !assessorId) {
+                return res.status(200).json({ periods: [], availabilities: [], schedules: [], supervisorId: null, assessorId: null });
+            }
+
+            let assignedBatchIds = new Set();
+            let supervisorBatchIds = new Set();
+            let assessorBatchIds = new Set();
+
+            if (supervisorId) {
+                const supRecords = await prisma.student_fyp_records.findMany({
+                    where: { supervisor_id: supervisorId },
+                    include: { students: { select: { batch_id: true } } }
+                });
+                supRecords.forEach(r => {
+                    if (r.students?.batch_id) {
+                        assignedBatchIds.add(r.students.batch_id);
+                        supervisorBatchIds.add(r.students.batch_id);
+                    }
                 });
             }
-        } else if (role === 'supervisor') {
-            periods = await prisma.viva_periods.findMany({
+
+            if (assessorId) {
+                const assRecords = await prisma.student_fyp_records.findMany({
+                    where: { assessor_id: assessorId },
+                    include: { students: { select: { batch_id: true } } }
+                });
+                assRecords.forEach(r => {
+                    if (r.students?.batch_id) {
+                        assignedBatchIds.add(r.students.batch_id);
+                        assessorBatchIds.add(r.students.batch_id);
+                    }
+                });
+            }
+
+            const batchIdsArray = Array.from(assignedBatchIds);
+            console.log(`[DEBUG] Academic staff assigned batch IDs:`, batchIdsArray);
+
+            if (batchIdsArray.length === 0) {
+                return res.status(200).json({ periods: [], availabilities: [], schedules: [], supervisorId, assessorId });
+            }
+
+            const allPeriods = await prisma.viva_periods.findMany({
                 where: {
-                    viva_period_batches: {
-                        some: {
-                            batches: {
-                                students: { some: { student_fyp_records: { some: { supervisor_id: userId } } } }
-                            }
-                        }
-                    },
-                    status: { not: "Draft" }
+                    status: { not: 'Draft' },
+                    viva_period_batches: { some: { batch_id: { in: batchIdsArray } } }
                 },
-                orderBy: { created_at: "desc" }
+                include: {
+                    viva_period_batches: { include: { batches: { include: { students: { select: { id: true, student_name: true, cb_no: true } } } } } }
+                },
+                orderBy: { start_date: 'asc' }
             });
-        } else if (role === 'assessor') {
-            periods = await prisma.viva_periods.findMany({
+
+            // Map each period with context flags (isSupervisor, isAssessor)
+            periods = allPeriods.map(p => {
+                const periodBatchIds = p.viva_period_batches.map(vpb => vpb.batch_id);
+                return {
+                    ...p,
+                    isSupervisor: periodBatchIds.some(id => supervisorBatchIds.has(id)),
+                    isAssessor: periodBatchIds.some(id => assessorBatchIds.has(id))
+                };
+            });
+
+            // Availabilities and schedules need to be fetched for BOTH roles if they exist
+            const availabilities = await prisma.viva_availabilities.findMany({
                 where: {
-                    viva_period_batches: {
-                        some: {
-                            batches: {
-                                students: { some: { student_fyp_records: { some: { assessor_id: userId } } } }
-                            }
-                        }
-                    },
-                    status: { not: "Draft" }
-                },
-                orderBy: { created_at: "desc" }
+                    OR: [
+                        supervisorId ? { supervisor_id: supervisorId } : undefined,
+                        assessorId ? { assessor_id: assessorId } : undefined
+                    ].filter(Boolean)
+                }
             });
+
+            const schedules = await prisma.viva_schedules.findMany({
+                where: {
+                    status: 'FINALIZED',
+                    OR: [
+                        supervisorId ? { supervisor_id: supervisorId } : undefined,
+                        assessorId ? { assessor_id: assessorId } : undefined
+                    ].filter(Boolean)
+                },
+                include: { viva_periods: true, students: true, supervisors: true, assessors: true }
+            });
+
+            return res.status(200).json({ periods, availabilities, schedules, supervisorId, assessorId });
+        } else {
+            return res.status(400).json({ error: 'Invalid role' });
         }
 
+        // Fetch availabilities and finalized schedules for the participant
         const filterField = role === 'student' ? 'student_id' : role === 'supervisor' ? 'supervisor_id' : 'assessor_id';
-        const availabilities = await prisma.viva_availabilities.findMany({ where: { [filterField]: userId } });
-        const schedules = await prisma.viva_schedules.findMany({
-            where: { [filterField]: userId, status: "FINALIZED" },
-            include: { viva_periods: true, students: true, supervisors: true, assessors: true }
-        });
+        const availabilities = participantId
+            ? await prisma.viva_availabilities.findMany({ where: { [filterField]: participantId } })
+            : [];
+        const schedules = participantId
+            ? await prisma.viva_schedules.findMany({
+                where: { [filterField]: participantId, status: 'FINALIZED' },
+                include: { viva_periods: true, students: true, supervisors: true, assessors: true }
+              })
+            : [];
 
-        res.status(200).json({ periods, availabilities, schedules });
+        res.status(200).json({ periods, availabilities, schedules, participantId });
     } catch (error) {
-        console.error("Get My Dashboard Error:", error);
-        res.status(500).json({ error: "Failed to fetch dashboard data", details: error.message });
+        console.error('Get My Periods Error:', error);
+        res.status(500).json({ error: 'Failed to fetch periods', details: error.message });
     }
+};
+
+// ======================================================
+// PARTICIPANT - GET MY DASHBOARD (legacy, kept for compat)
+// ======================================================
+exports.getMyDashboard = async (req, res) => {
+    res.status(410).json({ error: 'This endpoint is deprecated. Use GET /api/viva/my-periods with x-user-role and x-user-email headers.' });
 };

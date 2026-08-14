@@ -15,8 +15,14 @@ async function generateSchedules(vivaPeriodId) {
 
         if (!period) throw new Error("Viva Period not found");
 
-        // 1. Fetch all students who need a viva schedule
+        const periodBatches = await prisma.viva_period_batches.findMany({
+            where: { viva_period_id: period.id }
+        });
+        const batchIds = periodBatches.map(pb => pb.batch_id);
+
+        // 1. Fetch only students in the selected batches
         const students = await prisma.students.findMany({
+            where: { batch_id: { in: batchIds } },
             include: {
                 viva_availabilities: true,
                 student_fyp_records: {

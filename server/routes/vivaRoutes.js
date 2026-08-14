@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const vivaController = require("../controllers/vivaController");
 const { verifyRole } = require("../middleware/roleMiddleware");
+// Get all batches with students for Viva Create preview
+router.get("/batches-with-students", verifyRole("admin"), vivaController.getBatchesWithStudents);
 
 // Create a new Viva Period
 router.post("/periods", verifyRole("admin"), vivaController.createVivaPeriod);
@@ -48,7 +50,10 @@ router.put("/schedules/:scheduleId", verifyRole("admin"), vivaController.updateS
 // Export schedules for a period
 router.get("/periods/:id/export", verifyRole(["admin", "pm"]), vivaController.exportSchedules);
 
-// Get My Dashboard Data (Student, Supervisor, Assessor)
+// Get My Periods (Student, Supervisor, Assessor) - resolves by x-user-email + x-user-role
+router.get("/my-periods", vivaController.getMyPeriods);
+
+// Get My Dashboard Data (Student, Supervisor, Assessor) - DEPRECATED
 router.get("/my-dashboard/:role/:id", vivaController.getMyDashboard);
 
 module.exports = router;
