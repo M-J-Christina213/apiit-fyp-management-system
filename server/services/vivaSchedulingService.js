@@ -190,8 +190,8 @@ async function generateSchedules(vivaPeriodId) {
                         start_time: assignedSlot.start_time,
                         end_time: assignedSlot.end_time,
                         duration_mins: durationMins,
-                        mode: "Online", // Default, can be changed during review
-                        venue: "Online",
+                        mode: "Physical", // Default, can be changed during review
+                        venue: "Pending",
                         status: "AUTO_SCHEDULED"
                     }
                 });
