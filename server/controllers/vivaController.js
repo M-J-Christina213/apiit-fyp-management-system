@@ -145,7 +145,7 @@ exports.updateVivaPeriod = async (req, res) => {
         const existingPeriod = await prisma.viva_periods.findUnique({ where: { id: periodId } });
         if (!existingPeriod) return res.status(404).json({ error: "Viva Period not found" });
 
-        const updatedData = { ...(type && { type }), ...(intake && { intake }), ...(status && { status }) };
+        const updatedData = { ...(intake && { intake }), ...(status && { status }) };
         if (start_date) updatedData.start_date = new Date(start_date);
         if (end_date) updatedData.end_date = new Date(end_date);
         if (daily_start_time) updatedData.daily_start_time = daily_start_time;
@@ -153,6 +153,18 @@ exports.updateVivaPeriod = async (req, res) => {
         if (slot_duration) updatedData.slot_duration = parseInt(slot_duration, 10);
 
         if (batches) {
+            const dbBatches = await prisma.batches.findMany({
+                where: { id: { in: batches } }
+            });
+            if (dbBatches.length > 0) {
+                const stages = [...new Set(dbBatches.map(b => b.stage))];
+                if (stages.length === 1) {
+                    updatedData.type = `${stages[0]} Viva`;
+                } else {
+                    return res.status(400).json({ error: "Selected batches belong to different FYP stages." });
+                }
+            }
+
             await prisma.viva_period_batches.deleteMany({ where: { viva_period_id: periodId } });
             updatedData.viva_period_batches = {
                 create: batches.map(batch_id => ({ batch_id }))

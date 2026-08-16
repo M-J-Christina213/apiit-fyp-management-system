@@ -377,15 +377,7 @@ const VivaAdminDashboard = () => {
               <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 transition"><X size={20} /></button>
             </div>
             <form onSubmit={handleSavePeriod} className="space-y-5">
-              <div className="grid grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Viva Stage</label>
-                  <select className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-                    <option value="Proposal Viva">Proposal Viva</option>
-                    <option value="Midpoint Viva">Midpoint Viva</option>
-                    <option value="Final Viva">Final Viva</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 gap-5">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Intake</label>
                   <select className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" value={formData.intake} onChange={e => setFormData({...formData, intake: e.target.value, batches: []})}>
