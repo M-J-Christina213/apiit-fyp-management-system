@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
 import DataTable from '../../components/common/DataTable';
+import StudentMilestones from './StudentMilestones';
 
 import {
   Target,
@@ -529,6 +530,16 @@ const StudentDashboard = () => {
         </div>
       );
     }
+
+    // ---------------- MILESTONES TAB ----------------
+    if (path === '/student/milestones') {
+      // Derive the CB number exactly as the rest of the dashboard does
+      const cbNo = currentUser?.email
+        ? currentUser.email.split('@')[0].toUpperCase()
+        : null;
+      return <StudentMilestones studentId={cbNo} />;
+    }
+
 
     // ---------------- SUPERVISORS TAB ----------------
     if (path === '/student/supervisors') {

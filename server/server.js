@@ -17,6 +17,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const externalSupervisorRoutes = require("./routes/externalSupervisors");
 const adminRoutes = require("./routes/adminRoutes");
 const vivaRoutes = require("./routes/vivaRoutes");
+const milestoneRoutes = require("./routes/milestoneRoutes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use(
     adminRoutes
 );
 app.use("/api/viva", vivaRoutes);
+app.use("/api/milestones", milestoneRoutes);
 
 const PORT = 5000;
 

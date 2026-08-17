@@ -42,6 +42,7 @@ const studentLinks = [
   { path: '/student/proposal', label: 'Proposal Submission', icon: FileText },
   { path: '/student/templates', label: 'Templates', icon: Layers },
   { path: '/student/logsheets', label: 'Logsheets', icon: FileText },
+  { path: '/student/milestones', label: 'FYP Milestones', icon: Bell },
   { path: '/student/viva', label: 'Viva Schedule', icon: CalendarDays },
   { path: '/student/profile', label: 'Profile', icon: Settings },
 ];
@@ -68,6 +69,7 @@ const pmLinks = [
   { path: '/pm/external-supervisors', label: 'External Requests', icon: UserCheck },
   { path: '/pm/allocation', label: 'Supervisor Allocation', icon: Shield },
   { path: '/pm/assessors', label: 'Assessor Allocation', icon: FileCheck },
+  { path: '/pm/milestones', label: 'Milestone Tracker', icon: Bell },
   { path: '/pm/templates', label: 'Templates', icon: Layers },
   { path: '/pm/reports', label: 'Reports', icon: FileText },
   { path: '/pm/viva', label: 'Viva Schedules', icon: CalendarDays },
@@ -183,6 +185,7 @@ function App() {
             <Route path="/student/proposal/new" element={<StudentDashboard />} />
             <Route path="/student/templates" element={<StudentDashboard />} />
             <Route path="/student/logsheets" element={<StudentDashboard />} />
+            <Route path="/student/milestones" element={<StudentDashboard />} />
             <Route path="/student/viva" element={<StudentVivaDashboard />} />
             <Route path="/student/profile" element={<StudentDashboard />} />
             <Route path="/student/*" element={<Navigate to="/student/dashboard" replace />} />
@@ -242,6 +245,7 @@ function App() {
             <Route path="/pm/external-supervisors" element={<PMDashboard />} />
             <Route path="/pm/allocation" element={<PMDashboard />} />
             <Route path="/pm/assessors" element={<PMDashboard />} />
+            <Route path="/pm/milestones" element={<PMDashboard />} />
             <Route path="/pm/templates" element={<PMDashboard />} />
             <Route path="/pm/reports" element={<PMDashboard />} />
             <Route path="/pm/viva" element={<PMVivaDashboard />} />

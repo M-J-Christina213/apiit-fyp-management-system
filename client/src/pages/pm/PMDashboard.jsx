@@ -56,6 +56,7 @@ import {
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
+import PMMilestones from './PMMilestones';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -1073,8 +1074,10 @@ const PMDashboard = () => {
       );
     }
 
-
-
+    // ---------------- MILESTONES TAB ----------------
+    if (path === '/pm/milestones') {
+      return <PMMilestones batches={batches} />;
+    }
 
     // ---------------- COMMON FILTERING LOGIC ----------------
     // Get intake directly from batches joined on batchId

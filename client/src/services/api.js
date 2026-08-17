@@ -110,3 +110,16 @@ export const rejectExternalSupervisor = (id, data) =>
         `/admin/external-supervisor-requests/${id}/reject`,
         data
     );
+
+// ===============================
+// MILESTONE TRACKER
+// ===============================
+export const getMilestonesByBatch = (batchId) => API.get(`/milestones/batch/${batchId}`);
+export const createMilestone = (data) => API.post("/milestones", data);
+export const updateMilestone = (id, data) => API.put(`/milestones/${id}`, data);
+export const deleteMilestone = (id) => API.delete(`/milestones/${id}`);
+export const updateStudentMilestoneStatus = (data) => API.put("/milestones/status/update", data);
+export const getStudentMilestoneProgress = (studentId) => API.get(`/milestones/progress/student/${studentId}`);
+export const getStudentMilestoneProgressByCb = (cbNo) => API.get(`/milestones/progress/cb/${cbNo}`);
+export const getSupervisorMilestoneOverview = (email) => API.get(`/milestones/supervisor/${encodeURIComponent(email)}`);
+export const getAssessorMilestoneOverview = (email) => API.get(`/milestones/assessor/${encodeURIComponent(email)}`);
