@@ -168,6 +168,7 @@ const PMDashboard = () => {
 
   const [supervisorFilter, setSupervisorFilter] = useState("All");
   const [supervisorSearch, setSupervisorSearch] = useState("");
+  const [supervisorPoolSearch, setSupervisorPoolSearch] = useState("");
 
   const getNextStage = (current) => {
     switch (current) {
@@ -1488,13 +1489,23 @@ const PMDashboard = () => {
 
           {/* Section 2 - Supervisor Pool Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <div className="px-6 py-5 border-b border-slate-200 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-slate-50 gap-4">
               <div className="space-y-1">
                 <h1 className="text-xl font-bold text-slate-800">Faculty Supervisor Pool</h1>
                 <p className="text-sm text-slate-500">View available supervisors and their supervision capacities.</p>
 
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-center">
+                <div className="relative w-full sm:w-64 shrink-0">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, expertise..."
+                    value={supervisorPoolSearch}
+                    onChange={(e) => setSupervisorPoolSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-navy-900 text-sm"
+                  />
+                </div>
 
                 <button
                   onClick={() => {
@@ -1508,7 +1519,7 @@ const PMDashboard = () => {
                     setEditSupervisorPreferredSupervisionSlots(3);
                     setShowEditSupervisor(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded hover:bg-navy-950 text-sm font-bold"
+                  className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded hover:bg-navy-950 text-sm font-bold shrink-0"
                 >
                   <Plus className="h-4 w-4" />
                   Add Supervisor
@@ -1516,17 +1527,29 @@ const PMDashboard = () => {
 
                 <button
                   onClick={handleExportSupervisorPool}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 text-sm font-bold"
+                  className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-100 text-sm font-bold shrink-0"
                 >
                   <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                  Export Supervisor Pool
+                  Export
                 </button>
 
               </div>
             </div>
 
             <div className="p-0">
-              <DataTable columns={supervisorPoolPageColumns} data={supervisors} />
+              <DataTable 
+                columns={supervisorPoolPageColumns} 
+                data={supervisors.filter((s) => {
+                  if (!supervisorPoolSearch) return true;
+                  const query = supervisorPoolSearch.toLowerCase();
+                  return (
+                    s.name?.toLowerCase().includes(query) ||
+                    s.email?.toLowerCase().includes(query) ||
+                    s.expertise?.toLowerCase().includes(query) ||
+                    s.research_interests?.toLowerCase().includes(query)
+                  );
+                })} 
+              />
             </div>
           </div>
 
