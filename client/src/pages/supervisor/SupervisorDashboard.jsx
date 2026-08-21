@@ -190,7 +190,9 @@ const SupervisorDashboard = () => {
   }, [supervisors]);
 
   const myStudents = students.filter(
-    s => s.supervisor === `${supervisorRecord?.title || ''} ${supervisorRecord?.name || ''}`.trim()
+    s => s.supervisor === `${supervisorRecord?.title || ''} ${supervisorRecord?.name || ''}`.trim() ||
+         s.supervisor === supervisorRecord?.name ||
+         s.supervisorId == supervisorRecord?.id
   );
 
   const pendingProposalsCount = proposals.filter(p => p.status === 'Pending').length;
@@ -574,8 +576,8 @@ const SupervisorDashboard = () => {
 
     // ── MY STUDENTS TAB ──────────────────────────────────────────────────────
     if (path === '/supervisor/students') {
-      const supervisedStudents = students.filter(s => s.supervisor === currentSupervisor.name || s.supervisorId === currentSupervisor.id);
-      const assessedStudents = students.filter(s => s.assessor === `${currentSupervisor.title || ''} ${currentSupervisor.name}`.trim() || s.assessorId === currentSupervisor.id);
+      const supervisedStudents = students.filter(s => s.supervisor === currentSupervisor.name || s.supervisor === `${currentSupervisor.title || ''} ${currentSupervisor.name}`.trim() || s.supervisorId == currentSupervisor.id);
+      const assessedStudents = students.filter(s => s.assessor === currentSupervisor.name || s.assessor === `${currentSupervisor.title || ''} ${currentSupervisor.name}`.trim() || s.assessorId == currentSupervisor.id);
 
       const studentColumns = [
         { header: 'Student Number', accessor: 'id' },
