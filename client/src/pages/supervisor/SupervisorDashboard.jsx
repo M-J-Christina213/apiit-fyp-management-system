@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DashboardCard from '../../components/common/DashboardCard';
+import StatusBadge from '../../components/common/StatusBadge';
+import Modal from '../../components/common/Modal';
 import DataTable from '../../components/common/DataTable';
 
 import {
@@ -141,9 +143,9 @@ const SupervisorDashboard = () => {
 
   const supervisorId = currentSupervisor?.id;
 
-  // Load logsheets when on logsheets tab
+  // Load logsheets when on logsheets or dashboard tab
   useEffect(() => {
-    if (path !== "/supervisor/logsheets" || !supervisorId) return;
+    if ((path !== "/supervisor/logsheets" && path !== "/supervisor/dashboard" && path !== "/supervisor") || !supervisorId) return;
     loadLogsheets();
   }, [path, supervisorId]);
 
@@ -391,35 +393,156 @@ const SupervisorDashboard = () => {
     // ── DASHBOARD TAB ──────────────────────────────────────────────────────────
     if (path === '/supervisor/dashboard' || path === '/supervisor') {
       const pCount = proposalRequests.filter(p => p.status === 'Pending').length;
+      const pendingLogsCount = supervisorLogsheets.filter(l => l.status === 'Pending Review').length;
+      const attentionRequiredCount = pCount + pendingLogsCount;
+
+      // Enhanced supervisee columns with logsheet status
+      const enhancedStudentColumns = [
+        {
+          header: 'Student',
+          render: (row) => (
+            <div>
+              <p className="font-semibold text-slate-800">{row.name}</p>
+              <p className="text-xs text-slate-500">{row.id}</p>
+            </div>
+          )
+        },
+        { header: 'Project Topic', render: (row) => row.topic || <span className="text-slate-400 italic">No topic defined</span> },
+        { header: 'Intake / Batch', render: (row) => row.batch || '-' },
+        {
+          header: 'Project Stage',
+          render: (row) => (
+            <StatusBadge status={row.status || 'Proposal'} type="stage" />
+          )
+        },
+        {
+          header: 'Logsheets Info',
+          render: (row) => {
+            const studentLogs = supervisorLogsheets.filter(l => l.student_id === row.id);
+            const pendingStudentLogs = studentLogs.filter(l => l.status === 'Pending Review').length;
+            return (
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <span className="text-slate-600">{studentLogs.length} total</span>
+                {pendingStudentLogs > 0 && (
+                  <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded">
+                    {pendingStudentLogs} pending
+                  </span>
+                )}
+              </div>
+            );
+          }
+        }
+      ];
+
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-800">Supervisor Dashboard</h1>
-            <span className="text-sm text-slate-500 font-medium">{currentSupervisor.title} {currentSupervisor.name}</span>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Welcome back, {currentSupervisor.title} {currentSupervisor.name}</h1>
+              <p className="text-sm text-slate-500 mt-1">Overview of your academic supervisees and pending actions</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            <DashboardCard title="Current Supervisees" value={myStudents.length} subtitle="Active academic match" icon={Users} />
-            <DashboardCard title="Available Slots" value={currentSupervisor.slots || currentSupervisor.preferred_supervision_slots || 0} subtitle="Remaining match capacity" icon={UserPlus} />
-            <DashboardCard title="Pending Proposals" value={pCount} subtitle="Awaiting topic review" icon={FileSignature} />
-            <DashboardCard title="Active Batches" value="2" subtitle="2024-Feb, 2024-Sep" icon={Layers} />
+            <DashboardCard title="Assigned Supervisees" value={myStudents.length} subtitle="Direct guidance" icon={Users} />
+            <DashboardCard title="Available Slots" value={currentSupervisor.slots || currentSupervisor.preferred_supervision_slots || 0} subtitle="Remaining capacity" icon={UserPlus} />
+            <DashboardCard title="Pending Proposals" value={pCount} subtitle="Topic reviews required" icon={FileSignature} />
+            <DashboardCard title="Pending Logsheets" value={pendingLogsCount} subtitle="Awaiting approval signature" icon={Clock} />
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-[#0C2340]">Proposal Requests</h3>
-                <button onClick={() => navigate('/supervisor/requests')} className="text-xs font-bold text-navy-600 hover:text-navy-800">View All Requests</button>
+          {/* Attention Required Section */}
+          {attentionRequiredCount > 0 && (
+            <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <h3 className="text-base font-bold text-amber-800">Attention Required ({attentionRequiredCount})</h3>
               </div>
-              <DataTable columns={proposalColumns} data={proposalRequests} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {pCount > 0 && (
+                  <div className="bg-white p-4 rounded-lg border border-amber-100 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-850">{pCount} Proposal Requests Pending</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Students awaiting supervisor confirmation</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/supervisor/requests')}
+                      className="px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded hover:bg-amber-700 transition"
+                    >
+                      Review
+                    </button>
+                  </div>
+                )}
+                {pendingLogsCount > 0 && (
+                  <div className="bg-white p-4 rounded-lg border border-amber-100 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-850">{pendingLogsCount} Meeting Logsheets Pending</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Logsheets awaiting review and signature approval</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/supervisor/logsheets')}
+                      className="px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded hover:bg-amber-700 transition"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* My Students Overview */}
+            <div className="xl:col-span-2 space-y-6">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">My Supervised Students</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Live list of active students assigned to you</p>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/supervisor/students')} 
+                    className="text-xs font-bold text-navy-600 hover:text-navy-800"
+                  >
+                    View All Students
+                  </button>
+                </div>
+                <div className="p-0">
+                  <DataTable columns={enhancedStudentColumns} data={myStudents} />
+                </div>
+              </div>
             </div>
 
-            <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-[#0C2340]">My Assigned Supervisees</h3>
-                <button onClick={() => navigate('/supervisor/students')} className="text-xs font-bold text-navy-600 hover:text-navy-800">View Student Records</button>
+            {/* Quick Actions Panel */}
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="text-base font-bold text-slate-800">Quick Profile Actions</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-100">
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Digital Signature Status</p>
+                      <p className="text-sm font-semibold text-slate-700 mt-0.5">{signatureUrl ? 'Active' : 'Missing Signature'}</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/supervisor/profile')}
+                      className={`text-xs px-2.5 py-1.5 rounded font-bold border ${signatureUrl ? 'border-slate-350 hover:bg-slate-100' : 'bg-[#0C2340] text-white'}`}
+                    >
+                      {signatureUrl ? 'Manage' : 'Upload'}
+                    </button>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-100">
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Supervision Capacity</p>
+                      <p className="text-sm font-bold text-slate-700 mt-0.5">{currentSupervisor.preferred_supervision_slots ?? 0} slots</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/supervisor/profile')}
+                      className="text-xs px-2.5 py-1.5 border border-slate-350 hover:bg-slate-100 rounded font-bold"
+                    >
+                      Change
+                    </button>
+                  </div>
+                </div>
               </div>
-              <DataTable columns={studentOverviewColumns} data={myStudents} />
             </div>
           </div>
         </div>
@@ -828,128 +951,178 @@ const SupervisorDashboard = () => {
     <>
       {renderContent()}
 
-      {/* ── Proposal Modal ──────────────────────────────────────────────── */}
-      {showProposalModal && selectedProposal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl w-[700px] p-6 space-y-5">
-            <div className="flex justify-between">
-              <h2 className="text-xl font-bold">Proposal Details</h2>
-              <button onClick={() => { setShowProposalModal(false); setRejectionReason(""); }}>✕</button>
+      {/* Proposal Modal */}
+      <Modal
+        isOpen={showProposalModal && !!selectedProposal}
+        onClose={() => { setShowProposalModal(false); setRejectionReason(""); }}
+        title="Proposal Details"
+        icon={FileSignature}
+        footer={
+          selectedProposal?.status === "Pending" && (
+            <div className="flex gap-3 w-full justify-end">
+              <button
+                onClick={() => handleApproveProposal(selectedProposal.id)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition"
+              >
+                Approve
+              </button>
+              <button
+                onClick={handleRejectProposal}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition"
+              >
+                Reject
+              </button>
+            </div>
+          )
+        }
+      >
+        {selectedProposal && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Student</p>
+              <p className="font-semibold text-slate-800 mt-0.5">{selectedProposal.students?.student_name || "N/A"}</p>
+              <p className="text-xs text-slate-500">{selectedProposal.students?.cb_no || "N/A"}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Student</p>
-              <p className="font-semibold">{selectedProposal.students?.student_name || "N/A"}</p>
-              <p className="text-sm">{selectedProposal.students?.cb_no || "N/A"}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Project Topic</p>
+              <p className="font-semibold text-slate-800 mt-0.5">{selectedProposal.proposed_topic}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Project Topic</p>
-              <p className="font-semibold">{selectedProposal.proposed_topic}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Proposal Document</p>
-              <a href={`http://localhost:5000/uploads/${selectedProposal.proposal_pdf}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Open Proposal PDF</a>
-            </div>
-            {selectedProposal.status === "Pending" && (
-              <>
-                <textarea rows={4} placeholder="Enter rejection reason if rejecting..." value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} className="w-full border rounded-lg p-3" />
-                <div className="flex justify-end gap-3">
-                  <button onClick={() => handleApproveProposal(selectedProposal.id)} className="bg-green-600 text-white px-4 py-2 rounded">Approve</button>
-                  <button onClick={handleRejectProposal} className="bg-red-600 text-white px-4 py-2 rounded">Reject</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Logsheet View Modal ─────────────────────────────────────────── */}
-      {showViewModal && selectedLogsheet && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800">Logsheet Details</h2>
-              <button onClick={() => setShowViewModal(false)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Student</p>
-                  <p className="font-semibold text-slate-800">{selectedLogsheet.student_name}</p>
-                  <p className="text-xs text-slate-500">{selectedLogsheet.student_cb_no}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Meeting Date</p>
-                  <p className="font-semibold text-slate-800">{new Date(selectedLogsheet.meeting_date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Venue</p>
-                  <p className="text-slate-700">{selectedLogsheet.venue || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Semester</p>
-                  <p className="text-slate-700">{selectedLogsheet.semester}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Status</p>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${getStatusBadge(selectedLogsheet.status)}`}>{selectedLogsheet.status}</span>
-                </div>
-              </div>
-              {selectedLogsheet.rejection_reason && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <p className="text-xs font-bold text-red-700 mb-1">Rejection Reason</p>
-                  <p className="text-sm text-red-700">{selectedLogsheet.rejection_reason}</p>
-                </div>
-              )}
-              <div className="pt-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Proposal Document</p>
+              <div className="mt-1">
                 <a
-                  href={`http://localhost:5000/uploads/logsheets/${selectedLogsheet.signed_file_url || selectedLogsheet.file_path}`}
+                  href={`http://localhost:5000/uploads/${selectedProposal.proposal_pdf}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0C2340] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition"
+                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-650 hover:bg-slate-100 font-semibold transition"
                 >
-                  <FileText className="h-4 w-4" /> Open Logsheet PDF
+                  <FileText className="h-4 w-4 text-blue-600" /> Open Proposal PDF
                 </a>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Reject Logsheet Modal ────────────────────────────────────────── */}
-      {showRejectModal && selectedLogsheet && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800">Reject Logsheet</h2>
-              <button onClick={() => setShowRejectModal(false)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-5 w-5 text-slate-500" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <p className="text-sm text-slate-600">You are rejecting the logsheet from <span className="font-semibold">{selectedLogsheet.student_name}</span>. Please provide a reason so the student can resubmit.</p>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Rejection Reason <span className="text-red-500">*</span></label>
+            {selectedProposal.status === "Pending" && (
+              <div className="space-y-1.5 pt-2">
+                <label className="text-sm font-semibold text-slate-700">Rejection Reason</label>
                 <textarea
-                  rows={4}
-                  placeholder="e.g. Meeting notes are incomplete, please include discussion points and outcomes…"
-                  value={logsheetRejectionReason}
-                  onChange={(e) => setLogsheetRejectionReason(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-[#0C2340] focus:ring-1 focus:ring-[#0C2340] resize-none"
+                  rows={3}
+                  placeholder="Only required if rejecting..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg p-2.5 text-sm text-slate-750 focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => setShowRejectModal(false)} className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">Cancel</button>
-                <button
-                  onClick={handleConfirmReject}
-                  disabled={actionLoading}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-60 flex items-center gap-2"
-                >
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Confirm Rejection
-                </button>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Logsheet View Modal */}
+      <Modal
+        isOpen={showViewModal && !!selectedLogsheet}
+        onClose={() => setShowViewModal(false)}
+        title="Logsheet Details"
+        icon={FileText}
+        footer={
+          <button
+            onClick={() => setShowViewModal(false)}
+            className="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-lg transition"
+          >
+            Close
+          </button>
+        }
+      >
+        {selectedLogsheet && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Student</p>
+                <p className="font-semibold text-slate-800 mt-0.5">{selectedLogsheet.student_name}</p>
+                <p className="text-xs text-slate-500">{selectedLogsheet.student_cb_no}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Meeting Date</p>
+                <p className="font-semibold text-slate-800 mt-0.5">{new Date(selectedLogsheet.meeting_date).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Venue</p>
+                <p className="text-sm font-semibold text-slate-705 mt-0.5">{selectedLogsheet.venue || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Semester</p>
+                <p className="text-sm font-semibold text-slate-705 mt-0.5">{selectedLogsheet.semester}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Status</p>
+                <div className="mt-1">
+                  <StatusBadge status={selectedLogsheet.status} type="progress" />
+                </div>
               </div>
             </div>
+            {selectedLogsheet.rejection_reason && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-xs font-bold text-red-700 mb-1">Rejection Reason</p>
+                <p className="text-sm text-red-700 font-medium">{selectedLogsheet.rejection_reason}</p>
+              </div>
+            )}
+            <div className="pt-2 border-t border-slate-100 flex justify-start">
+              <a
+                href={`http://localhost:5000/uploads/logsheets/${selectedLogsheet.signed_file_url || selectedLogsheet.file_path}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#0C2340] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition"
+              >
+                <FileText className="h-4 w-4" /> Open Logsheet PDF
+              </a>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
+
+      {/* Reject Logsheet Modal */}
+      <Modal
+        isOpen={showRejectModal && !!selectedLogsheet}
+        onClose={() => setShowRejectModal(false)}
+        title="Reject Logsheet"
+        icon={XCircle}
+        iconBgColor="bg-red-50"
+        iconTextColor="text-red-650"
+        footer={
+          <>
+            <button
+              onClick={() => setShowRejectModal(false)}
+              className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmReject}
+              disabled={actionLoading}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-60 flex items-center gap-2"
+            >
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirm Rejection
+            </button>
+          </>
+        }
+      >
+        {selectedLogsheet && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              You are rejecting the logsheet from <span className="font-semibold text-slate-800">{selectedLogsheet.student_name}</span>. Please provide a reason so the student can resubmit.
+            </p>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Rejection Reason <span className="text-red-500">*</span></label>
+              <textarea
+                rows={4}
+                placeholder="e.g. Meeting notes are incomplete, please include discussion points and outcomes…"
+                value={logsheetRejectionReason}
+                onChange={(e) => setLogsheetRejectionReason(e.target.value)}
+                className="w-full border border-slate-200 rounded-lg p-2.5 text-sm text-slate-750 focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 resize-none"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* ── Toast notification ───────────────────────────────────────────── */}
       {toast && (

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
+import StatusBadge from '../../components/common/StatusBadge';
+import Modal from '../../components/common/Modal';
 import DataTable from '../../components/common/DataTable';
 
 import {
@@ -16,6 +18,7 @@ import {
   ShieldAlert,
   X,
   CheckCircle,
+  XCircle,
   Save
 } from 'lucide-react';
 
@@ -91,14 +94,10 @@ const AdminDashboard = () => {
         setSupervisors(supervisorsRes.data);
 
         setStats({
-          totalUsers:
-            usersRes.data.length,
-
-          totalStudents:
-            studentsRes.data.length,
-
-          totalSupervisors:
-            supervisorsRes.data.length
+          totalUsers: usersRes.data.length,
+          studentsCount: studentsRes.data.length,
+          supervisorsCount: supervisorsRes.data.length,
+          pmsCount: usersRes.data.filter(u => u.role === 'Project Manager' || u.role === 'PM').length
         });
 
       } catch (error) {
@@ -478,19 +477,19 @@ const AdminDashboard = () => {
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <div className="space-y-2">
+            <div className="space-y-1">
               <h1 className="text-2xl font-bold text-slate-800">User Management System</h1>
               <p className="text-sm text-slate-500">Configure account profiles, verify email registrations, and adjust credentials.</p>
             </div>
             <button
               onClick={() => setShowAddUser(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-navy-900 text-white hover:bg-navy-950 font-bold rounded text-xs transition-colors select-none"
+              className="flex items-center gap-1.5 px-4.5 py-2 bg-navy-900 text-white hover:bg-navy-950 font-bold rounded-lg text-xs transition-colors shadow-md select-none"
             >
               <Plus className="h-4 w-4" /> Register New Account
             </button>
           </div>
 
-          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <DataTable columns={userManagementColumns} data={users} />
           </div>
         </div>
@@ -498,39 +497,19 @@ const AdminDashboard = () => {
     }
 
     // ---------------- EXTERNAL SUPERVISOR REQUESTS ----------------
-
     if (path === '/admin/external-supervisor-requests') {
-
       return (
-
         <div className="space-y-6">
-
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              External Supervisor Requests
-            </h1>
-
-            <p className="text-sm text-slate-500">
-              Review and approve external supervisor registrations.
-            </p>
-
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-slate-800">External Supervisor Requests</h1>
+            <p className="text-sm text-slate-500">Review and approve external supervisor registrations.</p>
           </div>
 
-
-          <div className="bg-white p-5 rounded border border-slate-200">
-
-            <DataTable
-              columns={externalRequestColumns}
-              data={externalRequests}
-            />
-
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <DataTable columns={externalRequestColumns} data={externalRequests} />
           </div>
-
-
         </div>
-
       );
-
     }
 
     // ---------------- ROLES PERMISSIONS TAB ----------------
@@ -711,75 +690,134 @@ const AdminDashboard = () => {
       {renderContent()}
 
       {/* Add User Modal */}
-      {showAddUser && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded border border-slate-200 shadow-xl max-w-md w-full overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Create Portal Account</h3>
-              <button onClick={() => setShowAddUser(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddUserSubmit} className="p-6 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Frank Lampard"
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  className="block w-full p-2.5 border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700">University Email Address *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. flampard@apiit.lk"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  className="block w-full p-2.5 border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700">Assigned Portal Role *</label>
-                <select
-                  required
-                  value={newUserRole}
-                  onChange={(e) => setNewUserRole(e.target.value)}
-                  className="block w-full p-2.5 border border-slate-200 bg-white rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
-                >
-                  <option value="Student">Student</option>
-                  <option value="Supervisor">Supervisor</option>
-                  <option value="Project Manager">Project Manager</option>
-                  <option value="Admin">Administrator</option>
-                </select>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddUser(false)}
-                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded text-sm font-semibold text-slate-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors"
-                >
-                  Register Account
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showAddUser}
+        onClose={() => setShowAddUser(false)}
+        title="Create Portal Account"
+        icon={Users}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setShowAddUser(false)}
+              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded text-sm font-semibold text-slate-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="add-user-form"
+              className="px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded text-sm font-semibold transition-colors"
+            >
+              Register Account
+            </button>
+          </>
+        }
+      >
+        <form id="add-user-form" onSubmit={handleAddUserSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700">Full Name *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Frank Lampard"
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+              className="block w-full p-2.5 border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white"
+            />
           </div>
-        </div>
-      )}
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700">University Email Address *</label>
+            <input
+              type="email"
+              required
+              placeholder="e.g. flampard@apiit.lk"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+              className="block w-full p-2.5 border border-slate-200 rounded text-slate-900 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700">Assigned Portal Role *</label>
+            <select
+              required
+              value={newUserRole}
+              onChange={(e) => setNewUserRole(e.target.value)}
+              className="block w-full p-2.5 border border-slate-200 bg-white rounded text-slate-700 text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900"
+            >
+              <option value="Student">Student</option>
+              <option value="Supervisor">Supervisor</option>
+              <option value="Project Manager">Project Manager</option>
+              <option value="Admin">Administrator</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Reject Request Modal */}
+      <Modal
+        isOpen={showRejectModal && !!selectedRequest}
+        onClose={() => { setShowRejectModal(false); setSelectedRequest(null); setRejectionReason(""); }}
+        title="Reject External Supervisor Request"
+        icon={XCircle}
+        iconBgColor="bg-red-50"
+        iconTextColor="text-red-650"
+        footer={
+          <>
+            <button
+              onClick={() => { setShowRejectModal(false); setSelectedRequest(null); setRejectionReason(""); }}
+              className="px-4 py-2 text-sm font-semibold text-slate-755 bg-slate-105 hover:bg-slate-200 border border-slate-200 rounded-lg transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!rejectionReason.trim()) {
+                  alert("Please enter a rejection reason");
+                  return;
+                }
+                try {
+                  await rejectExternalSupervisor(selectedRequest.id, rejectionReason);
+                  alert("Request rejected");
+                  setShowRejectModal(false);
+                  setSelectedRequest(null);
+                  setRejectionReason("");
+                  // Refresh
+                  const updated = await getExternalSupervisorRequests();
+                  setExternalRequests(updated.data);
+                } catch (error) {
+                  console.error(error);
+                  alert("Failed to reject request");
+                }
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-650 hover:bg-red-700 rounded-lg transition"
+            >
+              Reject Request
+            </button>
+          </>
+        }
+      >
+        {selectedRequest && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-650">
+              You are rejecting the request from <span className="font-semibold text-slate-800">{selectedRequest.name}</span>. Please specify the reason.
+            </p>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Rejection Reason *</label>
+              <textarea
+                rows={3}
+                required
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g. Profile does not match computing school faculty requirements..."
+                className="w-full border border-slate-200 rounded-lg p-2.5 text-sm text-slate-750 focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 resize-none bg-white"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import DashboardCard from '../../components/common/DashboardCard';
+import StatusBadge from '../../components/common/StatusBadge';
+import Modal from '../../components/common/Modal';
 import DataTable from '../../components/common/DataTable';
 import StudentMilestones from './StudentMilestones';
 
@@ -451,62 +453,86 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             <DashboardCard
-              title="Supervisor Meetings"
-              value={`${logsheets.filter(l => l.studentId === currentStudent.id).length}/12`}
-              subtitle={`Semester 1 progress`}
-              icon={Clock}
-            />
-            <DashboardCard
-              title="Current Stage"
-              value={currentStudent.status === 'Assigned' ? 'Milestone 1: Progress' : 'Milestone 0: Proposal'}
-              subtitle="Stage 1 of 4"
+              title="Current FYP Stage"
+              value={currentStudent.status === 'Assigned' ? 'Midpoint' : 'Proposal'}
+              subtitle={currentStudent.status === 'Assigned' ? 'Semester 2' : 'Semester 1'}
               icon={Target}
             />
             <DashboardCard
-              title="Assigned Supervisor"
+              title="Supervisor Status"
               value={currentStudent.supervisor || 'Pending'}
               subtitle={currentStudent.supervisorConfirmationStatus === 'Allocated' ? 'Assigned by PM' : currentStudent.supervisor ? 'Allocation Confirmed' : 'Awaiting Supervisor Match'}
               icon={UserCheck}
             />
             <DashboardCard
-              title="Proposal Status"
-              value={myProposalRequest ? myProposalRequest.status : (currentStudent.status === 'Assigned' ? 'Approved' : 'Draft')}
-              subtitle={
-                myProposalRequest
-                  ? `Submitted on ${myProposalRequest.submittedDate}`
-                  : 'Not submitted yet'
-              }
-              icon={FileText}
-            />
-            <DashboardCard
-              title="Pending Actions"
+              title="Pending Tasks"
               value={pendingActionsCount}
               subtitle={pendingActionsText.join(", ")}
               icon={AlertCircle}
             />
+            <DashboardCard
+              title="Meetings"
+              value={`${logsheets.filter(l => l.studentId === currentStudent.id).length}/12`}
+              subtitle={`Logged this semester`}
+              icon={Clock}
+            />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Main Content Area - Available Supervisors */}
+            {/* Main Content Area */}
             <div className="xl:col-span-2 space-y-6">
-              <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-base font-bold text-[#0C2340]">Available Supervisors</h3>
+              {/* Project Progress Section */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-6">FYP Journey Progress</h3>
+                <div className="relative flex items-center justify-between before:absolute before:inset-0 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:w-full before:bg-slate-200">
+                  {/* Proposal */}
+                  <div className="relative z-10 flex flex-col items-center bg-white px-2">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white shadow-md bg-emerald-500">
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                    <span className="mt-3 text-sm font-bold text-slate-800">Proposal</span>
+                    <StatusBadge status="Completed" type="progress" />
+                  </div>
+                  {/* Midpoint */}
+                  <div className="relative z-10 flex flex-col items-center bg-white px-2">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-md bg-blue-50 text-blue-600 border-2 border-blue-500">
+                      <Target className="h-5 w-5" />
+                    </div>
+                    <span className="mt-3 text-sm font-bold text-slate-800">Midpoint</span>
+                    <StatusBadge status="In Progress" type="progress" />
+                  </div>
+                  {/* Final */}
+                  <div className="relative z-10 flex flex-col items-center bg-white px-2">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 border-2 border-slate-200 shadow-sm">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <span className="mt-3 text-sm font-bold text-slate-400">Final</span>
+                    <StatusBadge status="Pending" type="progress" />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Supervisors Table */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                  <h3 className="text-base font-bold text-slate-800">Available Supervisors</h3>
                   <Link to="/student/supervisors" className="text-xs font-semibold text-navy-600 hover:text-navy-800 flex items-center gap-0.5">
                     View Full Pool <ChevronRight className="h-4 w-4" />
                   </Link>
                 </div>
-                <DataTable columns={supervisorColumns.slice(0, 4)} data={supervisors.slice(0, 3)} />
+                <div className="p-0">
+                  <DataTable columns={supervisorColumns.slice(0, 4)} data={supervisors.slice(0, 3)} />
+                </div>
               </div>
             </div>
 
             {/* Right Panel - Recent Activity */}
             <div className="space-y-6">
-              <div className="bg-white p-5 rounded border border-slate-200 shadow-sm">
-                <h3 className="text-base font-bold text-[#0C2340] mb-4">Recent Activity</h3>
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-base font-bold text-slate-800 mb-4">Recent Activity</h3>
                 <div className="space-y-4">
                   {[
                     { action: myProposalRequest ? `Submitted proposal: "${myProposalRequest.topic}"` : 'Updated project details', time: 'Recently' },
@@ -1819,173 +1845,150 @@ const StudentDashboard = () => {
     <>
       {renderContent()}
 
-      {/* Modal */}
-      {showLogsheetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="h-5 w-5 text-navy-700" />
-                Submit Logsheet
-              </h2>
-              <button
-                onClick={() => {
-                  setShowLogsheetModal(false);
-                  setLogDate('');
-                  setLogVenue('');
-                  setLogFile(null);
-                }}
-                className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto">
-              <form id="logsheet-form" onSubmit={handleLogsheetSubmit} className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Meeting Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={logDate}
-                    onChange={(e) => setLogDate(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Venue (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Teams, Office 305, Library Study Room"
-                    value={logVenue}
-                    onChange={(e) => setLogVenue(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700">Upload Signed Logsheet (Mandatory PDF/DOC) *</label>
-                  <input
-                    type="file"
-                    required
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => setLogFile(e.target.files[0] || null)}
-                    className="w-full p-2 border border-slate-200 rounded text-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-navy-50 file:text-navy-700 hover:file:bg-navy-100 transition-all cursor-pointer text-slate-600"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Supported formats: PDF, DOC, DOCX. Max file size: 10MB.</p>
-                </div>
-              </form>
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLogsheetModal(false);
-                  setLogDate('');
-                  setLogVenue('');
-                  setLogFile(null);
-                }}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                form="logsheet-form"
-                className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-semibold rounded-lg transition-colors shadow-md select-none"
-              >
-                Submit Logsheet
-              </button>
-            </div>
+      {/* Submit Logsheet Modal */}
+      <Modal
+        isOpen={showLogsheetModal}
+        onClose={() => {
+          setShowLogsheetModal(false);
+          setLogDate('');
+          setLogVenue('');
+          setLogFile(null);
+        }}
+        title="Submit Logsheet"
+        icon={FileText}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setShowLogsheetModal(false);
+                setLogDate('');
+                setLogVenue('');
+                setLogFile(null);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="logsheet-form"
+              className="px-6 py-2 bg-navy-900 hover:bg-navy-950 text-white text-sm font-semibold rounded-lg transition-colors shadow-md select-none"
+            >
+              Submit Logsheet
+            </button>
+          </>
+        }
+      >
+        <form id="logsheet-form" onSubmit={handleLogsheetSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700">Meeting Date *</label>
+            <input
+              type="date"
+              required
+              value={logDate}
+              onChange={(e) => setLogDate(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
+            />
           </div>
-        </div>
-      )}
-      {showViewModal && viewingProposal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl w-[650px] p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h2 className="text-xl font-bold text-slate-800">Proposal Details</h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setViewingProposal(null);
-                }}
-                className="text-slate-400 hover:text-slate-600 transition-colors text-lg"
-              >
-                ✕
-              </button>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700">Venue (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Teams, Office 305, Library Study Room"
+              value={logVenue}
+              onChange={(e) => setLogVenue(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-white text-slate-800"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700">Upload Signed Logsheet (Mandatory PDF/DOC) *</label>
+            <input
+              type="file"
+              required
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => setLogFile(e.target.files[0] || null)}
+              className="w-full p-2 border border-slate-200 rounded text-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-navy-50 file:text-navy-700 hover:file:bg-navy-100 transition-all cursor-pointer text-slate-600"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">Supported formats: PDF, DOC, DOCX. Max file size: 10MB.</p>
+          </div>
+        </form>
+      </Modal>
+
+      {/* View Proposal Details Modal */}
+      <Modal
+        isOpen={showViewModal && !!viewingProposal}
+        onClose={() => {
+          setShowViewModal(false);
+          setViewingProposal(null);
+        }}
+        title="Proposal Details"
+        icon={FileText}
+        footer={
+          <button
+            onClick={() => {
+              setShowViewModal(false);
+              setViewingProposal(null);
+            }}
+            className="px-5 py-2 text-sm font-semibold text-white bg-navy-900 hover:bg-navy-950 rounded-lg transition-colors shadow-md"
+          >
+            Close
+          </button>
+        }
+      >
+        {viewingProposal && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Topic</p>
+              <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.proposed_topic || "N/A"}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Topic</p>
-                <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.proposed_topic || "N/A"}</p>
-              </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Requested Supervisor</p>
+              <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.supervisor_name || "N/A"}</p>
+            </div>
 
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Requested Supervisor</p>
-                <p className="font-semibold text-slate-800 mt-0.5">{viewingProposal.supervisor_name || "N/A"}</p>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
+              <div className="mt-1">
+                <StatusBadge status={viewingProposal.status || "Pending"} type="progress" />
               </div>
+            </div>
 
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
-                <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${viewingProposal.status === "Approved" ? "bg-green-100 text-green-700" :
-                  viewingProposal.status === "Rejected" ? "bg-red-100 text-red-700" :
-                    viewingProposal.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-slate-100 text-slate-700"
-                  }`}>
-                  {viewingProposal.status || "Pending"}
-                </span>
-              </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Submission Date</p>
+              <p className="text-sm font-medium text-slate-700 mt-0.5">
+                {viewingProposal.submitted_at ? new Date(viewingProposal.submitted_at).toLocaleDateString() : "N/A"}
+              </p>
+            </div>
 
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Submission Date</p>
-                <p className="text-sm font-medium text-slate-700 mt-0.5">
-                  {viewingProposal.submitted_at ? new Date(viewingProposal.submitted_at).toLocaleDateString() : "N/A"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proposal PDF</p>
-                {viewingProposal.proposal_pdf ? (
-                  <a
-                    href={`http://localhost:5000/uploads/${viewingProposal.proposal_pdf}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors underline"
-                  >
-                    Open/Download PDF
-                  </a>
-                ) : (
-                  <p className="text-sm text-slate-500 mt-0.5">No file uploaded</p>
-                )}
-              </div>
-
-              {viewingProposal.status === "Rejected" && viewingProposal.rejection_reason && (
-                <div className="col-span-2 bg-red-50 border border-red-100 rounded-lg p-3.5">
-                  <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">Rejection Reason</p>
-                  <p className="text-sm text-red-700 mt-1 font-medium">{viewingProposal.rejection_reason}</p>
-                </div>
+            <div className="col-span-2">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proposal PDF</p>
+              {viewingProposal.proposal_pdf ? (
+                <a
+                  href={`http://localhost:5000/uploads/${viewingProposal.proposal_pdf}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors underline"
+                >
+                  Open/Download PDF
+                </a>
+              ) : (
+                <p className="text-sm text-slate-500 mt-0.5">No file uploaded</p>
               )}
             </div>
 
-            <div className="border-t pt-4 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setViewingProposal(null);
-                }}
-                className="px-5 py-2 text-sm font-semibold text-white bg-navy-900 hover:bg-navy-950 rounded-lg transition-colors shadow-md"
-              >
-                Close
-              </button>
-            </div>
+            {viewingProposal.status === "Rejected" && viewingProposal.rejection_reason && (
+              <div className="col-span-2 bg-red-50 border border-red-100 rounded-lg p-3.5">
+                <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">Rejection Reason</p>
+                <p className="text-sm text-red-700 mt-1 font-medium">{viewingProposal.rejection_reason}</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </>
   );
 };
