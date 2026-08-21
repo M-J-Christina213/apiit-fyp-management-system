@@ -327,11 +327,21 @@ const Login = () => {
                 )}
               </button>
 
-              <div className="text-center mt-4">
+              <div className="flex flex-col items-center gap-3 mt-6">
+                <p className="text-sm text-slate-600">
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => navigate('/external-supervisor/register')}
+                    className="font-semibold text-navy-900 hover:underline focus:outline-none"
+                  >
+                    Request Access
+                  </button>
+                </p>
                 <button
                   type="button"
                   onClick={() => setShowExternalLogin(false)}
-                  className="text-sm text-navy-900 font-semibold hover:underline"
+                  className="text-sm text-slate-500 font-medium hover:text-slate-700 transition-colors focus:outline-none"
                 >
                   &larr; Back to University Login
                 </button>
