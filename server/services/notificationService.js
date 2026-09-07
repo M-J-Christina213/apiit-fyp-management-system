@@ -125,6 +125,26 @@ class NotificationService {
             console.error("Error notifying all students:", err);
         }
     }
+
+    static async notifyRole(role, title, message) {
+        try {
+            const roleUsers = await prisma.users.findMany({
+                where: { role: { equals: role, mode: "insensitive" } }
+            });
+            if (roleUsers.length > 0) {
+                await prisma.notifications.createMany({
+                    data: roleUsers.map(user => ({
+                        user_id: user.id,
+                        title,
+                        message,
+                        is_read: false
+                    }))
+                });
+            }
+        } catch (err) {
+            console.error(`Error notifying role ${role}:`, err);
+        }
+    }
 }
 
 module.exports = NotificationService;
