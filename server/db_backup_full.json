@@ -1,0 +1,5230 @@
+{
+  "assessors": [
+    {
+      "id": 33,
+      "title": "Dr.",
+      "name": "Sampath Hettiarachchi",
+      "email": "sampath.hettiarachchi@apiit.lk",
+      "expertise": null,
+      "research_interests": "Scalable Systems, Distributed Analytics",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 34,
+      "title": "Ms.",
+      "name": "Ruwani Senarath",
+      "email": "ruwani.senarath@apiit.lk",
+      "expertise": null,
+      "research_interests": "Cross-platform Apps, UX",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 35,
+      "title": "Dr.",
+      "name": "Thilina Madushanka",
+      "email": "thilina.madushanka@apiit.lk",
+      "expertise": null,
+      "research_interests": "Incident Response, Threat Hunting",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 36,
+      "title": "Prof.",
+      "name": "Nadeeka Jayasuriya",
+      "email": "nadeeka.jayasuriya@apiit.lk",
+      "expertise": null,
+      "research_interests": "Autonomous Vehicles, SLAM",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 37,
+      "title": "Dr.",
+      "name": "Sanduni Abeywickrama",
+      "email": "sanduni.abeywickrama@apiit.lk",
+      "expertise": null,
+      "research_interests": "E-learning, Serious Games",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 38,
+      "title": "Mr.",
+      "name": "Chathura Fernando",
+      "email": "chathura.fernando@apiit.lk",
+      "expertise": null,
+      "research_interests": "Data Engineering, APIs",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 39,
+      "title": "Dr.",
+      "name": "Isuru Rajapaksha",
+      "email": "isuru.rajapaksha@apiit.lk",
+      "expertise": null,
+      "research_interests": "Image Analytics, Smart Surveillance",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 40,
+      "title": "Prof.",
+      "name": "Madhavi Wickramaratne",
+      "email": "madhavi.wickramaratne@apiit.lk",
+      "expertise": null,
+      "research_interests": "Digital Transformation, Enterprise Systems",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 161,
+      "title": null,
+      "name": "Assessor One",
+      "email": "assessor1@test.com",
+      "expertise": null,
+      "research_interests": null,
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 162,
+      "title": null,
+      "name": "Assessor Two",
+      "email": "assessor2@test.com",
+      "expertise": null,
+      "research_interests": null,
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 163,
+      "title": "Dr.",
+      "name": "Dr. Xavier Assessor",
+      "email": "assessor1@apiit.lk",
+      "expertise": null,
+      "research_interests": null,
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 164,
+      "title": "Dr.",
+      "name": "Dr. Yasmin Assessor",
+      "email": "assessor2@apiit.lk",
+      "expertise": null,
+      "research_interests": null,
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 165,
+      "title": "Dr.",
+      "name": "Dr. Zachary Assessor",
+      "email": "assessor3@apiit.lk",
+      "expertise": null,
+      "research_interests": null,
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 1,
+      "title": "Dr.",
+      "name": "Nimal Perera",
+      "email": "nimal.perera@apiit.lk",
+      "expertise": null,
+      "research_interests": "Explainable AI, Computer Vision, Healthcare AI",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 2,
+      "title": "Prof.",
+      "name": "Sarah Fernando",
+      "email": "sarah.fernando@apiit.lk",
+      "expertise": null,
+      "research_interests": "Threat Intelligence, Malware Analysis, Zero Trust Security",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 3,
+      "title": "Dr.",
+      "name": "Kasun Jayasinghe",
+      "email": "kasun.jayasinghe@apiit.lk",
+      "expertise": null,
+      "research_interests": "Predictive Analytics, Smart Cities, Data Visualization",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 4,
+      "title": "Ms.",
+      "name": "Anjali Silva",
+      "email": "anjali.silva@apiit.lk",
+      "expertise": null,
+      "research_interests": "Inclusive Design, AR Interfaces, Usability Engineering",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 5,
+      "title": "Dr.",
+      "name": "Ruwan Wijeratne",
+      "email": "ruwan.wijeratne@apiit.lk",
+      "expertise": null,
+      "research_interests": "Container Orchestration, Edge Computing, Serverless",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 6,
+      "title": "Prof.",
+      "name": "Ishara Gunasekara",
+      "email": "ishara.gunasekara@apiit.lk",
+      "expertise": null,
+      "research_interests": "Large Language Models, Chatbots, Sentiment Analysis",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 7,
+      "title": "Mr.",
+      "name": "Chamara Rajapaksha",
+      "email": "chamara.rajapaksha@apiit.lk",
+      "expertise": null,
+      "research_interests": "Microservices, Software Architecture, Testing",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 8,
+      "title": "Dr.",
+      "name": "Dilani Peris",
+      "email": "dilani.peris@apiit.lk",
+      "expertise": null,
+      "research_interests": "Smart Agriculture, Sensor Networks, Edge AI",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 9,
+      "title": "Mrs.",
+      "name": "Fathima Ameer",
+      "email": "fathima.ameer@apiit.lk",
+      "expertise": null,
+      "research_interests": "Digital Storytelling, Accessibility, VR Learning",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 10,
+      "title": "Dr.",
+      "name": "Tharindu Senanayake",
+      "email": "tharindu.senanayake@apiit.lk",
+      "expertise": null,
+      "research_interests": "Medical Imaging, Deepfake Detection, Explainable AI",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 11,
+      "title": "Prof.",
+      "name": "Malsha De Silva",
+      "email": "malsha.de.silva@apiit.lk",
+      "expertise": null,
+      "research_interests": "Smart Contracts, Decentralized Applications, Web3",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 12,
+      "title": "Dr.",
+      "name": "Ahamed Shiyam",
+      "email": "ahamed.shiyam@apiit.lk",
+      "expertise": null,
+      "research_interests": "Transfer Learning, AI Ethics, Deepfake Detection",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 13,
+      "title": "Ms.",
+      "name": "Nadeesha Ekanayake",
+      "email": "nadeesha.ekanayake@apiit.lk",
+      "expertise": null,
+      "research_interests": "Cross Platform Apps, Mobile Security, UX",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 14,
+      "title": "Dr.",
+      "name": "Ashan Fernando",
+      "email": "ashan.fernando@apiit.lk",
+      "expertise": null,
+      "research_interests": "Disease Prediction, Genomics, Medical Data Mining",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 15,
+      "title": "Prof.",
+      "name": "Rashmi Jayawardena",
+      "email": "rashmi.jayawardena@apiit.lk",
+      "expertise": null,
+      "research_interests": "Personalization, E-commerce Analytics, AI",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 16,
+      "title": "Mr.",
+      "name": "Pradeep Liyanage",
+      "email": "pradeep.liyanage@apiit.lk",
+      "expertise": null,
+      "research_interests": "Knowledge Graphs, Search Engines, Data Warehousing",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 17,
+      "title": "Dr.",
+      "name": "Kumari Wickramasinghe",
+      "email": "kumari.wickramasinghe@apiit.lk",
+      "expertise": null,
+      "research_interests": "Immersive Learning, Metaverse, 3D Interfaces",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 18,
+      "title": "Prof.",
+      "name": "Harsha Peiris",
+      "email": "harsha.peiris@apiit.lk",
+      "expertise": null,
+      "research_interests": "Drone Technology, SLAM, Computer Vision",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 19,
+      "title": "Dr.",
+      "name": "Sajini Abeysekara",
+      "email": "sajini.abeysekara@apiit.lk",
+      "expertise": null,
+      "research_interests": "Privacy Preserving Systems, Blockchain Security",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 20,
+      "title": "Ms.",
+      "name": "Shalika Ranasinghe",
+      "email": "shalika.ranasinghe@apiit.lk",
+      "expertise": null,
+      "research_interests": "Automation Testing, DevSecOps, Reliability Engineering",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 21,
+      "title": "Dr.",
+      "name": "Nuwan Rodrigo",
+      "email": "nuwan.rodrigo@apiit.lk",
+      "expertise": null,
+      "research_interests": "Predictive Analytics, Smart Healthcare",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 22,
+      "title": "Prof.",
+      "name": "Piumi Karunaratne",
+      "email": "piumi.karunaratne@apiit.lk",
+      "expertise": null,
+      "research_interests": "Security Automation, SIEM",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 23,
+      "title": "Dr.",
+      "name": "Gayan Peris",
+      "email": "gayan.peris@apiit.lk",
+      "expertise": null,
+      "research_interests": "Smart Homes, Edge Computing",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 24,
+      "title": "Mr.",
+      "name": "Lakshan Wijesinghe",
+      "email": "lakshan.wijesinghe@apiit.lk",
+      "expertise": null,
+      "research_interests": "MERN Stack, Cloud Deployment",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 25,
+      "title": "Dr.",
+      "name": "Ayesha Fernando",
+      "email": "ayesha.fernando@apiit.lk",
+      "expertise": null,
+      "research_interests": "Facial Recognition, Surveillance Systems",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 26,
+      "title": "Ms.",
+      "name": "Shenali De Silva",
+      "email": "shenali.de.silva@apiit.lk",
+      "expertise": null,
+      "research_interests": "Accessibility, User Experience",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 27,
+      "title": "Dr.",
+      "name": "Dhanushka Samarasinghe",
+      "email": "dhanushka.samarasinghe@apiit.lk",
+      "expertise": null,
+      "research_interests": "Digital Identity, Smart Contracts",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 28,
+      "title": "Prof.",
+      "name": "Ravindu Gunawardena",
+      "email": "ravindu.gunawardena@apiit.lk",
+      "expertise": null,
+      "research_interests": "LLMs, Conversational AI",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 29,
+      "title": "Dr.",
+      "name": "Janani Perera",
+      "email": "janani.perera@apiit.lk",
+      "expertise": null,
+      "research_interests": "Medical AI, EHR Analytics",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 30,
+      "title": "Mr.",
+      "name": "Yohan Silva",
+      "email": "yohan.silva@apiit.lk",
+      "expertise": null,
+      "research_interests": "CI/CD, Kubernetes",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 31,
+      "title": "Dr.",
+      "name": "Nirosha Pathirana",
+      "email": "nirosha.pathirana@apiit.lk",
+      "expertise": null,
+      "research_interests": "Virtual Learning, Gaming",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    },
+    {
+      "id": 32,
+      "title": "Prof.",
+      "name": "Buddhika Ekanayake",
+      "email": "buddhika.ekanayake@apiit.lk",
+      "expertise": null,
+      "research_interests": "Fraud Detection, Pattern Analysis",
+      "assigned_count": 0,
+      "preferred_slots": 3
+    }
+  ],
+  "batches": [
+    {
+      "id": 63,
+      "batch_code": "CYS2512",
+      "batch_intake": "2024-feb",
+      "start_fyp_date": "2024-07-06T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-06T04:15:03.426Z"
+    },
+    {
+      "id": 64,
+      "batch_code": "COM2513",
+      "batch_intake": "2024-feb",
+      "start_fyp_date": "2024-07-06T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-06T04:15:03.486Z"
+    },
+    {
+      "id": 65,
+      "batch_code": "SE2514",
+      "batch_intake": "2024-feb",
+      "start_fyp_date": "2024-07-06T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-06T04:15:03.559Z"
+    },
+    {
+      "id": 67,
+      "batch_code": "AI2516",
+      "batch_intake": "2024-feb",
+      "start_fyp_date": "2024-07-06T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-06T04:15:03.650Z"
+    },
+    {
+      "id": 68,
+      "batch_code": "2027-SEP",
+      "batch_intake": "2027-sep",
+      "start_fyp_date": "2027-06-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:13:43.967Z"
+    },
+    {
+      "id": 69,
+      "batch_code": "SENG2462",
+      "batch_intake": "2027-nov",
+      "start_fyp_date": "2027-11-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:14:13.773Z"
+    },
+    {
+      "id": 70,
+      "batch_code": "CYS2461",
+      "batch_intake": "2027-nov",
+      "start_fyp_date": "2027-11-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:14:13.822Z"
+    },
+    {
+      "id": 71,
+      "batch_code": "COM2461",
+      "batch_intake": "2027-nov",
+      "start_fyp_date": "2027-11-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:14:13.845Z"
+    },
+    {
+      "id": 72,
+      "batch_code": "SENG2462-JIX6C",
+      "batch_intake": "2027-nov",
+      "start_fyp_date": "2027-11-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:14:15.160Z"
+    },
+    {
+      "id": 73,
+      "batch_code": "CYS2461-JIX74",
+      "batch_intake": "2027-nov",
+      "start_fyp_date": "2027-11-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:14:15.188Z"
+    },
+    {
+      "id": 74,
+      "batch_code": "COM2461-JIX7R",
+      "batch_intake": "2027-nov",
+      "start_fyp_date": "2027-11-10T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-10T06:14:15.210Z"
+    },
+    {
+      "id": 61,
+      "batch_code": "SENG2421",
+      "batch_intake": "2024-feb",
+      "start_fyp_date": "2024-07-06T00:00:00.000Z",
+      "stage": "Midpoint",
+      "created_at": "2026-07-06T04:15:03.307Z"
+    },
+    {
+      "id": 62,
+      "batch_code": "SENG2511",
+      "batch_intake": "2024-feb",
+      "start_fyp_date": "2024-07-06T00:00:00.000Z",
+      "stage": "Proposal",
+      "created_at": "2026-07-06T04:15:03.338Z"
+    },
+    {
+      "id": 75,
+      "batch_code": "SE24",
+      "batch_intake": "February 2024",
+      "start_fyp_date": "2026-02-01T00:00:00.000Z",
+      "stage": "Final",
+      "created_at": "2026-09-07T04:13:26.076Z"
+    },
+    {
+      "id": 76,
+      "batch_code": "CS24",
+      "batch_intake": "February 2024",
+      "start_fyp_date": "2026-02-01T00:00:00.000Z",
+      "stage": "Final",
+      "created_at": "2026-09-07T04:13:26.266Z"
+    },
+    {
+      "id": 77,
+      "batch_code": "NE24",
+      "batch_intake": "July 2024",
+      "start_fyp_date": "2026-07-01T00:00:00.000Z",
+      "stage": "Final",
+      "created_at": "2026-09-07T04:13:26.274Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": 1,
+      "user_id": null,
+      "title": "Proposal Approved",
+      "message": "Your proposal has been approved by the supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-01T09:33:26.221Z"
+    },
+    {
+      "id": 5,
+      "user_id": 47,
+      "title": "Supervisor Assigned",
+      "message": "A supervisor (Kavin Kumar) has been assigned to you by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-07T02:44:34.496Z"
+    },
+    {
+      "id": 6,
+      "user_id": 4,
+      "title": "New Student Assigned",
+      "message": "You have been assigned as the supervisor for student Shenal Rodrigo (CB025103) by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-07T02:44:34.602Z"
+    },
+    {
+      "id": 7,
+      "user_id": 4,
+      "title": "New Logsheet Submitted",
+      "message": "Student Shenal Rodrigo has uploaded a new logsheet for review.",
+      "is_read": false,
+      "created_at": "2026-07-07T02:45:39.255Z"
+    },
+    {
+      "id": 8,
+      "user_id": 47,
+      "title": "Logsheet Approved",
+      "message": "Your logsheet has been approved by your supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-08T02:51:43.544Z"
+    },
+    {
+      "id": 9,
+      "user_id": 4,
+      "title": "New Logsheet Submitted",
+      "message": "Student Christina Wanigasekara has uploaded a new logsheet for review.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:31:24.486Z"
+    },
+    {
+      "id": 11,
+      "user_id": 2,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 12,
+      "user_id": 3,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 13,
+      "user_id": 44,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 14,
+      "user_id": 45,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 15,
+      "user_id": 46,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 16,
+      "user_id": 47,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 17,
+      "user_id": 48,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 18,
+      "user_id": 49,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 19,
+      "user_id": 50,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 20,
+      "user_id": 51,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 21,
+      "user_id": 52,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 22,
+      "user_id": 53,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 23,
+      "user_id": 54,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 24,
+      "user_id": 55,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 25,
+      "user_id": 56,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 26,
+      "user_id": 57,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 27,
+      "user_id": 58,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 28,
+      "user_id": 59,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 29,
+      "user_id": 60,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 30,
+      "user_id": 61,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 31,
+      "user_id": 62,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 32,
+      "user_id": 63,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 33,
+      "user_id": 64,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 34,
+      "user_id": 65,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 35,
+      "user_id": 66,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 36,
+      "user_id": 67,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 37,
+      "user_id": 68,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 38,
+      "user_id": 69,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 39,
+      "user_id": 70,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 40,
+      "user_id": 71,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 41,
+      "user_id": 72,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 42,
+      "user_id": 73,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 43,
+      "user_id": 74,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 44,
+      "user_id": 75,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 45,
+      "user_id": 76,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 46,
+      "user_id": 77,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 47,
+      "user_id": 78,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 48,
+      "user_id": 79,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 49,
+      "user_id": 80,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 50,
+      "user_id": 81,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 51,
+      "user_id": 82,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 52,
+      "user_id": 83,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 53,
+      "user_id": 84,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 54,
+      "user_id": 85,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 55,
+      "user_id": 86,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 56,
+      "user_id": 87,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 57,
+      "user_id": 88,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 58,
+      "user_id": 89,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "title": "Supervisor Assigned",
+      "message": "A supervisor (Kavin Kumar) has been assigned to you by the PM.",
+      "is_read": true,
+      "created_at": "2026-07-06T04:41:01.277Z"
+    },
+    {
+      "id": 59,
+      "user_id": 90,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 60,
+      "user_id": 91,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 61,
+      "user_id": 92,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 62,
+      "user_id": 93,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 63,
+      "user_id": 94,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 64,
+      "user_id": 96,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 65,
+      "user_id": 97,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 66,
+      "user_id": 98,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 67,
+      "user_id": 99,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 68,
+      "user_id": 100,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 69,
+      "user_id": 101,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 70,
+      "user_id": 102,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 71,
+      "user_id": 103,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 72,
+      "user_id": 104,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": false,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 74,
+      "user_id": 110,
+      "title": "New Proposal Assigned",
+      "message": "Student Christina Wanigasekara has submitted a research proposal draft titled \"AI-Powered Early Detection of Skin Cancer Using Deep Learning\" nominating you as supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-09T16:52:31.930Z"
+    },
+    {
+      "id": 75,
+      "user_id": 139,
+      "title": "New Proposal Assigned",
+      "message": "Student Tharindu Fernando has submitted a research proposal draft titled \"AI-Driven Medical \" nominating you as supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:36:32.440Z"
+    },
+    {
+      "id": 76,
+      "user_id": 46,
+      "title": "Proposal Approved",
+      "message": "Your proposal has been approved by the supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:37:00.119Z"
+    },
+    {
+      "id": 77,
+      "user_id": 139,
+      "title": "New Proposal Assigned",
+      "message": "Student Hansani Dias has submitted a research proposal draft titled \"AI driven Medical Analysis \" nominating you as supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:48:33.976Z"
+    },
+    {
+      "id": 78,
+      "user_id": 48,
+      "title": "Supervisor Confirmed",
+      "message": "Your supervisor Janani Perera has been confirmed.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:49:03.219Z"
+    },
+    {
+      "id": 79,
+      "user_id": 44,
+      "title": "Supervisor Assigned",
+      "message": "A supervisor (Sarah Fernando) has been assigned to you by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:49:49.911Z"
+    },
+    {
+      "id": 80,
+      "user_id": 112,
+      "title": "New Student Assigned",
+      "message": "You have been assigned as the supervisor for student Ayesha Perera (CB025100) by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:49:49.923Z"
+    },
+    {
+      "id": 81,
+      "user_id": 114,
+      "title": "New Proposal Assigned",
+      "message": "Student Tharindu Fernando has submitted a research proposal draft titled \"Smart University Complaint & Maintenance Management System\" nominating you as supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:51:28.468Z"
+    },
+    {
+      "id": 82,
+      "user_id": 46,
+      "title": "Supervisor Confirmed",
+      "message": "Your supervisor Anjali Silva has been confirmed.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:52:01.848Z"
+    },
+    {
+      "id": 83,
+      "user_id": 45,
+      "title": "Supervisor Assigned",
+      "message": "A supervisor (Sajini Abeysekara) has been assigned to you by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:52:31.117Z"
+    },
+    {
+      "id": 84,
+      "user_id": 129,
+      "title": "New Student Assigned",
+      "message": "You have been assigned as the supervisor for student Nipun Silva (CB025101) by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:52:31.123Z"
+    },
+    {
+      "id": 85,
+      "user_id": 45,
+      "title": "Assessor Assigned",
+      "message": "An assessor (Dr. Ruwan Wijeratne) has been assigned to you by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:52:54.657Z"
+    },
+    {
+      "id": 86,
+      "user_id": 115,
+      "title": "Assessor Assignment",
+      "message": "You have been allocated as assessor for student Nipun Silva (CB025101) by the PM.",
+      "is_read": false,
+      "created_at": "2026-07-10T03:52:54.667Z"
+    },
+    {
+      "id": 88,
+      "user_id": 117,
+      "title": "New Proposal Assigned",
+      "message": "Student Dilan Wickram has submitted a research proposal draft titled \"AI driven medical\" nominating you as supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-10T06:26:50.372Z"
+    },
+    {
+      "id": 89,
+      "user_id": 153,
+      "title": "Supervisor Confirmed",
+      "message": "Your supervisor Chamara Rajapaksha has been confirmed.",
+      "is_read": false,
+      "created_at": "2026-07-10T06:27:40.916Z"
+    },
+    {
+      "id": 90,
+      "user_id": 117,
+      "title": "New Logsheet Submitted",
+      "message": "Student Dilan Wickram has uploaded a new logsheet for review.",
+      "is_read": false,
+      "created_at": "2026-07-10T06:32:44.791Z"
+    },
+    {
+      "id": 91,
+      "user_id": 153,
+      "title": "Logsheet Approved",
+      "message": "Your logsheet has been approved by your supervisor.",
+      "is_read": false,
+      "created_at": "2026-07-10T06:33:45.460Z"
+    },
+    {
+      "id": 92,
+      "user_id": 144,
+      "title": "New Proposal Assigned",
+      "message": "Student Christina Wanigasekara has submitted a research proposal draft titled \"AI-Driven Monitoring Clinics\" nominating you as supervisor.",
+      "is_read": false,
+      "created_at": "2026-08-13T14:22:55.351Z"
+    },
+    {
+      "id": 94,
+      "user_id": 139,
+      "title": "New Student Assigned",
+      "message": "You have been assigned as the supervisor for student Christina Wanigasekara (CB014416) by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T14:28:28.366Z"
+    },
+    {
+      "id": 96,
+      "user_id": 114,
+      "title": "Assessor Assignment",
+      "message": "You have been allocated as assessor for student Christina Wanigasekara (CB014416) by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T14:29:43.525Z"
+    },
+    {
+      "id": 98,
+      "user_id": 135,
+      "title": "Assessor Assignment",
+      "message": "You have been allocated as assessor for student Christina Wanigasekara (CB014416) by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T16:29:29.365Z"
+    },
+    {
+      "id": 99,
+      "user_id": 155,
+      "title": "Supervisor Assigned",
+      "message": "A supervisor (Sarah Fernando) has been assigned to you by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T16:32:33.224Z"
+    },
+    {
+      "id": 100,
+      "user_id": 112,
+      "title": "New Student Assigned",
+      "message": "You have been assigned as the supervisor for student Nimesh Rodrigo (CB020103) by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T16:32:33.243Z"
+    },
+    {
+      "id": 101,
+      "user_id": 155,
+      "title": "Assessor Assigned",
+      "message": "An assessor (Dr. Gayan Peris) has been assigned to you by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T16:32:43.144Z"
+    },
+    {
+      "id": 102,
+      "user_id": 133,
+      "title": "Assessor Assignment",
+      "message": "You have been allocated as assessor for student Nimesh Rodrigo (CB020103) by the PM.",
+      "is_read": false,
+      "created_at": "2026-08-13T16:32:43.151Z"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "title": "Logsheet Rejected",
+      "message": "Your logsheet was rejected. Reason: Kindly upload in pdf format",
+      "is_read": true,
+      "created_at": "2026-07-06T05:40:24.012Z"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "title": "Logsheet Approved",
+      "message": "Your logsheet has been approved by your supervisor.",
+      "is_read": true,
+      "created_at": "2026-07-06T06:01:07.681Z"
+    },
+    {
+      "id": 10,
+      "user_id": 1,
+      "title": "New Template Uploaded",
+      "message": "A new template \"Logsheet\" for Proposal stage has been uploaded by Admin.",
+      "is_read": true,
+      "created_at": "2026-07-08T08:32:57.210Z"
+    },
+    {
+      "id": 73,
+      "user_id": 1,
+      "title": "Logsheet Approved",
+      "message": "Your logsheet has been approved by your supervisor.",
+      "is_read": true,
+      "created_at": "2026-07-08T08:36:25.773Z"
+    },
+    {
+      "id": 87,
+      "user_id": 1,
+      "title": "Batch Stage Updated",
+      "message": "Your batch stage has been updated to \"Midpoint\".",
+      "is_read": true,
+      "created_at": "2026-07-10T06:21:03.604Z"
+    },
+    {
+      "id": 93,
+      "user_id": 1,
+      "title": "Supervisor Assigned",
+      "message": "A supervisor (Janani Perera) has been assigned to you by the PM.",
+      "is_read": true,
+      "created_at": "2026-08-13T14:28:28.157Z"
+    },
+    {
+      "id": 95,
+      "user_id": 1,
+      "title": "Assessor Assigned",
+      "message": "An assessor (Ms. Anjali Silva) has been assigned to you by the PM.",
+      "is_read": true,
+      "created_at": "2026-08-13T14:29:43.514Z"
+    },
+    {
+      "id": 97,
+      "user_id": 1,
+      "title": "Assessor Assigned",
+      "message": "An assessor (Dr. Ayesha Fernando) has been assigned to you by the PM.",
+      "is_read": true,
+      "created_at": "2026-08-13T16:29:29.318Z"
+    }
+  ],
+  "proposal_requests": [
+    {
+      "id": 5,
+      "student_id": 478,
+      "supervisor_id": null,
+      "proposed_topic": "Smart University Complaint & Maintenance Management System",
+      "proposal_pdf": null,
+      "status": "Approved",
+      "rejection_reason": null,
+      "submitted_at": "2026-07-10T03:51:28.433Z",
+      "approved_at": "2026-07-10T03:52:01.817Z",
+      "student_confirmed": false
+    },
+    {
+      "id": 4,
+      "student_id": 480,
+      "supervisor_id": null,
+      "proposed_topic": "AI driven Medical Analysis ",
+      "proposal_pdf": null,
+      "status": "Approved",
+      "rejection_reason": null,
+      "submitted_at": "2026-07-10T03:48:33.804Z",
+      "approved_at": "2026-07-10T03:49:03.158Z",
+      "student_confirmed": false
+    },
+    {
+      "id": 3,
+      "student_id": 478,
+      "supervisor_id": null,
+      "proposed_topic": "AI-Driven Medical ",
+      "proposal_pdf": null,
+      "status": "Declined",
+      "rejection_reason": null,
+      "submitted_at": "2026-07-10T03:36:32.147Z",
+      "approved_at": null,
+      "student_confirmed": false
+    },
+    {
+      "id": 6,
+      "student_id": 536,
+      "supervisor_id": 210,
+      "proposed_topic": "AI driven medical",
+      "proposal_pdf": null,
+      "status": "Approved",
+      "rejection_reason": null,
+      "submitted_at": "2026-07-10T06:26:50.198Z",
+      "approved_at": "2026-07-10T06:27:40.656Z",
+      "student_confirmed": false
+    },
+    {
+      "id": 7,
+      "student_id": 475,
+      "supervisor_id": 237,
+      "proposed_topic": "AI-Driven Monitoring Clinics",
+      "proposal_pdf": null,
+      "status": "Pending",
+      "rejection_reason": null,
+      "submitted_at": "2026-08-13T14:22:55.090Z",
+      "approved_at": null,
+      "student_confirmed": false
+    }
+  ],
+  "student_fyp_records": [
+    {
+      "id": 225,
+      "student_id": 537,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 227,
+      "student_id": 539,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 228,
+      "student_id": 540,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 229,
+      "student_id": 541,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 230,
+      "student_id": 542,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 231,
+      "student_id": 543,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 232,
+      "student_id": 544,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 233,
+      "student_id": 545,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 234,
+      "student_id": 546,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 235,
+      "student_id": 547,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 236,
+      "student_id": 548,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 237,
+      "student_id": 549,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 238,
+      "student_id": 550,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 239,
+      "student_id": 551,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 240,
+      "student_id": 552,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 241,
+      "student_id": 553,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 242,
+      "student_id": 554,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 243,
+      "student_id": 555,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 224,
+      "student_id": 536,
+      "tentative_topic": "AI driven medical",
+      "supervisor_id": 210,
+      "supervisor_confirmation_status": "Confirmed",
+      "assessor_id": null
+    },
+    {
+      "id": 244,
+      "student_id": 576,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 245,
+      "student_id": 577,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 246,
+      "student_id": 578,
+      "tentative_topic": null,
+      "supervisor_id": 244,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": 161
+    },
+    {
+      "id": 247,
+      "student_id": 579,
+      "tentative_topic": null,
+      "supervisor_id": 244,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": 162
+    },
+    {
+      "id": 248,
+      "student_id": 580,
+      "tentative_topic": null,
+      "supervisor_id": 245,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": 161
+    },
+    {
+      "id": 249,
+      "student_id": 581,
+      "tentative_topic": "Project 1",
+      "supervisor_id": 244,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": 161
+    },
+    {
+      "id": 250,
+      "student_id": 582,
+      "tentative_topic": "Project 2",
+      "supervisor_id": 245,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": 162
+    },
+    {
+      "id": 251,
+      "student_id": 583,
+      "tentative_topic": "Project 3",
+      "supervisor_id": 244,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": 161
+    },
+    {
+      "id": 252,
+      "student_id": 475,
+      "tentative_topic": null,
+      "supervisor_id": 232,
+      "supervisor_confirmation_status": "Allocated",
+      "assessor_id": 25
+    },
+    {
+      "id": 226,
+      "student_id": 538,
+      "tentative_topic": null,
+      "supervisor_id": 205,
+      "supervisor_confirmation_status": "Allocated",
+      "assessor_id": 23
+    },
+    {
+      "id": 169,
+      "student_id": 481,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 170,
+      "student_id": 482,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 171,
+      "student_id": 483,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 172,
+      "student_id": 484,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 173,
+      "student_id": 485,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 174,
+      "student_id": 486,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 175,
+      "student_id": 487,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 176,
+      "student_id": 488,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 177,
+      "student_id": 489,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 178,
+      "student_id": 490,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 179,
+      "student_id": 491,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 180,
+      "student_id": 492,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 181,
+      "student_id": 493,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 182,
+      "student_id": 494,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 183,
+      "student_id": 495,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 184,
+      "student_id": 496,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 185,
+      "student_id": 497,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 186,
+      "student_id": 498,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 187,
+      "student_id": 499,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 188,
+      "student_id": 500,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 189,
+      "student_id": 501,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 190,
+      "student_id": 502,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 191,
+      "student_id": 503,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 192,
+      "student_id": 504,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 193,
+      "student_id": 505,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 194,
+      "student_id": 506,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 195,
+      "student_id": 507,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 196,
+      "student_id": 508,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 197,
+      "student_id": 509,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 198,
+      "student_id": 510,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 199,
+      "student_id": 511,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 200,
+      "student_id": 512,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 201,
+      "student_id": 513,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 202,
+      "student_id": 514,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 203,
+      "student_id": 515,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 214,
+      "student_id": 526,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 215,
+      "student_id": 527,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 216,
+      "student_id": 528,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 217,
+      "student_id": 529,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 218,
+      "student_id": 530,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 219,
+      "student_id": 531,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 220,
+      "student_id": 532,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 221,
+      "student_id": 533,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 222,
+      "student_id": 534,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    },
+    {
+      "id": 223,
+      "student_id": 535,
+      "tentative_topic": null,
+      "supervisor_id": null,
+      "supervisor_confirmation_status": "Pending",
+      "assessor_id": null
+    }
+  ],
+  "students": [
+    {
+      "id": 536,
+      "batch_id": 72,
+      "student_name": "Dilan Wickram",
+      "cb_no": "CB020101"
+    },
+    {
+      "id": 537,
+      "batch_id": 72,
+      "student_name": "Anjali Peris",
+      "cb_no": "CB020102"
+    },
+    {
+      "id": 538,
+      "batch_id": 72,
+      "student_name": "Nimesh Rodrigo",
+      "cb_no": "CB020103"
+    },
+    {
+      "id": 539,
+      "batch_id": 72,
+      "student_name": "Ishani Fernando",
+      "cb_no": "CB020104"
+    },
+    {
+      "id": 540,
+      "batch_id": 72,
+      "student_name": "Keshan Silva",
+      "cb_no": "CB020105"
+    },
+    {
+      "id": 541,
+      "batch_id": 72,
+      "student_name": "Hasini Nadeesha",
+      "cb_no": "CB023401"
+    },
+    {
+      "id": 542,
+      "batch_id": 72,
+      "student_name": "Vinu Herath",
+      "cb_no": "CB023404"
+    },
+    {
+      "id": 543,
+      "batch_id": 73,
+      "student_name": "Tharindu Jayasena",
+      "cb_no": "CB021201"
+    },
+    {
+      "id": 544,
+      "batch_id": 73,
+      "student_name": "Mihiri Perera",
+      "cb_no": "CB021202"
+    },
+    {
+      "id": 545,
+      "batch_id": 73,
+      "student_name": "Lakshika Bandara",
+      "cb_no": "CB021203"
+    },
+    {
+      "id": 546,
+      "batch_id": 73,
+      "student_name": "Sadeep Wickramasinghe",
+      "cb_no": "CB021204"
+    },
+    {
+      "id": 547,
+      "batch_id": 73,
+      "student_name": "Nuwanthi Herath",
+      "cb_no": "CB021205"
+    },
+    {
+      "id": 548,
+      "batch_id": 73,
+      "student_name": "Chamodi Perera",
+      "cb_no": "CB023402"
+    },
+    {
+      "id": 549,
+      "batch_id": 73,
+      "student_name": "Pabasara Silva",
+      "cb_no": "CB023405"
+    },
+    {
+      "id": 550,
+      "batch_id": 74,
+      "student_name": "Ravindu Kumara",
+      "cb_no": "CB022301"
+    },
+    {
+      "id": 551,
+      "batch_id": 74,
+      "student_name": "Shanika Dias",
+      "cb_no": "CB022302"
+    },
+    {
+      "id": 552,
+      "batch_id": 74,
+      "student_name": "Kasun Madushanka",
+      "cb_no": "CB022303"
+    },
+    {
+      "id": 553,
+      "batch_id": 74,
+      "student_name": "Thilini Rajapaksha",
+      "cb_no": "CB022304"
+    },
+    {
+      "id": 554,
+      "batch_id": 74,
+      "student_name": "Dimuthu Fernando",
+      "cb_no": "CB022305"
+    },
+    {
+      "id": 555,
+      "batch_id": 74,
+      "student_name": "Isuru Lakshan",
+      "cb_no": "CB023403"
+    },
+    {
+      "id": 576,
+      "batch_id": 62,
+      "student_name": "CBKavin1Test",
+      "cb_no": "CBKAVIN1"
+    },
+    {
+      "id": 577,
+      "batch_id": 71,
+      "student_name": "CBKavin2Test",
+      "cb_no": "CBKAVIN2"
+    },
+    {
+      "id": 581,
+      "batch_id": null,
+      "student_name": "Test Student 1",
+      "cb_no": "CB00123"
+    },
+    {
+      "id": 582,
+      "batch_id": null,
+      "student_name": "Test Student 2",
+      "cb_no": "CB00124"
+    },
+    {
+      "id": 583,
+      "batch_id": null,
+      "student_name": "Test Student 3",
+      "cb_no": "CB00125"
+    },
+    {
+      "id": 475,
+      "batch_id": 69,
+      "student_name": "Christina Wanigasekara",
+      "cb_no": "CB014416"
+    },
+    {
+      "id": 578,
+      "batch_id": 75,
+      "student_name": "Alice Student",
+      "cb_no": "CB001"
+    },
+    {
+      "id": 579,
+      "batch_id": 75,
+      "student_name": "Bob Student",
+      "cb_no": "CB002"
+    },
+    {
+      "id": 580,
+      "batch_id": 76,
+      "student_name": "Charlie Student",
+      "cb_no": "CB003"
+    },
+    {
+      "id": 588,
+      "batch_id": 76,
+      "student_name": "Diana Student",
+      "cb_no": "CB004"
+    },
+    {
+      "id": 589,
+      "batch_id": 77,
+      "student_name": "Evan Student",
+      "cb_no": "CB005"
+    },
+    {
+      "id": 590,
+      "batch_id": 77,
+      "student_name": "Fiona Student",
+      "cb_no": "CB006"
+    },
+    {
+      "id": 476,
+      "batch_id": 62,
+      "student_name": "Ayesha Perera",
+      "cb_no": "CB025100"
+    },
+    {
+      "id": 477,
+      "batch_id": 62,
+      "student_name": "Nipun Silva",
+      "cb_no": "CB025101"
+    },
+    {
+      "id": 478,
+      "batch_id": 62,
+      "student_name": "Tharindu Fernando",
+      "cb_no": "CB025102"
+    },
+    {
+      "id": 479,
+      "batch_id": 62,
+      "student_name": "Shenal Rodrigo",
+      "cb_no": "CB025103"
+    },
+    {
+      "id": 480,
+      "batch_id": 62,
+      "student_name": "Hansani Dias",
+      "cb_no": "CB025104"
+    },
+    {
+      "id": 481,
+      "batch_id": 62,
+      "student_name": "Ravindu Bandara",
+      "cb_no": "CB025105"
+    },
+    {
+      "id": 482,
+      "batch_id": 62,
+      "student_name": "Kavindu Herath",
+      "cb_no": "CB025106"
+    },
+    {
+      "id": 483,
+      "batch_id": 62,
+      "student_name": "Dilki Jayasinghe",
+      "cb_no": "CB025107"
+    },
+    {
+      "id": 484,
+      "batch_id": 62,
+      "student_name": "Ishara Rajapaksha",
+      "cb_no": "CB025108"
+    },
+    {
+      "id": 485,
+      "batch_id": 62,
+      "student_name": "Sasindu Amarasinghe",
+      "cb_no": "CB025109"
+    },
+    {
+      "id": 486,
+      "batch_id": 63,
+      "student_name": "Nethmi Liyanage",
+      "cb_no": "CB026110"
+    },
+    {
+      "id": 487,
+      "batch_id": 63,
+      "student_name": "Maleesha De Silva",
+      "cb_no": "CB026111"
+    },
+    {
+      "id": 488,
+      "batch_id": 63,
+      "student_name": "Sanduni Gunawardena",
+      "cb_no": "CB026112"
+    },
+    {
+      "id": 489,
+      "batch_id": 63,
+      "student_name": "Dhanuka Wickramasinghe",
+      "cb_no": "CB026113"
+    },
+    {
+      "id": 490,
+      "batch_id": 63,
+      "student_name": "Kasun Peiris",
+      "cb_no": "CB026114"
+    },
+    {
+      "id": 491,
+      "batch_id": 63,
+      "student_name": "Lakshan Senanayake",
+      "cb_no": "CB026115"
+    },
+    {
+      "id": 492,
+      "batch_id": 63,
+      "student_name": "Pabasara Madushanka",
+      "cb_no": "CB026116"
+    },
+    {
+      "id": 493,
+      "batch_id": 63,
+      "student_name": "Chathura Kumari",
+      "cb_no": "CB026117"
+    },
+    {
+      "id": 494,
+      "batch_id": 63,
+      "student_name": "Navodi Wijesinghe",
+      "cb_no": "CB026118"
+    },
+    {
+      "id": 495,
+      "batch_id": 63,
+      "student_name": "Umesh Peris",
+      "cb_no": "CB026119"
+    },
+    {
+      "id": 496,
+      "batch_id": 64,
+      "student_name": "Dinithi Perera",
+      "cb_no": "CB027120"
+    },
+    {
+      "id": 497,
+      "batch_id": 64,
+      "student_name": "Amaya Silva",
+      "cb_no": "CB027121"
+    },
+    {
+      "id": 498,
+      "batch_id": 64,
+      "student_name": "Thilina Fernando",
+      "cb_no": "CB027122"
+    },
+    {
+      "id": 499,
+      "batch_id": 64,
+      "student_name": "Keshani Rodrigo",
+      "cb_no": "CB027123"
+    },
+    {
+      "id": 500,
+      "batch_id": 64,
+      "student_name": "Gayan Dias",
+      "cb_no": "CB027124"
+    },
+    {
+      "id": 501,
+      "batch_id": 64,
+      "student_name": "Nadeesha Bandara",
+      "cb_no": "CB027125"
+    },
+    {
+      "id": 502,
+      "batch_id": 64,
+      "student_name": "Yasiru Herath",
+      "cb_no": "CB027126"
+    },
+    {
+      "id": 503,
+      "batch_id": 64,
+      "student_name": "Mihiri Jayasinghe",
+      "cb_no": "CB027127"
+    },
+    {
+      "id": 504,
+      "batch_id": 64,
+      "student_name": "Sahan Rajapaksha",
+      "cb_no": "CB027128"
+    },
+    {
+      "id": 505,
+      "batch_id": 64,
+      "student_name": "Hasini Amarasinghe",
+      "cb_no": "CB027129"
+    },
+    {
+      "id": 506,
+      "batch_id": 65,
+      "student_name": "Shavini Liyanage",
+      "cb_no": "CB028130"
+    },
+    {
+      "id": 507,
+      "batch_id": 65,
+      "student_name": "Dulanga De Silva",
+      "cb_no": "CB028131"
+    },
+    {
+      "id": 508,
+      "batch_id": 65,
+      "student_name": "Tharushi Gunawardena",
+      "cb_no": "CB028132"
+    },
+    {
+      "id": 509,
+      "batch_id": 65,
+      "student_name": "Akila Wickramasinghe",
+      "cb_no": "CB028133"
+    },
+    {
+      "id": 510,
+      "batch_id": 65,
+      "student_name": "Isuru Peiris",
+      "cb_no": "CB028134"
+    },
+    {
+      "id": 511,
+      "batch_id": 65,
+      "student_name": "Vihanga Senanayake",
+      "cb_no": "CB028135"
+    },
+    {
+      "id": 512,
+      "batch_id": 65,
+      "student_name": "Chamodi Madushanka",
+      "cb_no": "CB028136"
+    },
+    {
+      "id": 513,
+      "batch_id": 65,
+      "student_name": "Kevin Kumari",
+      "cb_no": "CB028137"
+    },
+    {
+      "id": 514,
+      "batch_id": 65,
+      "student_name": "Janani Wijesinghe",
+      "cb_no": "CB028138"
+    },
+    {
+      "id": 515,
+      "batch_id": 65,
+      "student_name": "Sachini Peris",
+      "cb_no": "CB028139"
+    },
+    {
+      "id": 526,
+      "batch_id": 67,
+      "student_name": "Oshadi Liyanage",
+      "cb_no": "CB030150"
+    },
+    {
+      "id": 527,
+      "batch_id": 67,
+      "student_name": "Nadeera De Silva",
+      "cb_no": "CB030151"
+    },
+    {
+      "id": 528,
+      "batch_id": 67,
+      "student_name": "Bimasha Gunawardena",
+      "cb_no": "CB030152"
+    },
+    {
+      "id": 529,
+      "batch_id": 67,
+      "student_name": "Raveen Wickramasinghe",
+      "cb_no": "CB030153"
+    },
+    {
+      "id": 530,
+      "batch_id": 67,
+      "student_name": "Gimhani Peiris",
+      "cb_no": "CB030154"
+    },
+    {
+      "id": 531,
+      "batch_id": 67,
+      "student_name": "Thisara Senanayake",
+      "cb_no": "CB030155"
+    },
+    {
+      "id": 532,
+      "batch_id": 67,
+      "student_name": "Shanika Madushanka",
+      "cb_no": "CB030156"
+    },
+    {
+      "id": 533,
+      "batch_id": 67,
+      "student_name": "Dileesha Kumari",
+      "cb_no": "CB030157"
+    },
+    {
+      "id": 534,
+      "batch_id": 67,
+      "student_name": "Nuwan Wijesinghe",
+      "cb_no": "CB030158"
+    },
+    {
+      "id": 535,
+      "batch_id": 67,
+      "student_name": "Pasindu Peris",
+      "cb_no": "CB030159"
+    }
+  ],
+  "supervisors": [
+    {
+      "id": 204,
+      "title": "Dr.",
+      "name": "Nimal Perera",
+      "email": "nimal.perera@apiit.lk",
+      "expertise": "Artificial Intelligence, Machine Learning, Deep Learning",
+      "research_interests": "Explainable AI, Computer Vision, Healthcare AI",
+      "additional_information": "Weekly hybrid meetings. Publication-oriented projects preferred.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 206,
+      "title": "Dr.",
+      "name": "Kasun Jayasinghe",
+      "email": "kasun.jayasinghe@apiit.lk",
+      "expertise": "Data Science, Big Data, Business Analytics",
+      "research_interests": "Predictive Analytics, Smart Cities, Data Visualization",
+      "additional_information": "Bi-weekly online meetings.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 207,
+      "title": "Ms.",
+      "name": "Anjali Silva",
+      "email": "anjali.silva@apiit.lk",
+      "expertise": "Human Computer Interaction, UX Design, Accessibility",
+      "research_interests": "Inclusive Design, AR Interfaces, Usability Engineering",
+      "additional_information": "Strong emphasis on user studies.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 208,
+      "title": "Dr.",
+      "name": "Ruwan Wijeratne",
+      "email": "ruwan.wijeratne@apiit.lk",
+      "expertise": "Cloud Computing, Distributed Systems, DevOps",
+      "research_interests": "Container Orchestration, Edge Computing, Serverless",
+      "additional_information": "Industry collaboration opportunities available.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 209,
+      "title": "Prof.",
+      "name": "Ishara Gunasekara",
+      "email": "ishara.gunasekara@apiit.lk",
+      "expertise": "Natural Language Processing, Generative AI",
+      "research_interests": "Large Language Models, Chatbots, Sentiment Analysis",
+      "additional_information": "Publication-focused supervision.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 211,
+      "title": "Dr.",
+      "name": "Dilani Peris",
+      "email": "dilani.peris@apiit.lk",
+      "expertise": "Internet of Things, Embedded Systems",
+      "research_interests": "Smart Agriculture, Sensor Networks, Edge AI",
+      "additional_information": "Hardware access available in laboratory.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 212,
+      "title": "Mrs.",
+      "name": "Fathima Ameer",
+      "email": "fathima.ameer@apiit.lk",
+      "expertise": "HCI, Gamification, Educational Technology",
+      "research_interests": "Digital Storytelling, Accessibility, VR Learning",
+      "additional_information": "Hybrid meetings every two weeks.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 213,
+      "title": "Dr.",
+      "name": "Tharindu Senanayake",
+      "email": "tharindu.senanayake@apiit.lk",
+      "expertise": "Computer Vision, Image Processing",
+      "research_interests": "Medical Imaging, Deepfake Detection, Explainable AI",
+      "additional_information": "Students interested in publications encouraged.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 214,
+      "title": "Prof.",
+      "name": "Malsha De Silva",
+      "email": "malsha.de.silva@apiit.lk",
+      "expertise": "Blockchain, FinTech",
+      "research_interests": "Smart Contracts, Decentralized Applications, Web3",
+      "additional_information": "Projects with industry relevance preferred.",
+      "preferred_supervision_slots": 2,
+      "signature_url": null
+    },
+    {
+      "id": 215,
+      "title": "Dr.",
+      "name": "Ahamed Shiyam",
+      "email": "ahamed.shiyam@apiit.lk",
+      "expertise": "Machine Learning, NLP, Full Stack Development",
+      "research_interests": "Transfer Learning, AI Ethics, Deepfake Detection",
+      "additional_information": "Hybrid supervision available.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 216,
+      "title": "Ms.",
+      "name": "Nadeesha Ekanayake",
+      "email": "nadeesha.ekanayake@apiit.lk",
+      "expertise": "Mobile Computing, Android Development",
+      "research_interests": "Cross Platform Apps, Mobile Security, UX",
+      "additional_information": "Weekly online sessions.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 217,
+      "title": "Dr.",
+      "name": "Ashan Fernando",
+      "email": "ashan.fernando@apiit.lk",
+      "expertise": "Bioinformatics, AI in Healthcare",
+      "research_interests": "Disease Prediction, Genomics, Medical Data Mining",
+      "additional_information": "Healthcare domain projects only.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 218,
+      "title": "Prof.",
+      "name": "Rashmi Jayawardena",
+      "email": "rashmi.jayawardena@apiit.lk",
+      "expertise": "Data Mining, Recommender Systems",
+      "research_interests": "Personalization, E-commerce Analytics, AI",
+      "additional_information": "Research publication expected.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 219,
+      "title": "Mr.",
+      "name": "Pradeep Liyanage",
+      "email": "pradeep.liyanage@apiit.lk",
+      "expertise": "Database Systems, Information Retrieval",
+      "research_interests": "Knowledge Graphs, Search Engines, Data Warehousing",
+      "additional_information": "On-campus meetings preferred.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 220,
+      "title": "Dr.",
+      "name": "Kumari Wickramasinghe",
+      "email": "kumari.wickramasinghe@apiit.lk",
+      "expertise": "Augmented Reality, Virtual Reality",
+      "research_interests": "Immersive Learning, Metaverse, 3D Interfaces",
+      "additional_information": "Access to VR lab available.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 221,
+      "title": "Prof.",
+      "name": "Harsha Peiris",
+      "email": "harsha.peiris@apiit.lk",
+      "expertise": "Robotics, Autonomous Systems",
+      "research_interests": "Drone Technology, SLAM, Computer Vision",
+      "additional_information": "Hardware-intensive projects.",
+      "preferred_supervision_slots": 2,
+      "signature_url": null
+    },
+    {
+      "id": 222,
+      "title": "Dr.",
+      "name": "Sajini Abeysekara",
+      "email": "sajini.abeysekara@apiit.lk",
+      "expertise": "Information Security, Cryptography",
+      "research_interests": "Privacy Preserving Systems, Blockchain Security",
+      "additional_information": "Strong mathematical background preferred.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 223,
+      "title": "Ms.",
+      "name": "Shalika Ranasinghe",
+      "email": "shalika.ranasinghe@apiit.lk",
+      "expertise": "Software Quality Assurance, Testing",
+      "research_interests": "Automation Testing, DevSecOps, Reliability Engineering",
+      "additional_information": "Weekly meetings mandatory.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 224,
+      "title": "Dr.",
+      "name": "Nuwan Rodrigo",
+      "email": "nuwan.rodrigo@apiit.lk",
+      "expertise": "AI, Data Science",
+      "research_interests": "Predictive Analytics, Smart Healthcare",
+      "additional_information": "Publication encouraged.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 225,
+      "title": "Prof.",
+      "name": "Piumi Karunaratne",
+      "email": "piumi.karunaratne@apiit.lk",
+      "expertise": "Cyber Security, Cloud Security",
+      "research_interests": "Security Automation, SIEM",
+      "additional_information": "Hybrid mode.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 226,
+      "title": "Dr.",
+      "name": "Gayan Peris",
+      "email": "gayan.peris@apiit.lk",
+      "expertise": "IoT, Embedded Systems",
+      "research_interests": "Smart Homes, Edge Computing",
+      "additional_information": "Lab access available.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 227,
+      "title": "Mr.",
+      "name": "Lakshan Wijesinghe",
+      "email": "lakshan.wijesinghe@apiit.lk",
+      "expertise": "Web Development, Full Stack",
+      "research_interests": "MERN Stack, Cloud Deployment",
+      "additional_information": "Industry projects preferred.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 228,
+      "title": "Dr.",
+      "name": "Ayesha Fernando",
+      "email": "ayesha.fernando@apiit.lk",
+      "expertise": "Computer Vision, Deep Learning",
+      "research_interests": "Facial Recognition, Surveillance Systems",
+      "additional_information": "Weekly meetings.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 229,
+      "title": "Ms.",
+      "name": "Shenali De Silva",
+      "email": "shenali.de.silva@apiit.lk",
+      "expertise": "HCI, UX",
+      "research_interests": "Accessibility, User Experience",
+      "additional_information": "User studies required.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 230,
+      "title": "Dr.",
+      "name": "Dhanushka Samarasinghe",
+      "email": "dhanushka.samarasinghe@apiit.lk",
+      "expertise": "Blockchain, FinTech",
+      "research_interests": "Digital Identity, Smart Contracts",
+      "additional_information": "Research focus.",
+      "preferred_supervision_slots": 2,
+      "signature_url": null
+    },
+    {
+      "id": 231,
+      "title": "Prof.",
+      "name": "Ravindu Gunawardena",
+      "email": "ravindu.gunawardena@apiit.lk",
+      "expertise": "Machine Learning, NLP",
+      "research_interests": "LLMs, Conversational AI",
+      "additional_information": "Publication expected.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 233,
+      "title": "Mr.",
+      "name": "Yohan Silva",
+      "email": "yohan.silva@apiit.lk",
+      "expertise": "Software Engineering, DevOps",
+      "research_interests": "CI/CD, Kubernetes",
+      "additional_information": "Industry mentoring available.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 234,
+      "title": "Dr.",
+      "name": "Nirosha Pathirana",
+      "email": "nirosha.pathirana@apiit.lk",
+      "expertise": "AR/VR, Multimedia",
+      "research_interests": "Virtual Learning, Gaming",
+      "additional_information": "VR equipment provided.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 235,
+      "title": "Prof.",
+      "name": "Buddhika Ekanayake",
+      "email": "buddhika.ekanayake@apiit.lk",
+      "expertise": "Data Mining, AI",
+      "research_interests": "Fraud Detection, Pattern Analysis",
+      "additional_information": "Weekly supervision.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 236,
+      "title": "Dr.",
+      "name": "Sampath Hettiarachchi",
+      "email": "sampath.hettiarachchi@apiit.lk",
+      "expertise": "Cloud Computing, Big Data",
+      "research_interests": "Scalable Systems, Distributed Analytics",
+      "additional_information": "Hybrid meetings.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 237,
+      "title": "Ms.",
+      "name": "Ruwani Senarath",
+      "email": "ruwani.senarath@apiit.lk",
+      "expertise": "Mobile Computing, UI Design",
+      "research_interests": "Cross-platform Apps, UX",
+      "additional_information": "Agile methodology preferred.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 238,
+      "title": "Dr.",
+      "name": "Thilina Madushanka",
+      "email": "thilina.madushanka@apiit.lk",
+      "expertise": "Cyber Security, Forensics",
+      "research_interests": "Incident Response, Threat Hunting",
+      "additional_information": "Hands-on projects only.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 239,
+      "title": "Prof.",
+      "name": "Nadeeka Jayasuriya",
+      "email": "nadeeka.jayasuriya@apiit.lk",
+      "expertise": "Robotics, AI",
+      "research_interests": "Autonomous Vehicles, SLAM",
+      "additional_information": "Robotics lab access.",
+      "preferred_supervision_slots": 2,
+      "signature_url": null
+    },
+    {
+      "id": 240,
+      "title": "Dr.",
+      "name": "Sanduni Abeywickrama",
+      "email": "sanduni.abeywickrama@apiit.lk",
+      "expertise": "Educational Technology, Gamification",
+      "research_interests": "E-learning, Serious Games",
+      "additional_information": "Online meetings.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 241,
+      "title": "Mr.",
+      "name": "Chathura Fernando",
+      "email": "chathura.fernando@apiit.lk",
+      "expertise": "Databases, Backend Development",
+      "research_interests": "Data Engineering, APIs",
+      "additional_information": "Industry-focused supervision.",
+      "preferred_supervision_slots": 5,
+      "signature_url": null
+    },
+    {
+      "id": 242,
+      "title": "Dr.",
+      "name": "Isuru Rajapaksha",
+      "email": "isuru.rajapaksha@apiit.lk",
+      "expertise": "AI, Computer Vision",
+      "research_interests": "Image Analytics, Smart Surveillance",
+      "additional_information": "Publication opportunities available.",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    },
+    {
+      "id": 243,
+      "title": "Prof.",
+      "name": "Madhavi Wickramaratne",
+      "email": "madhavi.wickramaratne@apiit.lk",
+      "expertise": "Information Systems, Business Analytics",
+      "research_interests": "Digital Transformation, Enterprise Systems",
+      "additional_information": "Fortnightly meetings.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 232,
+      "title": "Dr.",
+      "name": "Janani Perera",
+      "email": "janani.perera@apiit.lk",
+      "expertise": "Health Informatics, Data Analytics",
+      "research_interests": "Medical AI, EHR Analytics",
+      "additional_information": "Healthcare projects only.",
+      "preferred_supervision_slots": 2,
+      "signature_url": null
+    },
+    {
+      "id": 205,
+      "title": "Prof.",
+      "name": "Sarah Fernando",
+      "email": "sarah.fernando@apiit.lk",
+      "expertise": "Cyber Security, Digital Forensics, Network Security",
+      "research_interests": "Threat Intelligence, Malware Analysis, Zero Trust Security",
+      "additional_information": "Students with programming background preferred.",
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 210,
+      "title": "Mr.",
+      "name": "Chamara Rajapaksha",
+      "email": "chamara.rajapaksha@apiit.lk",
+      "expertise": "Software Engineering, Agile Development",
+      "research_interests": "Microservices, Software Architecture, Testing",
+      "additional_information": "Weekly progress updates required.",
+      "preferred_supervision_slots": 2,
+      "signature_url": null
+    },
+    {
+      "id": 244,
+      "title": null,
+      "name": "Supervisor One",
+      "email": "supervisor1@test.com",
+      "expertise": null,
+      "research_interests": null,
+      "additional_information": null,
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 245,
+      "title": null,
+      "name": "Supervisor Two",
+      "email": "supervisor2@test.com",
+      "expertise": null,
+      "research_interests": null,
+      "additional_information": null,
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 246,
+      "title": "Dr.",
+      "name": "Dr. Kavin",
+      "email": "kavin@apiit.lk",
+      "expertise": null,
+      "research_interests": null,
+      "additional_information": null,
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 247,
+      "title": "Dr.",
+      "name": "Dr. Nirmala",
+      "email": "nirmala@apiit.lk",
+      "expertise": null,
+      "research_interests": null,
+      "additional_information": null,
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 248,
+      "title": "Prof.",
+      "name": "Prof. Alan Smith",
+      "email": "alan@apiit.lk",
+      "expertise": null,
+      "research_interests": null,
+      "additional_information": null,
+      "preferred_supervision_slots": 3,
+      "signature_url": null
+    },
+    {
+      "id": 249,
+      "title": "Dr.",
+      "name": "Test1",
+      "email": "Testk1@apiit.lk",
+      "expertise": "Machine Learning, Data Algorithms",
+      "research_interests": "AI, robotics",
+      "additional_information": "Preferred meeting time during the weekdays",
+      "preferred_supervision_slots": 4,
+      "signature_url": null
+    }
+  ],
+  "templates": [
+    {
+      "id": 1,
+      "title": "Proposal Template",
+      "file_path": "1782465272235.docx",
+      "uploaded_at": "2026-06-26T09:14:32.241Z",
+      "file_name": "Proposal Template (1).docx",
+      "file_size": "52.72 KB",
+      "file_type": ".docx",
+      "stage": "Proposal"
+    },
+    {
+      "id": 3,
+      "title": "FYP steps",
+      "file_path": "1782669576032.docx",
+      "uploaded_at": "2026-06-28T17:59:36.053Z",
+      "file_name": "FYP steps (1).docx",
+      "file_size": "18.13 KB",
+      "file_type": ".docx",
+      "stage": "Proposal"
+    },
+    {
+      "id": 6,
+      "title": "Smaple testt midpoint",
+      "file_path": "1782673895641.docx",
+      "uploaded_at": "2026-06-28T19:11:35.645Z",
+      "file_name": "Proposal Template (1) (3).docx",
+      "file_size": "52.72 KB",
+      "file_type": ".docx",
+      "stage": "Midpoint"
+    },
+    {
+      "id": 10,
+      "title": "Logsheet",
+      "file_path": "1783499577145.docx",
+      "uploaded_at": "2026-07-08T08:32:57.160Z",
+      "file_name": "FYP-LOGSHEET_V2.docx",
+      "file_size": "57.43 KB",
+      "file_type": ".docx",
+      "stage": "Proposal"
+    },
+    {
+      "id": 5,
+      "title": "sample template",
+      "file_path": "1782673637417.docx",
+      "uploaded_at": "2026-06-28T19:07:17.422Z",
+      "file_name": "Proposal Template (1) (3).docx",
+      "file_size": "52.72 KB",
+      "file_type": ".docx",
+      "stage": "Proposal"
+    },
+    {
+      "id": 9,
+      "title": "Proposal Report",
+      "file_path": "1782901371190.docx",
+      "uploaded_at": "2026-07-01T10:22:51.205Z",
+      "file_name": "Proposal Template (1) (1).docx",
+      "file_size": "52.72 KB",
+      "file_type": ".docx",
+      "stage": "Proposal"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "name": null,
+      "email": "CB014416@students.apiit.lk",
+      "password": "$2b$10$riXcoBQtqQlCb60RUVlxbuxinoAHBcQUDtKq3yjNL6fKEsWMFYw.O",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 2,
+      "name": null,
+      "email": "CB014417@students.apiit.lk",
+      "password": "$2b$10$vssVPV4CNdZYyZa4c6/WLO5g1pkteaxJsAkPH/wGdXTHA.ZLRR5zC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 3,
+      "name": null,
+      "email": "CB014418@students.apiit.lk",
+      "password": "$2b$10$u8z37gloQIn.fQU4T.5.5e/0wKpVrpiq9cSDwJGKu0Q0XLhn5kTEa",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 44,
+      "name": null,
+      "email": "CB025100@students.apiit.lk",
+      "password": "$2b$10$tT53CHLgGJHkaHDmwzc6Ee3wbg8MkLTvE.eS5a18GWRod02mLLsx6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:29.925Z"
+    },
+    {
+      "id": 45,
+      "name": null,
+      "email": "CB025101@students.apiit.lk",
+      "password": "$2b$10$gfnbTyIMjU/8pbYtx0PkMe5j3u.st88iNmSZAeEsywwjJhW5aqiAe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:30.027Z"
+    },
+    {
+      "id": 46,
+      "name": null,
+      "email": "CB025102@students.apiit.lk",
+      "password": "$2b$10$EmR9V57KtP221DbNSh85jeRTR5OIRxo..nJEFN61q8ccFz7gNqQ4O",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:30.178Z"
+    },
+    {
+      "id": 47,
+      "name": null,
+      "email": "CB025103@students.apiit.lk",
+      "password": "$2b$10$MGR8wqu.51gRb8jyDXVaPeVb9bQ.6ddQPAK/FENoFSKtymaLFN5VK",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:30.410Z"
+    },
+    {
+      "id": 48,
+      "name": null,
+      "email": "CB025104@students.apiit.lk",
+      "password": "$2b$10$JFfe7O5JvESFNYp9FovVPOlDUpBPBDIX7v/qsCRYC.Pq9eWnSkQS.",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:30.630Z"
+    },
+    {
+      "id": 49,
+      "name": null,
+      "email": "CB025105@students.apiit.lk",
+      "password": "$2b$10$grhklWIbDZL5JIWWNKOxnuBmckR02E3nFJxxgf2CaZW2AnzCgHgN6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:30.873Z"
+    },
+    {
+      "id": 50,
+      "name": null,
+      "email": "CB025106@students.apiit.lk",
+      "password": "$2b$10$6kI/XdmjJ8u2bYvr0P0G/OSarXcS7iepi8EY1B2.p/pv9nfRR4zCm",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.031Z"
+    },
+    {
+      "id": 51,
+      "name": null,
+      "email": "CB025107@students.apiit.lk",
+      "password": "$2b$10$JhZ83orewHsGA.BFjHtE2e9Bsax1BDtxfWyqL/OplpZsCTsAdT.W6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.125Z"
+    },
+    {
+      "id": 52,
+      "name": null,
+      "email": "CB025108@students.apiit.lk",
+      "password": "$2b$10$G5BuV41fJ7vuc9CUhf4juutgupIFQgKi0WsT/HvhfETJYqVthTq/e",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.250Z"
+    },
+    {
+      "id": 53,
+      "name": null,
+      "email": "CB025109@students.apiit.lk",
+      "password": "$2b$10$gPqjWyPKEOxs1aMWDLjehejzx5okdZDR7qtHo5oAYQvCXJnTnCjQi",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.373Z"
+    },
+    {
+      "id": 54,
+      "name": null,
+      "email": "CB026110@students.apiit.lk",
+      "password": "$2b$10$Wc.1p/MUTk5k6luvkEfw0.61DerUJPkZdRCXXfGK.22/XEZoqohGe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.475Z"
+    },
+    {
+      "id": 55,
+      "name": null,
+      "email": "CB026111@students.apiit.lk",
+      "password": "$2b$10$mVfDcbhqayGwXu0J..QMc.w5Z2NCCMO/ejwG0E5UyYVJquNLn3FN2",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.577Z"
+    },
+    {
+      "id": 56,
+      "name": null,
+      "email": "CB026112@students.apiit.lk",
+      "password": "$2b$10$uzU99M4SyAK9V5ZzIDHhVetaGPmQRB3wRnyVsU/hFIFy8/ajHU15G",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.673Z"
+    },
+    {
+      "id": 57,
+      "name": null,
+      "email": "CB026113@students.apiit.lk",
+      "password": "$2b$10$oqgb30OaeIjo5vdeB/4PdO4DSmbHpdVylYkybCHmNuBtQxUMmyTfC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.774Z"
+    },
+    {
+      "id": 58,
+      "name": null,
+      "email": "CB026114@students.apiit.lk",
+      "password": "$2b$10$swjro92r0mv7ta5lB7boSeYSBt7k0A8NfK4Iph.ObCxDdmQFx4DUC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.868Z"
+    },
+    {
+      "id": 7,
+      "name": "Nirosha Admin",
+      "email": "nirosha@apiit.lk",
+      "password": "$2b$10$Bbma.eDG024QUUFiHUXcjuZYPnzpuGjiL/3XmLP.f1JD5pZ2OUMAS",
+      "role": "admin",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 6,
+      "name": "Fathima PM",
+      "email": "fathima@apiit.lk",
+      "password": "$2b$10$1NZ.R18FgM7cQJn444PblexR29gibDAcnC8OByAtud2KzwHrKx5oy",
+      "role": "pm",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 4,
+      "name": "Dr. Kavin",
+      "email": "kavin@apiit.lk",
+      "password": "$2b$10$p1PbD4ViWXtQwE6PLhx4OO7pSePB0RE/PrzUnwQkCIkh8281auts2",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 5,
+      "name": "Dr. Nirmala",
+      "email": "nirmala@apiit.lk",
+      "password": "$2b$10$kC90lrq.IFEY6XUsYZq8hudeWU/eOSyO2ej6pzlDF9kKbWIV2gZ2q",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-06-25T10:48:08.260Z"
+    },
+    {
+      "id": 59,
+      "name": null,
+      "email": "CB026115@students.apiit.lk",
+      "password": "$2b$10$qlLGKUxAv85PDMoAnPBSc.2lh5WTfr2XLwZw92zUiqfXdHEDdLmTq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:31.963Z"
+    },
+    {
+      "id": 60,
+      "name": null,
+      "email": "CB026116@students.apiit.lk",
+      "password": "$2b$10$YhY.Gp7DcJqdR.seQxwBo.s7TNND0QQNfgyrTZO8xYVKE3pbY.8Ji",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.067Z"
+    },
+    {
+      "id": 61,
+      "name": null,
+      "email": "CB026117@students.apiit.lk",
+      "password": "$2b$10$aL7c5iPm/VXM8rb3zcD90.cFpnq9f7C3iMGB5KOADEzMoDfLpxAk6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.171Z"
+    },
+    {
+      "id": 62,
+      "name": null,
+      "email": "CB026118@students.apiit.lk",
+      "password": "$2b$10$R6l4b36KhQo./hrrLhyF3.ik5OmSY0dASU0kk285yAufF119nRPnm",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.271Z"
+    },
+    {
+      "id": 63,
+      "name": null,
+      "email": "CB026119@students.apiit.lk",
+      "password": "$2b$10$P4esvcT3VE7LgJDMi6wwHuXS47xXybdkeoidD5/o0S/.pdQ/sdWAa",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.363Z"
+    },
+    {
+      "id": 64,
+      "name": null,
+      "email": "CB027120@students.apiit.lk",
+      "password": "$2b$10$/ER/4XODEnjexzSmg8a62.YZne7rBFwTei4e4zYOCLX3r4p7/.6S2",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.454Z"
+    },
+    {
+      "id": 65,
+      "name": null,
+      "email": "CB027121@students.apiit.lk",
+      "password": "$2b$10$ky048.QitVKjZ/asF.EjVeWLBIOGIWKGi.Z1D9xD/H89MB00O4au2",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.546Z"
+    },
+    {
+      "id": 66,
+      "name": null,
+      "email": "CB027122@students.apiit.lk",
+      "password": "$2b$10$KyWd3WhL9EeKnDYZ88TIf.I67WB9oS/oe2M5M8Wk1jF7hSfqZLuEK",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.627Z"
+    },
+    {
+      "id": 67,
+      "name": null,
+      "email": "CB027123@students.apiit.lk",
+      "password": "$2b$10$fHvA6EA9hqSPqGiu2jNEHO0alUP/Z8WfotPdQUd0U/NtkF8zkycA6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.723Z"
+    },
+    {
+      "id": 68,
+      "name": null,
+      "email": "CB027124@students.apiit.lk",
+      "password": "$2b$10$44pGTD2vJppORyJKeB7cOObxsmfPVeXvU1A8fDege0uDmfHL/OU3i",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.851Z"
+    },
+    {
+      "id": 69,
+      "name": null,
+      "email": "CB027125@students.apiit.lk",
+      "password": "$2b$10$qyQUROditKI.RtsascjwY.V1E.f99V9ue8dIi57VPywEcPpCEZARa",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:32.946Z"
+    },
+    {
+      "id": 70,
+      "name": null,
+      "email": "CB027126@students.apiit.lk",
+      "password": "$2b$10$4gmrEje9ks2z.Avlyng2U.bASvmSLlbBt75LyLbjJKSsVpI7uQWDC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.049Z"
+    },
+    {
+      "id": 71,
+      "name": null,
+      "email": "CB027127@students.apiit.lk",
+      "password": "$2b$10$RcUT4a6iDWvYDYpUoxFrYeuwmUDIK7MAK9pbl5JHIL2CLgTCVdAG.",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.202Z"
+    },
+    {
+      "id": 72,
+      "name": null,
+      "email": "CB027128@students.apiit.lk",
+      "password": "$2b$10$NCAHtqS0Tyz8ep5LkPSoZOe1n9B5BTk4xfqI/GLfDY5/BhSO4Ue6C",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.330Z"
+    },
+    {
+      "id": 73,
+      "name": null,
+      "email": "CB027129@students.apiit.lk",
+      "password": "$2b$10$ovFJNYyVr7NuTNkXR41gEukVMxco1RfydzyfIfsm1FNg8OzSakV7.",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.536Z"
+    },
+    {
+      "id": 74,
+      "name": null,
+      "email": "CB028130@students.apiit.lk",
+      "password": "$2b$10$z3d2TK8LRzHyzKv2qYSE7OIclMMEIPaiq4qgJP3z.s4yyNVbJ7//6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.698Z"
+    },
+    {
+      "id": 75,
+      "name": null,
+      "email": "CB028131@students.apiit.lk",
+      "password": "$2b$10$6Ao6kX8UGWnIroIGVbOQpeDOwLKav/pdtICwa0xtYdUW7VYjStT7a",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.841Z"
+    },
+    {
+      "id": 76,
+      "name": null,
+      "email": "CB028132@students.apiit.lk",
+      "password": "$2b$10$fRmccNekyqeYGl38onI9ieKlKfKEKDomeZ2bk7.MbObH8RPJL8KvC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:33.950Z"
+    },
+    {
+      "id": 77,
+      "name": null,
+      "email": "CB028133@students.apiit.lk",
+      "password": "$2b$10$L6Z88cHCh9TVsjtTNfwS8uljDP5shfPFb68GLW7ZtTlE/3ZbU3oNW",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:34.072Z"
+    },
+    {
+      "id": 78,
+      "name": null,
+      "email": "CB028134@students.apiit.lk",
+      "password": "$2b$10$n5f0u69XVkgPws4O4dUYRuzm8ZuPVlgLW0j6OWa3itvEj08buwP4m",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:34.157Z"
+    },
+    {
+      "id": 79,
+      "name": null,
+      "email": "CB028135@students.apiit.lk",
+      "password": "$2b$10$Gigol3UATfhWqgtrM2C.we.5gkEQ2sLEWkTWj6Kny8AQyYfDbf7D2",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:34.280Z"
+    },
+    {
+      "id": 80,
+      "name": null,
+      "email": "CB028136@students.apiit.lk",
+      "password": "$2b$10$i.7ZYpwvXHR5i6OxGIEJV.RUW7oTqjtceBfVMtgDUmGTFngtUdHV6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:34.483Z"
+    },
+    {
+      "id": 81,
+      "name": null,
+      "email": "CB028137@students.apiit.lk",
+      "password": "$2b$10$KSZ1PwRxlB508gIDqgP6R.b/MN/uadQTAQP9UCAtrWmzxBC9QJYQO",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:34.625Z"
+    },
+    {
+      "id": 82,
+      "name": null,
+      "email": "CB028138@students.apiit.lk",
+      "password": "$2b$10$NFWb.i4OK9Tbznu1FgKviOOMCqV.X4L47jFpbcLMrNnENGfZpwFuC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:34.782Z"
+    },
+    {
+      "id": 83,
+      "name": null,
+      "email": "CB028139@students.apiit.lk",
+      "password": "$2b$10$QmfjvQdk1HjOl1/IasIeuucfegpz7M7F5LIjudak.QJ2yARfUuE/C",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.055Z"
+    },
+    {
+      "id": 84,
+      "name": null,
+      "email": "CB029140@students.apiit.lk",
+      "password": "$2b$10$s/zUivWDkt9v0mvAHSnm9uYKKyOeTk7Y38lqo..HI3c5vir93HL.6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.182Z"
+    },
+    {
+      "id": 85,
+      "name": null,
+      "email": "CB029141@students.apiit.lk",
+      "password": "$2b$10$jLmQ2KV8vtnze.bIk9OnGOy9Bxl4sKuxxUQc2OMKmQNn/N3Ekm79y",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.307Z"
+    },
+    {
+      "id": 86,
+      "name": null,
+      "email": "CB029142@students.apiit.lk",
+      "password": "$2b$10$aimWjUBAEKhz805pwggHG.FW.DECgBkivvd0ZBnBLMmViZdlgS.GC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.461Z"
+    },
+    {
+      "id": 87,
+      "name": null,
+      "email": "CB029143@students.apiit.lk",
+      "password": "$2b$10$HiSVMveN1h6Zh9u3dCLPNOgeF3rPLbAbyX9yMcr9H/3zFdLYZz1H6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.616Z"
+    },
+    {
+      "id": 88,
+      "name": null,
+      "email": "CB029144@students.apiit.lk",
+      "password": "$2b$10$YOpovh1bbChJRCh2CH/ZweMQPp6X96Lk.7dQN1cfYHoal0nX1lyhC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.732Z"
+    },
+    {
+      "id": 89,
+      "name": null,
+      "email": "CB029145@students.apiit.lk",
+      "password": "$2b$10$8nEDujcU9Q1/e/O.DskJy.qaDZQS7xOQyhoZNXkK78jyh2a5fkKQq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.838Z"
+    },
+    {
+      "id": 90,
+      "name": null,
+      "email": "CB029146@students.apiit.lk",
+      "password": "$2b$10$QFs7SHnmhfK7e.vbFWJXLeQDryAk5TKXP8G7.hbkymif.1OMoPujG",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:35.954Z"
+    },
+    {
+      "id": 91,
+      "name": null,
+      "email": "CB029147@students.apiit.lk",
+      "password": "$2b$10$93uo6wm4zhSZ3tweaiQmK.JJipHAhMti7z.PPYyJJMGrCOcyb293q",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:36.082Z"
+    },
+    {
+      "id": 92,
+      "name": null,
+      "email": "CB029148@students.apiit.lk",
+      "password": "$2b$10$dRjQOAABMuYtj7nCrXtLv./.iGMiY0p1PHRtMta3XRGQHbvQICHdC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:36.336Z"
+    },
+    {
+      "id": 93,
+      "name": null,
+      "email": "CB029149@students.apiit.lk",
+      "password": "$2b$10$R9TWfpXYrFqe6Cnayx1/v..AhTzDG7FDZLhLlWpWbC5p93Yu/f7pK",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:36.496Z"
+    },
+    {
+      "id": 94,
+      "name": null,
+      "email": "CB030150@students.apiit.lk",
+      "password": "$2b$10$f02PUJiuYTTGhXgPwnqAMOeC1B2E3u3z3.LrQYhdycs6ZH2rEwLEC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:36.670Z"
+    },
+    {
+      "id": 96,
+      "name": null,
+      "email": "CB030151@students.apiit.lk",
+      "password": "$2b$10$tr1xgcpRMTf42vuUQOPp0eA/DiQwsOsaRjReJ.a3BJ9lPVyWZyp0S",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:36.985Z"
+    },
+    {
+      "id": 97,
+      "name": null,
+      "email": "CB030152@students.apiit.lk",
+      "password": "$2b$10$mMbDDKFQMOGomYIRS.s3KeBeyWTlUEyyedpo4GRoP9hiBZoEHbIRe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:37.122Z"
+    },
+    {
+      "id": 98,
+      "name": null,
+      "email": "CB030153@students.apiit.lk",
+      "password": "$2b$10$1fgD5hzFaM5i.dpYPGTiTeqWtenzfseZFmFZ5ea2/4B5adreB5mNW",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:37.317Z"
+    },
+    {
+      "id": 99,
+      "name": null,
+      "email": "CB030154@students.apiit.lk",
+      "password": "$2b$10$eu1Y5xEZfK3J6tqfONo5AeFgWFkpFgjHTmH5sefDSeWOW/TyE3jAi",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:37.585Z"
+    },
+    {
+      "id": 100,
+      "name": null,
+      "email": "CB030155@students.apiit.lk",
+      "password": "$2b$10$Q4PlzdI3Uw91DJApPdnyfOJ8WIffO7Uk9YnSDO4p7Qb9H1jCX/nmq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:37.875Z"
+    },
+    {
+      "id": 101,
+      "name": null,
+      "email": "CB030156@students.apiit.lk",
+      "password": "$2b$10$ByRcsO4c4lGHMAp46j6JyeNhY2CWB62uo7i4pUw9jkIlcrm5EGP/2",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:38.102Z"
+    },
+    {
+      "id": 102,
+      "name": null,
+      "email": "CB030157@students.apiit.lk",
+      "password": "$2b$10$UteALUcRkxJdylbctTDln.PAijorrx64yznKhOM4d3qP0z7dpz7hO",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:38.326Z"
+    },
+    {
+      "id": 103,
+      "name": null,
+      "email": "CB030158@students.apiit.lk",
+      "password": "$2b$10$USii2yMkBubn.pzakcoEqe/eXk.ezor5ZPVwAkvIGQ6nqYr4oqLV6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:38.438Z"
+    },
+    {
+      "id": 104,
+      "name": null,
+      "email": "CB030159@students.apiit.lk",
+      "password": "$2b$10$YHSykXW8oOmM4Bl7LtYNNOxxSOGrRQ7LUNHzSF06ELrwnnIm/w4te",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-06T04:12:38.519Z"
+    },
+    {
+      "id": 107,
+      "name": "Kaushan Thilaranthe",
+      "email": "kaushan.thil@gmail.com",
+      "password": "$2b$10$bd4919Sep.0ssTUq3lklUOAQmaZgZvrC6Gg1RZ.yXAq3QlMY//cLS",
+      "role": "supervisor",
+      "is_active": false,
+      "created_at": "2026-07-08T06:05:53.841Z"
+    },
+    {
+      "id": 108,
+      "name": "Kaushan Thilaranthe",
+      "email": "kaushan@gmail.com",
+      "password": "$2b$10$NaMzVuKWjqIuUtIR5DP6vORd7KATr0tMrRFW.ndMBHPrktIF5LKqy",
+      "role": "supervisor",
+      "is_active": false,
+      "created_at": "2026-07-08T06:06:54.021Z"
+    },
+    {
+      "id": 109,
+      "name": "Kaushan Thilaranthe",
+      "email": "kaushan.thila@gmail.com",
+      "password": "$2b$10$CBfizJdiW5wOdzX7mKqFy.UhBLMXOCqKkxE31LsOW4tibL/.5PJc6",
+      "role": "supervisor",
+      "is_active": false,
+      "created_at": "2026-07-08T06:10:50.640Z"
+    },
+    {
+      "id": 110,
+      "name": null,
+      "email": "bala@gmail.com",
+      "password": "$2b$10$D56tM4/2xRp2lgsf9LgZJ.bNJW9yrHtieonOuMRrcQhgnPvd3AoVu",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-09T15:41:35.933Z"
+    },
+    {
+      "id": 111,
+      "name": null,
+      "email": "nimal.perera@apiit.lk",
+      "password": "$2b$10$lEIUzMBYo4DpJI7lCRXUmuESTRbehRP31Wc4uWCq5uVCgfBqITQJK",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:43.530Z"
+    },
+    {
+      "id": 112,
+      "name": null,
+      "email": "sarah.fernando@apiit.lk",
+      "password": "$2b$10$p.LnaCH7KwCmE4Mk90DR1OSOb51IyBlyyxf6fHniaXyd8UQyz1tfW",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:43.642Z"
+    },
+    {
+      "id": 113,
+      "name": null,
+      "email": "kasun.jayasinghe@apiit.lk",
+      "password": "$2b$10$QgmeLd4ih8ZQUZVT/W7uiONfyk4KfPSMKJZprDn7AudqZeKXPSxH6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:43.741Z"
+    },
+    {
+      "id": 114,
+      "name": null,
+      "email": "anjali.silva@apiit.lk",
+      "password": "$2b$10$.B.ewj8qyjN8uWBI0Qg0s.oYUbLBSX9chex.Ov1lMucD4TQDmOmbu",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:43.838Z"
+    },
+    {
+      "id": 115,
+      "name": null,
+      "email": "ruwan.wijeratne@apiit.lk",
+      "password": "$2b$10$E5Clfz0d2Ua7Jk/Mx/WcTuuzctnnl6O5Us6Evtw.o2Q60GTY.E5gC",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:43.935Z"
+    },
+    {
+      "id": 116,
+      "name": null,
+      "email": "ishara.gunasekara@apiit.lk",
+      "password": "$2b$10$yYwfjbjQbcSdGopW5A32mOiStWvYp3uFTjBLPHyVjwZFylgaFPbba",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.027Z"
+    },
+    {
+      "id": 117,
+      "name": null,
+      "email": "chamara.rajapaksha@apiit.lk",
+      "password": "$2b$10$nS7wQ/9kBV9yKvOQQ8sOOOY81ngQWfNW3c2qOZwTBxPYYwQZo.v4C",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.133Z"
+    },
+    {
+      "id": 118,
+      "name": null,
+      "email": "dilani.peris@apiit.lk",
+      "password": "$2b$10$5OHwQWTPgPWKuaaOB7s/1es5aB4hYT1Ww8bLNrfXoyVSZ/niISR7y",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.248Z"
+    },
+    {
+      "id": 119,
+      "name": null,
+      "email": "fathima.ameer@apiit.lk",
+      "password": "$2b$10$1DDM.rYAP3iZvPvcb0mBxu2.MMUubYGC84JhvFewcEciLaz5zYSI6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.395Z"
+    },
+    {
+      "id": 120,
+      "name": null,
+      "email": "tharindu.senanayake@apiit.lk",
+      "password": "$2b$10$RcaVI4797pYw1Y9xXYCkEOKKTc/akb.Ojfey7.MXMRWC7Q2vWLCqi",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.537Z"
+    },
+    {
+      "id": 121,
+      "name": null,
+      "email": "malsha.de.silva@apiit.lk",
+      "password": "$2b$10$2DzvEdw3e8EsFu8EaMY4XeYNDUldKkfwXGFd.6IspOykqnrU3HcNG",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.634Z"
+    },
+    {
+      "id": 122,
+      "name": null,
+      "email": "ahamed.shiyam@apiit.lk",
+      "password": "$2b$10$NQn2aU.o5j3zzNW93deVl.WJtnGOn77hX9elXUDfuZq89q49toAve",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.730Z"
+    },
+    {
+      "id": 123,
+      "name": null,
+      "email": "nadeesha.ekanayake@apiit.lk",
+      "password": "$2b$10$XfXoS8QFkx.aCwH9bc69CeuEgIEGOvKEQOgId9XzgaTm5DubBjoh.",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.834Z"
+    },
+    {
+      "id": 124,
+      "name": null,
+      "email": "ashan.fernando@apiit.lk",
+      "password": "$2b$10$SCdrMFUGQpuwDtMUiX51yu0FzOu9EeHg3uPObs/d3umrp2S6Rruri",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:44.930Z"
+    },
+    {
+      "id": 125,
+      "name": null,
+      "email": "rashmi.jayawardena@apiit.lk",
+      "password": "$2b$10$zWX2ZmXTkuabZBAZsa7cTuh9uEpRGTrISrwpR2CXwtMjmV66Cu0na",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.029Z"
+    },
+    {
+      "id": 126,
+      "name": null,
+      "email": "pradeep.liyanage@apiit.lk",
+      "password": "$2b$10$Nng1eCGSLHmXHB/fBCvG1eOLQCdbzMfh/vZqBiWySSPual15sixMS",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.131Z"
+    },
+    {
+      "id": 127,
+      "name": null,
+      "email": "kumari.wickramasinghe@apiit.lk",
+      "password": "$2b$10$DJEvuFThDj3aH7mz9QkmsOldi12nYiclwnqyuvVuLIYtsWciQ954S",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.232Z"
+    },
+    {
+      "id": 128,
+      "name": null,
+      "email": "harsha.peiris@apiit.lk",
+      "password": "$2b$10$W.QmMJcokn37AoP69KGvCenRwKpE2rGDmM9kCcCx3xR5uiownrtP.",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.332Z"
+    },
+    {
+      "id": 129,
+      "name": null,
+      "email": "sajini.abeysekara@apiit.lk",
+      "password": "$2b$10$bF6Km9xMPcKhsHwN/YT/ee7mZN28vMW4mmYN7eMvx/CNF1djXPy0S",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.438Z"
+    },
+    {
+      "id": 130,
+      "name": null,
+      "email": "shalika.ranasinghe@apiit.lk",
+      "password": "$2b$10$aqPBM7XPmHJG91G8IRmeT.Avemq229oluG6nERuLppL9ilBAhvVpe",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.540Z"
+    },
+    {
+      "id": 131,
+      "name": null,
+      "email": "nuwan.rodrigo@apiit.lk",
+      "password": "$2b$10$qN3OKVVC4HbgatyX.SxvIu8cNkGXPUAYdcmpnqlcCiuEdbyKl632y",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.703Z"
+    },
+    {
+      "id": 132,
+      "name": null,
+      "email": "piumi.karunaratne@apiit.lk",
+      "password": "$2b$10$pvZnt/Du3KdyD4NMw57fT.yfnA855f8b4C5.SD/LFeSIeB0t4RKBe",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.847Z"
+    },
+    {
+      "id": 133,
+      "name": null,
+      "email": "gayan.peris@apiit.lk",
+      "password": "$2b$10$9AbRaaMe/jdLi3bl0gl7IuynMq8AEOmb7UVyBBLr9Q15gvFSCtu32",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:45.949Z"
+    },
+    {
+      "id": 134,
+      "name": null,
+      "email": "lakshan.wijesinghe@apiit.lk",
+      "password": "$2b$10$VVj3TlknZepdJfEEck8r0Ob3nLA7QQL4BAepa7IARrBkD2mKdVlS2",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.046Z"
+    },
+    {
+      "id": 135,
+      "name": null,
+      "email": "ayesha.fernando@apiit.lk",
+      "password": "$2b$10$1tc3DZNlOmQqa7FoPr9aoOWJQeg8..ZbRTKKm.bKne9IN1vZM90cy",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.147Z"
+    },
+    {
+      "id": 136,
+      "name": null,
+      "email": "shenali.de.silva@apiit.lk",
+      "password": "$2b$10$aZ732PjiQPTeFYabWYtmG.hX/SZQpbQ1fcKhGYp26xaTPOPhWBHF6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.243Z"
+    },
+    {
+      "id": 137,
+      "name": null,
+      "email": "dhanushka.samarasinghe@apiit.lk",
+      "password": "$2b$10$v4n3jhq0WTdC70u7EL.PTe2/Y9wWHBhJwbvZTA9L8SShirFpJkD0m",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.339Z"
+    },
+    {
+      "id": 138,
+      "name": null,
+      "email": "ravindu.gunawardena@apiit.lk",
+      "password": "$2b$10$c0IT.EnleixKg.42SjGLVeF5aIxMGjjqs1A/eKwiJUufBaDfrhStK",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.438Z"
+    },
+    {
+      "id": 139,
+      "name": null,
+      "email": "janani.perera@apiit.lk",
+      "password": "$2b$10$4ru7CMjUkdhxaoBbHHaIm.SgHeni6URDv1J8PxnrvEVMZI7XQQXRm",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.535Z"
+    },
+    {
+      "id": 140,
+      "name": null,
+      "email": "yohan.silva@apiit.lk",
+      "password": "$2b$10$h62KzjYZsPk8eLN1Cab0jODYk2uBNgaP3cvkGLXUv40TpY9mNqtlK",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.637Z"
+    },
+    {
+      "id": 141,
+      "name": null,
+      "email": "nirosha.pathirana@apiit.lk",
+      "password": "$2b$10$Of8o8qotv/qOiG/arGvYPOBUk1Dh38B7vzYpW.FYHcN8X9ottLR8e",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.737Z"
+    },
+    {
+      "id": 142,
+      "name": null,
+      "email": "buddhika.ekanayake@apiit.lk",
+      "password": "$2b$10$tSBh2C90nFBC1XYAOtfg7.r.9kKGF2LVXhyO/pDkHdzfh56fD7mg6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:46.892Z"
+    },
+    {
+      "id": 143,
+      "name": null,
+      "email": "sampath.hettiarachchi@apiit.lk",
+      "password": "$2b$10$/iLVjcpHIbnQI5uu1F3ewuJNACqMsH2rN8e2YdjJUx5x.jLw461X6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.353Z"
+    },
+    {
+      "id": 144,
+      "name": null,
+      "email": "ruwani.senarath@apiit.lk",
+      "password": "$2b$10$lbuIqpmCUeu1WvblTzmoaONuUgtfgSBsAiM7WUyOYuph680jSHUji",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.459Z"
+    },
+    {
+      "id": 145,
+      "name": null,
+      "email": "thilina.madushanka@apiit.lk",
+      "password": "$2b$10$py2/GnAyRF5wf7d6lEdyMOdim4CfS3kEfS2sKpKqbBa7j07pogRp6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.560Z"
+    },
+    {
+      "id": 146,
+      "name": null,
+      "email": "nadeeka.jayasuriya@apiit.lk",
+      "password": "$2b$10$An4uUDsrwysv21D5HVIAMuwN6D.S7cm4ed8ZUgxkR18T46mhkOVyG",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.660Z"
+    },
+    {
+      "id": 147,
+      "name": null,
+      "email": "sanduni.abeywickrama@apiit.lk",
+      "password": "$2b$10$2N8KExu8SzV8gr6G/Na0BuAZnBSpm6D42v8EYgx27QjvW1qH2TP.y",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.760Z"
+    },
+    {
+      "id": 148,
+      "name": null,
+      "email": "chathura.fernando@apiit.lk",
+      "password": "$2b$10$aqezy0Iwq44m0bLS8BzeU.06pwZ8EARNG5YCwKbsoGsqAzR41Nl3K",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.873Z"
+    },
+    {
+      "id": 149,
+      "name": null,
+      "email": "isuru.rajapaksha@apiit.lk",
+      "password": "$2b$10$K7nmxPgCATy1qmrULa75heGxuTQu/ciVoFomjd7yU0cGN6SPvSQhe",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:47.971Z"
+    },
+    {
+      "id": 150,
+      "name": null,
+      "email": "madhavi.wickramaratne@apiit.lk",
+      "password": "$2b$10$GGzKCMXQbelr14Ocs3j6ZuKgJpl/M92gQEnPMGsIo2/blNCZ7cAXW",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-07-10T03:34:48.070Z"
+    },
+    {
+      "id": 153,
+      "name": null,
+      "email": "CB020101@students.apiit.lk",
+      "password": "$2b$10$IZVQmoGpMGbjeGaG.MzE0ebGQdjIdrLW87mocj0.9znN/Oliu3lA6",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.049Z"
+    },
+    {
+      "id": 154,
+      "name": null,
+      "email": "CB020102@students.apiit.lk",
+      "password": "$2b$10$BZRBhrFKFsQM4q0nCF4YLu6JIZsJ8eDzI5KHawnzv3W7W6PeBrrkW",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.169Z"
+    },
+    {
+      "id": 155,
+      "name": null,
+      "email": "CB020103@students.apiit.lk",
+      "password": "$2b$10$qeFrrM18tR29IP0M7Z0wJ.g/DRsXTLqeU48u7ICaOJLMN/QQR1J/W",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.286Z"
+    },
+    {
+      "id": 156,
+      "name": null,
+      "email": "CB020104@students.apiit.lk",
+      "password": "$2b$10$Wv.oLj0BsRNNb2NnlgZsjuUIjG6jtI9zWPMf4A3T6faM5evxGtokC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.402Z"
+    },
+    {
+      "id": 157,
+      "name": null,
+      "email": "CB020105@students.apiit.lk",
+      "password": "$2b$10$zVF1pGtScxBhLNxdsi7J7OvZd9lyrxeOxbKUIg4v3TSt9Bdn5emnK",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.527Z"
+    },
+    {
+      "id": 158,
+      "name": null,
+      "email": "CB023401@students.apiit.lk",
+      "password": "$2b$10$VTPo8H.mS0pIA/w93ImTFemZBlZkuTm7vmwFhWc4Kw2zbTh.lpCKe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.641Z"
+    },
+    {
+      "id": 159,
+      "name": null,
+      "email": "CB023404@students.apiit.lk",
+      "password": "$2b$10$bjpzzCZCgftRdCpPInSPk.x3gAyfjY9PCX/5gspaKbEn4J358Lgsq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.762Z"
+    },
+    {
+      "id": 160,
+      "name": null,
+      "email": "CB021201@students.apiit.lk",
+      "password": "$2b$10$IBn0WnbYW.QferFbk3J5vOdGP4XOO50EcLDEKKjz9vM.X.4AY1.1O",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:14.979Z"
+    },
+    {
+      "id": 161,
+      "name": null,
+      "email": "CB021202@students.apiit.lk",
+      "password": "$2b$10$5pOr/ScwRpOn0eUFTBTmAOJR6hsadlhHlRp3vDSM46as6tHxH20Pe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:15.148Z"
+    },
+    {
+      "id": 162,
+      "name": null,
+      "email": "CB021203@students.apiit.lk",
+      "password": "$2b$10$m/z8HaSYEWrhQemPHJMra.82E9.O5c0khwk4JbeWIphyt4OxvC3xa",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:15.357Z"
+    },
+    {
+      "id": 164,
+      "name": null,
+      "email": "CB021204@students.apiit.lk",
+      "password": "$2b$10$fi.RycbZaLo5nFWh6IOtyOGoKM18i8X.ICPDVZmbGsiheP37vc09.",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:15.599Z"
+    },
+    {
+      "id": 165,
+      "name": null,
+      "email": "CB021205@students.apiit.lk",
+      "password": "$2b$10$62ziuqRi07edSz6F5bU46uel9sp7cKhNri7LZURg9MaS3oiL4PMnG",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:15.763Z"
+    },
+    {
+      "id": 166,
+      "name": null,
+      "email": "CB023402@students.apiit.lk",
+      "password": "$2b$10$nUmHgb.8RBXYcdNVnzSF6Oziu8fjc.mDZliM1PUMmU59SiU7N/sVG",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:15.880Z"
+    },
+    {
+      "id": 167,
+      "name": null,
+      "email": "CB023405@students.apiit.lk",
+      "password": "$2b$10$oW2XWjh7pe8DN4SYCVPeZOpr1C0753ab6erW.8K6DDneGUWP1LVPy",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.002Z"
+    },
+    {
+      "id": 168,
+      "name": null,
+      "email": "CB022301@students.apiit.lk",
+      "password": "$2b$10$ianKf8EBBTHC1l7N3uBSAOqvgHsZWOAslP46EnIhLJWWVxFUZFv4O",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.132Z"
+    },
+    {
+      "id": 169,
+      "name": null,
+      "email": "CB022302@students.apiit.lk",
+      "password": "$2b$10$HW.DtS/fk77t5ByQ9Ja5SuXMOsJ9wUJVmUXzJcoy/.h4w1veZ8PxS",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.316Z"
+    },
+    {
+      "id": 170,
+      "name": null,
+      "email": "CB022303@students.apiit.lk",
+      "password": "$2b$10$0rVEwtld6oGJAMnwP4qxIeQFBxUucBiJoJEkGAp0b7spjQlvpaRQe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.458Z"
+    },
+    {
+      "id": 171,
+      "name": null,
+      "email": "CB022304@students.apiit.lk",
+      "password": "$2b$10$bCcq8grzy6OxBREXxJCuTOFs1/pmri2fCbaUJDf5N3LhbPSedoVhK",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.592Z"
+    },
+    {
+      "id": 172,
+      "name": null,
+      "email": "CB022305@students.apiit.lk",
+      "password": "$2b$10$fB7BPdVZsHBooABev06t4u5W.EnaXpCnm3Furm67WaQpT2mZrOjxO",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.708Z"
+    },
+    {
+      "id": 173,
+      "name": null,
+      "email": "CB023403@students.apiit.lk",
+      "password": "$2b$10$rlRGnuWTacMmFUk2n52.1enzw8WMkYr6DV7I/4KssnAygzUICjNEC",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-07-10T06:14:16.868Z"
+    },
+    {
+      "id": 174,
+      "name": null,
+      "email": "cbkavin1@students.apiit.lk",
+      "password": "$2b$10$LEMdqstO0ehn85nL67QGS.qE0Trel/OFFaaWZqvKzWsJM4pqYg/dK",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-08-07T05:00:58.417Z"
+    },
+    {
+      "id": 175,
+      "name": null,
+      "email": "cbkavin2@students.apiit.lk",
+      "password": "$2b$10$LcoampLKM18WMWKoqEVrOezrflBYK35/SWwIM6a/ltQ7nM4zKDXyS",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-08-07T05:01:55.996Z"
+    },
+    {
+      "id": 177,
+      "name": null,
+      "email": "cb014416@students.apiit.lk",
+      "password": "$2b$10$lgovn5VHNM90g65czjhn6.eUx/cp3t/CsujTOBCpapWlkfLlyGcPe",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-08-13T14:27:01.956Z"
+    },
+    {
+      "id": 182,
+      "name": "Prof. Alan Smith",
+      "email": "alan@apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.315Z"
+    },
+    {
+      "id": 183,
+      "name": "Dr. Xavier Assessor",
+      "email": "assessor1@apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "academic",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.325Z"
+    },
+    {
+      "id": 184,
+      "name": "Dr. Yasmin Assessor",
+      "email": "assessor2@apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "academic",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.329Z"
+    },
+    {
+      "id": 185,
+      "name": "Dr. Zachary Assessor",
+      "email": "assessor3@apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "academic",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.331Z"
+    },
+    {
+      "id": 186,
+      "name": "Alice Student",
+      "email": "cb001@students.apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.331Z"
+    },
+    {
+      "id": 187,
+      "name": "Bob Student",
+      "email": "cb002@students.apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.333Z"
+    },
+    {
+      "id": 188,
+      "name": "Charlie Student",
+      "email": "cb003@students.apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.335Z"
+    },
+    {
+      "id": 189,
+      "name": "Diana Student",
+      "email": "cb004@students.apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.336Z"
+    },
+    {
+      "id": 190,
+      "name": "Evan Student",
+      "email": "cb005@students.apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.337Z"
+    },
+    {
+      "id": 191,
+      "name": "Fiona Student",
+      "email": "cb006@students.apiit.lk",
+      "password": "$2b$10$BnVE44btw3FfEoJ22/.raOGAVHckOJKJzgTE45esxQFKD8JpyRUyq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-09-07T04:13:26.339Z"
+    },
+    {
+      "id": 192,
+      "name": null,
+      "email": "Testk1@apiit.lk",
+      "password": "$2b$10$VeKGumlVJqJ5PFdRS16vU.hqkb4CMGWAqgIt09zqWDK.pOHAmCOp6",
+      "role": "supervisor",
+      "is_active": true,
+      "created_at": "2026-09-10T05:58:40.668Z"
+    }
+  ],
+  "logsheets": [
+    {
+      "id": 2,
+      "student_id": 475,
+      "supervisor_id": null,
+      "meeting_date": "2026-07-23T00:00:00.000Z",
+      "venue": "Teams",
+      "file_name": "Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_path": "1783311861168-Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": "50.41 KB",
+      "status": "Rejected",
+      "semester": "Semester 1",
+      "rejection_reason": "Kindly upload in pdf format",
+      "approved_at": null,
+      "rejected_at": "2026-07-06T05:40:23.919Z",
+      "signature_applied": false,
+      "signed_file_url": null,
+      "created_at": "2026-07-06T04:24:21.227Z"
+    },
+    {
+      "id": 1,
+      "student_id": 475,
+      "supervisor_id": null,
+      "meeting_date": "2026-07-07T00:00:00.000Z",
+      "venue": null,
+      "file_name": "Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_path": "1783311446012-Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": "50.41 KB",
+      "status": "Approved",
+      "semester": "Semester 1",
+      "rejection_reason": null,
+      "approved_at": "2026-07-06T06:01:07.652Z",
+      "rejected_at": null,
+      "signature_applied": false,
+      "signed_file_url": null,
+      "created_at": "2026-07-06T04:17:26.087Z"
+    },
+    {
+      "id": 3,
+      "student_id": 479,
+      "supervisor_id": null,
+      "meeting_date": "2026-07-30T00:00:00.000Z",
+      "venue": null,
+      "file_name": "1783311446012-Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_path": "1783392339113-1783311446012-Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": "50.41 KB",
+      "status": "Approved",
+      "semester": "Semester 1",
+      "rejection_reason": null,
+      "approved_at": "2026-07-08T02:51:43.409Z",
+      "rejected_at": null,
+      "signature_applied": false,
+      "signed_file_url": null,
+      "created_at": "2026-07-07T02:45:39.206Z"
+    },
+    {
+      "id": 4,
+      "student_id": 475,
+      "supervisor_id": null,
+      "meeting_date": "2026-07-25T00:00:00.000Z",
+      "venue": null,
+      "file_name": "Christina (CB014416) - Superisor Meeting 03 - FYP Logsheet (23.04.26).docx",
+      "file_path": "1783499483757-Christina (CB014416) - Superisor Meeting 03 - FYP Logsheet (23.04.26).docx",
+      "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": "49.33 KB",
+      "status": "Approved",
+      "semester": "Semester 1",
+      "rejection_reason": null,
+      "approved_at": "2026-07-08T08:36:25.583Z",
+      "rejected_at": null,
+      "signature_applied": false,
+      "signed_file_url": null,
+      "created_at": "2026-07-08T08:31:23.942Z"
+    },
+    {
+      "id": 5,
+      "student_id": 536,
+      "supervisor_id": 210,
+      "meeting_date": "2026-07-11T00:00:00.000Z",
+      "venue": null,
+      "file_name": "Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_path": "1783665164601-Christina (CB014416) - Superisor Meeting 01 - FYP Logsheet (06.04.26).docx",
+      "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": "50.41 KB",
+      "status": "Approved",
+      "semester": "Semester 1",
+      "rejection_reason": null,
+      "approved_at": "2026-07-10T06:33:45.443Z",
+      "rejected_at": null,
+      "signature_applied": false,
+      "signed_file_url": null,
+      "created_at": "2026-07-10T06:32:44.635Z"
+    }
+  ],
+  "external_supervisor_requests": [
+    {
+      "id": 1,
+      "title": "Mr.",
+      "name": "Kaushan Thilaranthe",
+      "email": "kaushan.thil@gmail.com",
+      "university": "Univeristy of Moratuwa",
+      "expertise": "IOT",
+      "research_interests": "Data Analystics",
+      "preferred_supervision_slots": 1,
+      "status": "Pending",
+      "rejection_reason": null,
+      "approved_at": null,
+      "approved_by": null,
+      "created_at": "2026-07-08T06:05:53.905Z"
+    },
+    {
+      "id": 2,
+      "title": "Mr.",
+      "name": "Kaushan Thilaranthe",
+      "email": "kaushan@gmail.com",
+      "university": "Univeristy of Moratuwa",
+      "expertise": "IOT",
+      "research_interests": "Data Analystics",
+      "preferred_supervision_slots": 5,
+      "status": "Pending",
+      "rejection_reason": null,
+      "approved_at": null,
+      "approved_by": null,
+      "created_at": "2026-07-08T06:06:54.027Z"
+    },
+    {
+      "id": 3,
+      "title": "Mr.",
+      "name": "Kaushan Thilaranthe",
+      "email": "kaushan.thila@gmail.com",
+      "university": "Univeristy of Moratuwa",
+      "expertise": "IOT",
+      "research_interests": "Data",
+      "preferred_supervision_slots": 5,
+      "status": "Pending",
+      "rejection_reason": null,
+      "approved_at": null,
+      "approved_by": null,
+      "created_at": "2026-07-08T06:10:50.649Z"
+    }
+  ],
+  "viva_periods": [
+    {
+      "id": 10,
+      "name": null,
+      "type": "Proposal Viva",
+      "intake": "2024-feb",
+      "academic_year": null,
+      "semester": null,
+      "start_date": "2026-08-20T00:00:00.000Z",
+      "end_date": "2026-09-03T00:00:00.000Z",
+      "daily_start_time": "08:00",
+      "daily_end_time": "19:00",
+      "slot_duration": 30,
+      "status": "AVAILABILITY_OPEN",
+      "created_at": "2026-08-13T14:17:17.885Z"
+    },
+    {
+      "id": 11,
+      "name": null,
+      "type": "Midpoint Viva",
+      "intake": "2024-feb",
+      "academic_year": null,
+      "semester": null,
+      "start_date": "2026-09-13T00:00:00.000Z",
+      "end_date": "2026-09-30T00:00:00.000Z",
+      "daily_start_time": "08:00",
+      "daily_end_time": "19:00",
+      "slot_duration": 30,
+      "status": "SCHEDULE_GENERATED",
+      "created_at": "2026-08-13T14:20:33.195Z"
+    },
+    {
+      "id": 15,
+      "name": null,
+      "type": "Proposal Viva",
+      "intake": "2027-nov",
+      "academic_year": null,
+      "semester": null,
+      "start_date": "2026-09-13T00:00:00.000Z",
+      "end_date": "2026-09-27T00:00:00.000Z",
+      "daily_start_time": "08:30",
+      "daily_end_time": "17:00",
+      "slot_duration": 30,
+      "status": "SCHEDULE_GENERATED",
+      "created_at": "2026-08-21T05:02:45.401Z"
+    },
+    {
+      "id": 16,
+      "name": "Semester 1 Viva 2026",
+      "type": "Final Viva",
+      "intake": "February 2024",
+      "academic_year": "2026",
+      "semester": "Semester 1",
+      "start_date": "2026-09-15T00:00:00.000Z",
+      "end_date": "2026-09-20T00:00:00.000Z",
+      "daily_start_time": "09:00",
+      "daily_end_time": "17:00",
+      "slot_duration": 30,
+      "status": "FINALIZED",
+      "created_at": "2026-09-07T04:13:26.455Z"
+    }
+  ],
+  "viva_period_batches": [
+    {
+      "viva_period_id": 10,
+      "batch_id": 63
+    },
+    {
+      "viva_period_id": 10,
+      "batch_id": 64
+    },
+    {
+      "viva_period_id": 10,
+      "batch_id": 65
+    },
+    {
+      "viva_period_id": 10,
+      "batch_id": 67
+    },
+    {
+      "viva_period_id": 10,
+      "batch_id": 62
+    },
+    {
+      "viva_period_id": 11,
+      "batch_id": 61
+    },
+    {
+      "viva_period_id": 15,
+      "batch_id": 69
+    },
+    {
+      "viva_period_id": 16,
+      "batch_id": 75
+    },
+    {
+      "viva_period_id": 16,
+      "batch_id": 76
+    }
+  ],
+  "viva_availabilities": [
+    {
+      "id": 264,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": null,
+      "student_id": 475,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T08:30:00.000Z",
+      "end_time": "1970-01-01T09:00:00.000Z",
+      "created_at": "2026-08-21T05:08:35.886Z"
+    },
+    {
+      "id": 265,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": null,
+      "student_id": 475,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T09:00:00.000Z",
+      "end_time": "1970-01-01T09:30:00.000Z",
+      "created_at": "2026-08-21T05:08:35.886Z"
+    },
+    {
+      "id": 266,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": null,
+      "student_id": 475,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T09:30:00.000Z",
+      "end_time": "1970-01-01T10:00:00.000Z",
+      "created_at": "2026-08-21T05:08:35.886Z"
+    },
+    {
+      "id": 267,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": null,
+      "student_id": 475,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T10:00:00.000Z",
+      "end_time": "1970-01-01T10:30:00.000Z",
+      "created_at": "2026-08-21T05:08:35.886Z"
+    },
+    {
+      "id": 268,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T08:30:00.000Z",
+      "end_time": "1970-01-01T09:00:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 269,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T09:30:00.000Z",
+      "end_time": "1970-01-01T10:00:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 270,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T09:00:00.000Z",
+      "end_time": "1970-01-01T09:30:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 271,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T10:00:00.000Z",
+      "end_time": "1970-01-01T10:30:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 272,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T10:30:00.000Z",
+      "end_time": "1970-01-01T11:00:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 273,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T11:00:00.000Z",
+      "end_time": "1970-01-01T11:30:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 274,
+      "viva_period_id": 15,
+      "supervisor_id": 232,
+      "assessor_id": null,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T11:30:00.000Z",
+      "end_time": "1970-01-01T12:00:00.000Z",
+      "created_at": "2026-08-21T05:09:06.211Z"
+    },
+    {
+      "id": 275,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T08:30:00.000Z",
+      "end_time": "1970-01-01T09:00:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 276,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T09:00:00.000Z",
+      "end_time": "1970-01-01T09:30:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 277,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T09:30:00.000Z",
+      "end_time": "1970-01-01T10:00:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 278,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T10:00:00.000Z",
+      "end_time": "1970-01-01T10:30:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 279,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T10:30:00.000Z",
+      "end_time": "1970-01-01T11:00:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 280,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T11:00:00.000Z",
+      "end_time": "1970-01-01T11:30:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 281,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T11:30:00.000Z",
+      "end_time": "1970-01-01T12:00:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    },
+    {
+      "id": 282,
+      "viva_period_id": 15,
+      "supervisor_id": null,
+      "assessor_id": 25,
+      "student_id": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T12:00:00.000Z",
+      "end_time": "1970-01-01T12:30:00.000Z",
+      "created_at": "2026-08-21T05:09:30.653Z"
+    }
+  ],
+  "viva_schedules": [
+    {
+      "id": 7,
+      "viva_period_id": 15,
+      "student_id": 475,
+      "supervisor_id": 232,
+      "assessor_id": 25,
+      "batch_code": null,
+      "date": "2026-09-13T00:00:00.000Z",
+      "start_time": "1970-01-01T08:30:00.000Z",
+      "end_time": "1970-01-01T09:00:00.000Z",
+      "duration_mins": 30,
+      "mode": "Physical",
+      "attendance_mode": "PHYSICAL",
+      "venue": "L4CR5 ",
+      "report_link": null,
+      "teams_meeting_id": null,
+      "teams_join_url": null,
+      "outlook_event_id": null,
+      "outlook_sync_status": "NOT_SYNCED",
+      "outlook_sync_error": null,
+      "status": "FINALIZED",
+      "finalized_at": null,
+      "created_at": "2026-08-21T05:09:38.594Z",
+      "updated_at": "2026-09-07T09:32:33.820Z"
+    },
+    {
+      "id": 8,
+      "viva_period_id": 16,
+      "student_id": 578,
+      "supervisor_id": 246,
+      "assessor_id": 163,
+      "batch_code": "SE24",
+      "date": "2026-09-17T00:00:00.000Z",
+      "start_time": "1970-01-01T10:30:00.000Z",
+      "end_time": "1970-01-01T11:00:00.000Z",
+      "duration_mins": 30,
+      "mode": "PHYSICAL",
+      "attendance_mode": "PHYSICAL",
+      "venue": "L4CR2",
+      "report_link": "https://apiitlk-my.sharepoint.com/:b:/g/personal/admin_apiit_lk/CB001_Final_Report.pdf",
+      "teams_meeting_id": null,
+      "teams_join_url": null,
+      "outlook_event_id": null,
+      "outlook_sync_status": "FAILED",
+      "outlook_sync_error": null,
+      "status": "FINALIZED",
+      "finalized_at": "2026-09-07T04:13:26.738Z",
+      "created_at": "2026-09-07T04:13:26.589Z",
+      "updated_at": "2026-09-07T04:13:26.739Z"
+    },
+    {
+      "id": 9,
+      "viva_period_id": 16,
+      "student_id": 579,
+      "supervisor_id": 247,
+      "assessor_id": 163,
+      "batch_code": "SE24",
+      "date": "2026-09-15T00:00:00.000Z",
+      "start_time": "1970-01-01T09:30:00.000Z",
+      "end_time": "1970-01-01T10:00:00.000Z",
+      "duration_mins": 30,
+      "mode": "ONLINE",
+      "attendance_mode": "ONLINE",
+      "venue": "Microsoft Teams",
+      "report_link": "https://apiitlk-my.sharepoint.com/:b:/g/personal/admin_apiit_lk/CB002_Final_Report.pdf",
+      "teams_meeting_id": null,
+      "teams_join_url": null,
+      "outlook_event_id": null,
+      "outlook_sync_status": "FAILED",
+      "outlook_sync_error": null,
+      "status": "FINALIZED",
+      "finalized_at": "2026-09-07T04:13:26.750Z",
+      "created_at": "2026-09-07T04:13:26.600Z",
+      "updated_at": "2026-09-07T04:13:26.752Z"
+    },
+    {
+      "id": 10,
+      "viva_period_id": 16,
+      "student_id": 580,
+      "supervisor_id": 246,
+      "assessor_id": 164,
+      "batch_code": "CS24",
+      "date": "2026-09-15T00:00:00.000Z",
+      "start_time": "1970-01-01T10:00:00.000Z",
+      "end_time": "1970-01-01T10:30:00.000Z",
+      "duration_mins": 30,
+      "mode": "PHYSICAL",
+      "attendance_mode": "PHYSICAL",
+      "venue": "TBA",
+      "report_link": "https://apiitlk-my.sharepoint.com/:b:/g/personal/admin_apiit_lk/CB003_Final_Report.pdf",
+      "teams_meeting_id": null,
+      "teams_join_url": null,
+      "outlook_event_id": null,
+      "outlook_sync_status": "FAILED",
+      "outlook_sync_error": null,
+      "status": "FINALIZED",
+      "finalized_at": "2026-09-07T04:13:26.758Z",
+      "created_at": "2026-09-07T04:13:26.604Z",
+      "updated_at": "2026-09-07T04:13:26.759Z"
+    },
+    {
+      "id": 11,
+      "viva_period_id": 16,
+      "student_id": 588,
+      "supervisor_id": 248,
+      "assessor_id": 165,
+      "batch_code": "CS24",
+      "date": "2026-09-16T00:00:00.000Z",
+      "start_time": "1970-01-01T11:00:00.000Z",
+      "end_time": "1970-01-01T11:30:00.000Z",
+      "duration_mins": 30,
+      "mode": "ONLINE",
+      "attendance_mode": "ONLINE",
+      "venue": "Microsoft Teams",
+      "report_link": "https://apiitlk-my.sharepoint.com/:b:/g/personal/admin_apiit_lk/CB004_Final_Report.pdf",
+      "teams_meeting_id": null,
+      "teams_join_url": null,
+      "outlook_event_id": null,
+      "outlook_sync_status": "FAILED",
+      "outlook_sync_error": null,
+      "status": "FINALIZED",
+      "finalized_at": "2026-09-07T04:13:26.764Z",
+      "created_at": "2026-09-07T04:13:26.609Z",
+      "updated_at": "2026-09-07T04:13:26.765Z"
+    }
+  ],
+  "viva_confirmations": [
+    {
+      "id": 1,
+      "viva_schedule_id": 8,
+      "user_id": null,
+      "role": "SUPERVISOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "PHYSICAL",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.634Z",
+      "created_at": "2026-09-07T04:13:26.596Z",
+      "updated_at": "2026-09-07T04:13:26.635Z"
+    },
+    {
+      "id": 2,
+      "viva_schedule_id": 8,
+      "user_id": null,
+      "role": "ASSESSOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "PHYSICAL",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.634Z",
+      "created_at": "2026-09-07T04:13:26.596Z",
+      "updated_at": "2026-09-07T04:13:26.635Z"
+    },
+    {
+      "id": 3,
+      "viva_schedule_id": 9,
+      "user_id": null,
+      "role": "SUPERVISOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "ONLINE",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.637Z",
+      "created_at": "2026-09-07T04:13:26.602Z",
+      "updated_at": "2026-09-07T04:13:26.638Z"
+    },
+    {
+      "id": 4,
+      "viva_schedule_id": 9,
+      "user_id": null,
+      "role": "ASSESSOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "ONLINE",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.637Z",
+      "created_at": "2026-09-07T04:13:26.602Z",
+      "updated_at": "2026-09-07T04:13:26.638Z"
+    },
+    {
+      "id": 5,
+      "viva_schedule_id": 10,
+      "user_id": null,
+      "role": "SUPERVISOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "PHYSICAL",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.639Z",
+      "created_at": "2026-09-07T04:13:26.606Z",
+      "updated_at": "2026-09-07T04:13:26.640Z"
+    },
+    {
+      "id": 6,
+      "viva_schedule_id": 10,
+      "user_id": null,
+      "role": "ASSESSOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "PHYSICAL",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.639Z",
+      "created_at": "2026-09-07T04:13:26.606Z",
+      "updated_at": "2026-09-07T04:13:26.640Z"
+    },
+    {
+      "id": 7,
+      "viva_schedule_id": 11,
+      "user_id": null,
+      "role": "SUPERVISOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "ONLINE",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.641Z",
+      "created_at": "2026-09-07T04:13:26.611Z",
+      "updated_at": "2026-09-07T04:13:26.642Z"
+    },
+    {
+      "id": 8,
+      "viva_schedule_id": 11,
+      "user_id": null,
+      "role": "ASSESSOR",
+      "status": "CONFIRMED",
+      "attendance_mode": "ONLINE",
+      "comment": "Confirmed attendance.",
+      "confirmed_at": "2026-09-07T04:13:26.641Z",
+      "created_at": "2026-09-07T04:13:26.611Z",
+      "updated_at": "2026-09-07T04:13:26.642Z"
+    }
+  ],
+  "viva_change_requests": [
+    {
+      "id": 1,
+      "viva_schedule_id": 8,
+      "requested_by": null,
+      "role": "ASSESSOR",
+      "original_date": "2026-09-15T00:00:00.000Z",
+      "original_time": "09:00",
+      "proposed_date": "2026-09-17T00:00:00.000Z",
+      "proposed_time": "10:30",
+      "attendance_mode": "PHYSICAL",
+      "reason": "Clash with faculty senate meeting on September 15th morning.",
+      "admin_response": "Accepted. Schedule moved to 17 Sep 10:30 AM.",
+      "status": "ACCEPTED",
+      "created_at": "2026-09-07T04:13:26.618Z",
+      "resolved_at": "2026-09-07T04:13:26.630Z"
+    }
+  ],
+  "viva_notes": [
+    {
+      "id": 1,
+      "viva_schedule_id": 8,
+      "user_id": 246,
+      "role": "SUPERVISOR",
+      "note": "Key questions for Alice: Clarify microservices communication latency and JWT token expiry handling.",
+      "created_at": "2026-09-07T04:13:26.766Z",
+      "updated_at": "2026-09-07T04:13:26.766Z"
+    },
+    {
+      "id": 2,
+      "viva_schedule_id": 8,
+      "user_id": 163,
+      "role": "ASSESSOR",
+      "note": "Key questions for Alice: Evaluation of database indexing strategy and test coverage.",
+      "created_at": "2026-09-07T04:13:26.777Z",
+      "updated_at": "2026-09-07T04:13:26.777Z"
+    },
+    {
+      "id": 3,
+      "viva_schedule_id": 10,
+      "user_id": 246,
+      "role": "SUPERVISOR",
+      "note": "Integration test note: Verified code quality and test documentation.",
+      "created_at": "2026-09-07T04:18:01.040Z",
+      "updated_at": "2026-09-07T04:18:01.040Z"
+    }
+  ],
+  "viva_audit_logs": [
+    {
+      "id": 1,
+      "viva_period_id": 16,
+      "viva_schedule_id": null,
+      "action": "SEED_WORKFLOW_VALIDATION_COMPLETED",
+      "performed_by": "System Test",
+      "role": "ADMIN",
+      "details": "Full viva test scenario executed and verified.",
+      "created_at": "2026-09-07T04:13:26.934Z"
+    }
+  ],
+  "microsoft_integrations": [],
+  "milestones": [
+    {
+      "id": 1,
+      "batch_id": 61,
+      "name": "POC Submission",
+      "description": "Proof of concept submission, the template is available",
+      "type": "FORMATIVE",
+      "deadline": "2026-08-22T04:08:00.000Z",
+      "order_index": 0,
+      "created_at": "2026-08-17T04:08:44.393Z"
+    },
+    {
+      "id": 2,
+      "batch_id": 61,
+      "name": "Midpoint  Report",
+      "description": "Kindly submit your Midpoint report, and include the video link as well",
+      "type": "SUMMATIVE",
+      "deadline": "2026-09-06T11:30:00.000Z",
+      "order_index": 0,
+      "created_at": "2026-08-17T04:09:59.836Z"
+    },
+    {
+      "id": 3,
+      "batch_id": 69,
+      "name": "LR Checkpoint 1",
+      "description": null,
+      "type": "FORMATIVE",
+      "deadline": "2026-08-22T11:30:00.000Z",
+      "order_index": 0,
+      "created_at": "2026-08-17T04:57:19.977Z"
+    },
+    {
+      "id": 4,
+      "batch_id": 69,
+      "name": "Midpoint report",
+      "description": null,
+      "type": "SUMMATIVE",
+      "deadline": "2026-09-06T11:30:00.000Z",
+      "order_index": 1,
+      "created_at": "2026-08-17T04:58:06.260Z"
+    }
+  ],
+  "student_milestone_status": [
+    {
+      "id": 1,
+      "student_id": 475,
+      "milestone_id": 3,
+      "status": "Upcoming",
+      "submitted_at": null,
+      "updated_at": "2026-08-17T04:57:20.009Z"
+    },
+    {
+      "id": 2,
+      "student_id": 475,
+      "milestone_id": 4,
+      "status": "Upcoming",
+      "submitted_at": null,
+      "updated_at": "2026-08-17T04:58:06.264Z"
+    }
+  ],
+  "sent_reminders": []
+}

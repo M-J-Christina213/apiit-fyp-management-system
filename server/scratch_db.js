@@ -1,86 +1,34 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function check() {
-  try {
-    // 1. Find Christina
-    const student = await prisma.students.findUnique({
-      where: { cb_no: 'CB014416' },
-      include: {
-        batches: true,
-        student_fyp_records: {
-            include: {
-                supervisors: true,
-                assessors: true
-            }
-        }
-      }
-    });
+async function runSchemaUpdates() {
+    try {
+        console.log("=== APPLYING SAFE DB SCHEMA UPDATES ===");
+        await prisma.$executeRawUnsafe(`ALTER TABLE "microsoft_integrations" DROP CONSTRAINT IF EXISTS "microsoft_integrations_admin_email_key";`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "microsoft_integrations" ADD COLUMN IF NOT EXISTS "user_id" INT UNIQUE REFERENCES "users"("id") ON DELETE CASCADE;`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "microsoft_integrations" ADD COLUMN IF NOT EXISTS "microsoft_email" VARCHAR(150);`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "microsoft_integrations" ADD COLUMN IF NOT EXISTS "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
 
-    console.log("=== 1. CHRISTINA RECORD ===");
-    if (!student) {
-        console.log("Christina not found!");
-    } else {
-        console.log("ID:", student.id);
-        console.log("Name:", student.student_name);
-        console.log("Batch ID:", student.batch_id);
-        console.log("Batch Code:", student.batches?.batch_code);
-        
-        if (student.student_fyp_records.length > 0) {
-            const rec = student.student_fyp_records[0];
-            console.log("Supervisor ID:", rec.supervisor_id);
-            console.log("Supervisor Name:", rec.supervisors?.name);
-            console.log("Supervisor Email:", rec.supervisors?.email);
-            console.log("Assessor ID:", rec.assessor_id);
-            console.log("Assessor Name:", rec.assessors?.name);
-            console.log("Assessor Email:", rec.assessors?.email);
-        } else {
-            console.log("No student_fyp_records for Christina!");
-        }
-    }
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS "viva_outlook_events" (
+                "id" SERIAL PRIMARY KEY,
+                "viva_schedule_id" INT NOT NULL REFERENCES "viva_schedules"("id") ON DELETE CASCADE,
+                "user_id" INT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+                "outlook_event_id" VARCHAR(255) NOT NULL,
+                "sync_status" VARCHAR(30) DEFAULT 'SYNCED',
+                "sync_error" TEXT,
+                "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT "viva_outlook_events_viva_schedule_id_user_id_key" UNIQUE ("viva_schedule_id", "user_id")
+            );
+        `);
 
-    // 2. Find Anjali Silva in supervisors
-    const anjaliSup = await prisma.supervisors.findUnique({
-        where: { email: 'anjali.silva@apiit.lk' }
-    });
-    
-    console.log("\n=== 2. ANJALI SUPERVISOR RECORD ===");
-    if (anjaliSup) {
-        console.log("Supervisor ID:", anjaliSup.id);
-        console.log("Name:", anjaliSup.name);
-        console.log("Email:", anjaliSup.email);
-        
-        const fypRecords = await prisma.student_fyp_records.findMany({
-            where: { supervisor_id: anjaliSup.id }
-        });
-        console.log("FYP Records count for Anjali:", fypRecords.length);
-    } else {
-        console.log("Anjali Silva not found in supervisors table!");
+        console.log("=== SCHEMA UPDATES APPLIED SUCCESSFULLY ===");
+    } catch (e) {
+        console.error("Schema Update Error:", e);
+    } finally {
+        await prisma.$disconnect();
     }
-
-    // 3. Find Anjali Silva in assessors
-    const anjaliAss = await prisma.assessors.findUnique({
-        where: { email: 'anjali.silva@apiit.lk' }
-    });
-    
-    console.log("\n=== 3. ANJALI ASSESSOR RECORD ===");
-    if (anjaliAss) {
-        console.log("Assessor ID:", anjaliAss.id);
-        console.log("Name:", anjaliAss.name);
-        console.log("Email:", anjaliAss.email);
-        
-        const fypRecords = await prisma.student_fyp_records.findMany({
-            where: { assessor_id: anjaliAss.id }
-        });
-        console.log("FYP Records count for Anjali:", fypRecords.length);
-    } else {
-        console.log("Anjali Silva not found in assessors table!");
-    }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    await prisma.$disconnect();
-  }
 }
 
-check();
+runSchemaUpdates();

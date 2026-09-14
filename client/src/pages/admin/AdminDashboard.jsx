@@ -43,6 +43,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({});
   const [students, setStudents] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
+  const [msStatus, setMsStatus] = useState(null);
 
   // Modal states
   const [showAddUser, setShowAddUser] = useState(false);
@@ -73,25 +74,28 @@ const AdminDashboard = () => {
     const loadData = async () => {
       try {
 
+        const currentUser = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
         const [
           usersRes,
           studentsRes,
           supervisorsRes,
-          externalRequestsRes
+          externalRequestsRes,
+          msRes
         ] = await Promise.all([
           getUsers(),
           getStudents(),
           getSupervisors(),
-          getExternalSupervisorRequests()
+          getExternalSupervisorRequests(),
+          fetch("http://localhost:5000/api/viva/microsoft/status", {
+            headers: { "x-user-email": currentUser.email || "" }
+          }).then(r => r.json()).catch(() => null)
         ]);
 
-        setExternalRequests(
-          externalRequestsRes.data
-        );
-
+        setExternalRequests(externalRequestsRes.data);
         setUsers(usersRes.data);
         setStudents(studentsRes.data);
         setSupervisors(supervisorsRes.data);
+        setMsStatus(msRes);
 
         setStats({
           totalUsers: usersRes.data.length,
@@ -612,7 +616,74 @@ const AdminDashboard = () => {
             <p className="text-sm text-slate-500">Configure global matching rules, SSO parameters, and security policies for FYPMS.</p>
           </div>
 
-          <div className="bg-white p-6 rounded border border-slate-200 shadow-sm max-w-2xl">
+          <div className="bg-white p-6 rounded border border-slate-200 shadow-sm max-w-2xl space-y-6">
+            <div className="border-b border-slate-200 pb-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Microsoft 365 Integration</h3>
+              <p className="text-xs text-slate-500 mb-4">Connect your university Microsoft account to automatically synchronize finalized Viva schedules with your Outlook Calendar.</p>
+              
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`w-2.5 h-2.5 rounded-full ${msStatus?.isConnected ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                    <span className="text-sm font-bold text-slate-800">
+                      {msStatus?.isConnected ? 'Connected' : 'Not Connected'}
+                    </span>
+                  </div>
+                  {msStatus?.isConnected && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Account: <strong className="text-slate-700">{msStatus.microsoftEmail || 'Microsoft User'}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  {msStatus?.isConnected ? (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm("Are you sure you want to disconnect Microsoft 365?")) {
+                          const user = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
+                          await fetch("http://localhost:5000/api/viva/microsoft/disconnect", {
+                            method: "POST",
+                            headers: { "x-user-email": user.email || "" }
+                          });
+                          setMsStatus({ isConnected: false });
+                          alert("Disconnected Microsoft 365.");
+                        }
+                      }}
+                      className="px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded text-xs font-bold transition-colors border border-red-200"
+                    >
+                      Disconnect Account
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const user = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
+                        try {
+                          const res = await fetch("http://localhost:5000/api/viva/microsoft/auth-url", {
+                            headers: { "x-user-email": user.email || "" }
+                          });
+                          const data = await res.json();
+                          if (data.authUrl) {
+                            window.location.href = data.authUrl;
+                          } else {
+                            alert(data.error || "Microsoft OAuth is not configured.");
+                          }
+                        } catch (e) {
+                          alert("Failed to initiate Microsoft login: " + e.message);
+                        }
+                      }}
+                      className="px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded text-xs font-bold transition-colors shadow-sm"
+                    >
+                      Connect Microsoft Account
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSaveSettings} className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 border border-slate-200 rounded bg-slate-50/50">

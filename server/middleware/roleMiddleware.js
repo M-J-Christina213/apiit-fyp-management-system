@@ -5,18 +5,18 @@
 
 const verifyRole = (allowedRoles) => {
     return (req, res, next) => {
-        // Since there is no JWT implementation across the app yet,
-        // we simulate RBAC by checking a custom header 'x-user-role'
-        const userRole = req.headers['x-user-role'];
+        const rawRole = req.headers['x-user-role'];
 
-        if (!userRole) {
+        if (!rawRole) {
             return res.status(401).json({
                 error: "Unauthorized",
                 message: "Role information is missing."
             });
         }
 
-        const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+        const userRole = String(rawRole).trim().toUpperCase();
+        const rolesArray = (Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles])
+            .map(r => String(r).trim().toUpperCase());
 
         if (!rolesArray.includes(userRole)) {
             return res.status(403).json({

@@ -58,12 +58,12 @@ router.post("/schedules/:scheduleId/retry-sync", verifyRole("admin"), vivaContro
 router.post("/periods/:periodId/retry-sync", verifyRole("admin"), vivaController.retryOutlookSync);
 
 // ==========================================
-// 6. ADMIN - MICROSOFT 365 INTEGRATION
+// 6. MULTI-USER MICROSOFT 365 INTEGRATION
 // ==========================================
-router.get("/microsoft/auth-url", verifyRole("admin"), vivaController.getMicrosoftAuthUrl);
+router.get("/microsoft/auth-url", vivaController.getMicrosoftAuthUrl);
 router.get("/microsoft/callback", vivaController.handleMicrosoftCallback);
-router.get("/microsoft/status", verifyRole("admin"), vivaController.getMicrosoftStatus);
-router.post("/microsoft/disconnect", verifyRole("admin"), vivaController.disconnectMicrosoft);
+router.get("/microsoft/status", vivaController.getMicrosoftStatus);
+router.post("/microsoft/disconnect", vivaController.disconnectMicrosoft);
 
 // ==========================================
 // 7. ADMIN - AUDIT TRAIL

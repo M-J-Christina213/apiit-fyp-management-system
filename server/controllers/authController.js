@@ -22,26 +22,24 @@ function getKey(header, callback) {
 const login = async (req, res) => {
 
     try {
-
         const { email, password } = req.body;
+        const cleanEmail = String(email || "").trim().toLowerCase();
 
         // ------------------------------------------
-        // Find User
+        // Find User (Case-insensitive)
         // ------------------------------------------
 
-        const user = await prisma.users.findUnique({
+        const user = await prisma.users.findFirst({
             where: {
-                email
+                email: { equals: cleanEmail, mode: "insensitive" }
             }
         });
 
         if (!user) {
-
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password"
             });
-
         }
 
         // ------------------------------------------
@@ -195,11 +193,11 @@ const azureCallback = async (req, res) => {
         const response = await msalClient.acquireTokenByCode(tokenRequest);
         const { account } = response;
         
-        const email = account.username;
+        const email = String(account.username || "").trim().toLowerCase();
 
-        // Find user in DB
-        const user = await prisma.users.findUnique({
-            where: { email: email }
+        // Find user in DB (Case-insensitive)
+        const user = await prisma.users.findFirst({
+            where: { email: { equals: email, mode: "insensitive" } }
         });
 
         if (!user) {

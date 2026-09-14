@@ -33,7 +33,7 @@ const MODE_ICONS = {
 };
 
 export default function VivaAdminDashboard() {
-  const [activeTab, setActiveTab] = useState("schedules"); // schedules, calendar, changes, import, finalize, settings, audit
+  const [activeTab, setActiveTab] = useState("overview"); // overview, schedule, changes, finalized, calendar, settings
   const [periods, setPeriods] = useState([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [schedules, setSchedules] = useState([]);
@@ -766,34 +766,34 @@ export default function VivaAdminDashboard() {
       <div className="mt-8 border-b border-slate-200 flex items-center justify-between gap-4 overflow-x-auto">
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setActiveTab("schedules")}
+            onClick={() => setActiveTab("overview")}
             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "schedules" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+              activeTab === "overview" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
-            <CalendarDays className="w-4 h-4" />
-            <span>Viva Schedule Table</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{schedules.length}</span>
+            <Sparkles className="w-4 h-4" />
+            <span>Overview</span>
           </button>
 
           <button
-            onClick={() => setActiveTab("calendar")}
+            onClick={() => setActiveTab("schedule")}
             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "calendar" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+              activeTab === "schedule" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
-            <CalendarIcon className="w-4 h-4" />
-            <span>Visual Calendar View</span>
+            <CalendarDays className="w-4 h-4" />
+            <span>Schedule</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{schedules.length}</span>
           </button>
 
           <button
             onClick={() => setActiveTab("changes")}
             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "changes" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+              activeTab === "changes" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             <MessageSquare className="w-4 h-4" />
-            <span>Change Requests Center</span>
+            <span>Change Requests</span>
             {changeRequests.filter(c => c.status === "PENDING").length > 0 && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold">
                 {changeRequests.filter(c => c.status === "PENDING").length}
@@ -802,44 +802,35 @@ export default function VivaAdminDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab("import")}
+            onClick={() => setActiveTab("finalized")}
             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "import" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-            <span>Import / Create Schedule</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("finalize")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "finalize" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+              activeTab === "finalized" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             <CheckCircle className="w-4 h-4" />
-            <span>Finalization Checklist</span>
+            <span>Finalized</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">{stats.finalized}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("calendar")}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+              activeTab === "calendar" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            <span>Calendar</span>
           </button>
 
           <button
             onClick={() => setActiveTab("settings")}
             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "settings" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+              activeTab === "settings" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             <Video className="w-4 h-4" />
-            <span>Microsoft 365 Settings</span>
+            <span>Microsoft 365 Integration</span>
             {msStatus?.isConnected && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("audit")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "audit" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <ShieldAlert className="w-4 h-4" />
-            <span>Audit Trail</span>
           </button>
         </div>
 
@@ -854,8 +845,110 @@ export default function VivaAdminDashboard() {
         </div>
       </div>
 
+      {/* TAB 0: OVERVIEW */}
+      {activeTab === "overview" && (
+        <div className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  Current Viva Period Status & Actions
+                </h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${STATUS_COLORS[selectedPeriod?.status] || "bg-slate-100"}`}>
+                  {selectedPeriod?.status}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                The current period is set up for academic year <strong>{selectedPeriod?.academic_year || "2026"}</strong>. Automated scheduling cross-references availability collected from Supervisors, Assessors, and Students to find non-conflicting time slots.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center pt-2">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <p className="text-[11px] text-slate-500 font-medium">Slots Generated</p>
+                  <p className="text-lg font-bold text-slate-900 mt-0.5">{stats.total}</p>
+                </div>
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <p className="text-[11px] text-emerald-700 font-medium">Ready / Confirmed</p>
+                  <p className="text-lg font-bold text-emerald-800 mt-0.5">{stats.confirmed}</p>
+                </div>
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl">
+                  <p className="text-[11px] text-rose-700 font-medium">Pending Changes</p>
+                  <p className="text-lg font-bold text-rose-800 mt-0.5">{stats.changeReqs}</p>
+                </div>
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl">
+                  <p className="text-[11px] text-purple-700 font-medium">Finalized & Synced</p>
+                  <p className="text-lg font-bold text-purple-800 mt-0.5">{stats.finalized}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
+                <button
+                  onClick={() => handleAutoGenerateSchedule(selectedPeriodId)}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Auto-Generate viva schedules</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("schedule")}
+                  className="flex items-center gap-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  <span>View Full Schedule</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Readiness Summary Box */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Finalization Readiness
+                </h3>
+                <div className="mt-4 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Total Viva Registrations</span>
+                    <span className="font-bold text-slate-900">{stats.total}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Unresolved Conflicts</span>
+                    <span className={`font-bold ${stats.conflicts > 0 ? "text-rose-600 font-mono" : "text-emerald-600"}`}>
+                      {stats.conflicts}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Pending Change Requests</span>
+                    <span className={`font-bold ${stats.changeReqs > 0 ? "text-amber-600 font-mono" : "text-emerald-600"}`}>
+                      {stats.changeReqs}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 mt-4">
+                <button
+                  onClick={() => setShowFinalizeModal(true)}
+                  disabled={selectedPeriod?.status === "FINALIZED"}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-colors ${
+                    selectedPeriod?.status === "FINALIZED"
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{selectedPeriod?.status === "FINALIZED" ? "Period Finalized" : "Review & Finalize"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB 1: SCHEDULE MANAGEMENT TABLE */}
-      {activeTab === "schedules" && (
+      {activeTab === "schedule" && (
         <div className="mt-6 space-y-4">
           {/* Controls Bar: Search & Filters */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1515,6 +1608,105 @@ export default function VivaAdminDashboard() {
                 <span>Validate & Create Viva Slot</span>
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: FINALIZED VIVA SCHEDULES */}
+      {activeTab === "finalized" && (
+        <div className="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Finalized Viva Schedule & Outlook Sync Status</h3>
+              <p className="text-xs text-slate-500">View published Viva schedules, calendar synchronization status per participant, and meeting details.</p>
+            </div>
+            <button
+              onClick={() => handleRetrySync(null)}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Microsoft Sync</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-600">
+                  <th className="p-3">Student / CB No</th>
+                  <th className="p-3">Batch</th>
+                  <th className="p-3">Supervisor & Assessor</th>
+                  <th className="p-3">Date & Time</th>
+                  <th className="p-3">Mode & Venue</th>
+                  <th className="p-3">Outlook Sync Status</th>
+                  <th className="p-3">Teams Link</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {schedules.filter(s => s.status === "FINALIZED" || s.overallStatus === "FINALIZED").length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="text-center py-8 text-slate-400">
+                      No finalized Viva schedules yet. Use <strong>Review & Finalize Schedule</strong> when confirmations are complete.
+                    </td>
+                  </tr>
+                ) : (
+                  schedules.filter(s => s.status === "FINALIZED" || s.overallStatus === "FINALIZED").map(sch => {
+                    const dateStr = sch.date ? new Date(sch.date).toLocaleDateString() : "TBA";
+                    const timeStr = sch.start_time
+                      ? `${new Date(sch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${new Date(sch.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                      : "Time TBA";
+                    const mode = sch.attendance_mode || sch.mode || "PHYSICAL";
+
+                    return (
+                      <tr key={sch.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-3">
+                          <p className="font-bold text-slate-900">{sch.students?.student_name}</p>
+                          <p className="font-mono text-[11px] text-slate-500">{sch.students?.cb_no}</p>
+                        </td>
+                        <td className="p-3 font-semibold text-slate-700">{sch.batch_code}</td>
+                        <td className="p-3 space-y-0.5">
+                          <p><strong>Sup:</strong> {sch.supervisors?.name || "N/A"}</p>
+                          <p><strong>Ass:</strong> {sch.assessors?.name || "N/A"}</p>
+                        </td>
+                        <td className="p-3">
+                          <p className="font-semibold text-slate-800">{dateStr}</p>
+                          <p className="font-mono text-slate-500 text-[11px]">{timeStr}</p>
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-flex items-center text-slate-700 font-semibold mb-1">
+                            {MODE_ICONS[mode]}
+                            {mode}
+                          </span>
+                          <p className="text-slate-500 font-mono text-[11px]">{sch.venue || "TBA"}</p>
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Synced to Outlook</span>
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          {sch.teams_link ? (
+                            <a
+                              href={sch.teams_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 underline"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>Join Teams</span>
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">N/A (Physical)</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

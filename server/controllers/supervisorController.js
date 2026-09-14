@@ -86,55 +86,70 @@ const createSupervisor = async (req, res) => {
 
 
 
-        const newSupervisor = await prisma.supervisors.create({
+        const normEmail = String(email || "").trim().toLowerCase();
 
-            data: {
-
-                title,
-                name,
-                email,
-                expertise,
-                research_interests,
-                additional_information,
-
-                preferred_supervision_slots: Math.max(3, parseInt(preferred_supervision_slots, 10) || 3)
-
-            }
-
+        // Check if supervisor profile already exists
+        const existingSup = await prisma.supervisors.findFirst({
+            where: { email: { equals: normEmail, mode: "insensitive" } }
         });
 
-
-
-        // Create login account
-        const existingUser = await prisma.users.findUnique({
-            where: {
-                email
-            }
-        });
-
-
-
-        if (!existingUser) {
-
-            await prisma.users.create({
-
+        let newSupervisor;
+        if (existingSup) {
+            newSupervisor = await prisma.supervisors.update({
+                where: { id: existingSup.id },
                 data: {
-
-                    email,
-
-                    password: bcrypt.hashSync(
-                        "123@abc",
-                        10
-                    ),
-
-                    role: "supervisor",
-
-                    is_active: true
-
+                    title: title || existingSup.title,
+                    name: name || existingSup.name,
+                    expertise: expertise || existingSup.expertise,
+                    research_interests: research_interests || existingSup.research_interests,
+                    additional_information: additional_information || existingSup.additional_information,
+                    preferred_supervision_slots: preferred_supervision_slots ? parseInt(preferred_supervision_slots, 10) : existingSup.preferred_supervision_slots
                 }
-
             });
+        } else {
+            newSupervisor = await prisma.supervisors.create({
+                data: {
+                    title,
+                    name,
+                    email: normEmail,
+                    expertise,
+                    research_interests,
+                    additional_information,
+                    preferred_supervision_slots: Math.max(3, parseInt(preferred_supervision_slots, 10) || 3)
+                }
+            });
+        }
 
+        // Create or update login account with SUPERVISOR role
+        const existingUser = await prisma.users.findFirst({
+            where: { email: { equals: normEmail, mode: "insensitive" } }
+        });
+
+        if (existingUser) {
+            const currentRole = existingUser.role.toUpperCase();
+            if (currentRole === "PM" || currentRole === "ADMIN") {
+                return res.status(400).json({
+                    error: "Role Conflict",
+                    message: `This email is already registered as ${currentRole}. Please resolve the existing role before assigning as a Supervisor.`
+                });
+            }
+            // Update to SUPERVISOR if it wasn't
+            if (currentRole !== "SUPERVISOR") {
+                await prisma.users.update({
+                    where: { id: existingUser.id },
+                    data: { role: "SUPERVISOR", name: name || existingUser.name }
+                });
+            }
+        } else {
+            await prisma.users.create({
+                data: {
+                    name,
+                    email: normEmail,
+                    password: bcrypt.hashSync("123@abc", 10),
+                    role: "SUPERVISOR",
+                    is_active: true
+                }
+            });
         }
 
 

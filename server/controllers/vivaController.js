@@ -1546,52 +1546,39 @@ exports.finalizeVivaPeriod = async (req, res) => {
             })
         ]);
 
-        // 2. Microsoft Outlook & Teams synchronization
+        // 2. Microsoft Outlook & Teams synchronization per participant
         let syncSuccessCount = 0;
         let syncFailedCount = 0;
 
         for (const sch of period.viva_schedules) {
             try {
-                // If Online Viva and no teams link, create Teams meeting
-                let teamsJoinUrl = sch.teams_join_url;
-                let teamsMeetingId = sch.teams_meeting_id;
+                const studentUser = sch.students?.cb_no ? await prisma.users.findFirst({ where: { email: { contains: sch.students.cb_no, mode: "insensitive" } } }) : null;
+                const supUser = sch.supervisors?.email ? await prisma.users.findFirst({ where: { email: { equals: sch.supervisors.email, mode: "insensitive" } } }) : null;
+                const assUser = sch.assessors?.email ? await prisma.users.findFirst({ where: { email: { equals: sch.assessors.email, mode: "insensitive" } } }) : null;
+                const adminUser = req.headers["x-user-email"] ? await prisma.users.findFirst({ where: { email: { equals: req.headers["x-user-email"], mode: "insensitive" } } }) : null;
 
-                if (sch.attendance_mode === "ONLINE" && !teamsJoinUrl) {
-                    const teamsResult = await MicrosoftGraphService.createTeamsMeeting(sch, period);
-                    if (teamsResult.success) {
-                        teamsJoinUrl = teamsResult.joinWebUrl;
-                        teamsMeetingId = teamsResult.meetingId;
+                const targets = [
+                    { user: studentUser, role: "STUDENT" },
+                    { user: supUser, role: "SUPERVISOR" },
+                    { user: assUser, role: "ASSESSOR" },
+                    { user: adminUser, role: "ADMIN" }
+                ];
+
+                let schSyncSuccess = false;
+                for (const t of targets) {
+                    if (t.user?.id) {
+                        const syncRes = await MicrosoftGraphService.syncScheduleToUserCalendar(t.user.id, sch, period, t.role);
+                        if (syncRes.success) schSyncSuccess = true;
                     }
                 }
 
-                // Create or update Outlook calendar event
-                const calendarResult = await MicrosoftGraphService.createCalendarEvent(
-                    { ...sch, teams_join_url: teamsJoinUrl, teams_meeting_id: teamsMeetingId },
-                    period
-                );
+                if (schSyncSuccess) syncSuccessCount++;
+                else syncFailedCount++;
 
-                if (calendarResult.success) {
-                    syncSuccessCount++;
-                    await prisma.viva_schedules.update({
-                        where: { id: sch.id },
-                        data: {
-                            outlook_event_id: calendarResult.eventId,
-                            teams_meeting_id: teamsMeetingId || calendarResult.teamsMeetingId || null,
-                            teams_join_url: teamsJoinUrl || calendarResult.teamsJoinUrl || null,
-                            outlook_sync_status: "SYNCED",
-                            outlook_sync_error: null
-                        }
-                    });
-                } else {
-                    syncFailedCount++;
-                    await prisma.viva_schedules.update({
-                        where: { id: sch.id },
-                        data: {
-                            outlook_sync_status: "FAILED",
-                            outlook_sync_error: calendarResult.error || "Calendar synchronization failed."
-                        }
-                    });
-                }
+                await prisma.viva_schedules.update({
+                    where: { id: sch.id },
+                    data: { outlook_sync_status: schSyncSuccess ? "SYNCED" : "NOT_SYNCED" }
+                });
             } catch (syncErr) {
                 console.error(`Sync error for schedule ${sch.id}:`, syncErr.message);
                 syncFailedCount++;
@@ -1716,7 +1703,13 @@ exports.retryOutlookSync = async (req, res) => {
 // ======================================================
 exports.getMicrosoftAuthUrl = async (req, res) => {
     try {
-        const url = MicrosoftGraphService.getAuthUrl("admin_viva_auth");
+        const email = req.headers["x-user-email"];
+        const user = email ? await prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }) : null;
+        if (!user) {
+            return res.status(401).json({ error: "User identity required to generate Microsoft Auth URL." });
+        }
+
+        const url = MicrosoftGraphService.getAuthUrl(user.id, "viva_user_auth");
         res.status(200).json({ authUrl: url, isConfigured: MicrosoftGraphService.isConfigured() });
     } catch (error) {
         res.status(500).json({ error: "Failed to generate auth URL", details: error.message });
@@ -1724,9 +1717,32 @@ exports.getMicrosoftAuthUrl = async (req, res) => {
 };
 
 exports.handleMicrosoftCallback = async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
+    if (!code) {
+        return res.status(400).json({ error: "Authorization code missing from Microsoft callback." });
+    }
+
     try {
-        const result = await MicrosoftGraphService.handleAuthCallback(code || "simulated_code");
+        let userId = null;
+        if (state) {
+            try {
+                const parsed = JSON.parse(state);
+                userId = parsed.userId;
+            } catch (e) {
+                console.log("State is not JSON:", state);
+            }
+        }
+
+        if (!userId && req.headers["x-user-email"]) {
+            const user = await prisma.users.findFirst({ where: { email: { equals: req.headers["x-user-email"], mode: "insensitive" } } });
+            userId = user?.id;
+        }
+
+        if (!userId) {
+            return res.status(400).json({ error: "Unable to associate Microsoft authorization code with a valid system user." });
+        }
+
+        const result = await MicrosoftGraphService.handleAuthCallback(code, userId);
         res.status(200).json({ message: "Microsoft account connected successfully.", ...result });
     } catch (error) {
         console.error("Microsoft Auth Callback Error:", error);
@@ -1736,7 +1752,9 @@ exports.handleMicrosoftCallback = async (req, res) => {
 
 exports.getMicrosoftStatus = async (req, res) => {
     try {
-        const status = await MicrosoftGraphService.getIntegrationStatus();
+        const email = req.headers["x-user-email"];
+        const user = email ? await prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }) : null;
+        const status = await MicrosoftGraphService.getIntegrationStatus(user?.id);
         res.status(200).json(status);
     } catch (error) {
         res.status(500).json({ error: "Failed to get Microsoft integration status", details: error.message });
@@ -1745,7 +1763,11 @@ exports.getMicrosoftStatus = async (req, res) => {
 
 exports.disconnectMicrosoft = async (req, res) => {
     try {
-        await MicrosoftGraphService.disconnect();
+        const email = req.headers["x-user-email"];
+        const user = email ? await prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }) : null;
+        if (user) {
+            await MicrosoftGraphService.disconnect(user.id);
+        }
         res.status(200).json({ message: "Microsoft account disconnected." });
     } catch (error) {
         res.status(500).json({ error: "Failed to disconnect Microsoft account", details: error.message });
