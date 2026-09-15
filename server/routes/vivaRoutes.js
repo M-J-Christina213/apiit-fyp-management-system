@@ -60,10 +60,10 @@ router.post("/periods/:periodId/retry-sync", verifyRole("admin"), vivaController
 // ==========================================
 // 6. MULTI-USER MICROSOFT 365 INTEGRATION
 // ==========================================
-router.get("/microsoft/auth-url", vivaController.getMicrosoftAuthUrl);
+router.get("/microsoft/auth-url", verifyRole(["admin", "pm", "supervisor", "assessor", "student"]), vivaController.getMicrosoftAuthUrl);
 router.get("/microsoft/callback", vivaController.handleMicrosoftCallback);
-router.get("/microsoft/status", vivaController.getMicrosoftStatus);
-router.post("/microsoft/disconnect", vivaController.disconnectMicrosoft);
+router.get("/microsoft/status", verifyRole(["admin", "pm", "supervisor", "assessor", "student"]), vivaController.getMicrosoftStatus);
+router.post("/microsoft/disconnect", verifyRole(["admin", "pm", "supervisor", "assessor", "student"]), vivaController.disconnectMicrosoft);
 
 // ==========================================
 // 7. ADMIN - AUDIT TRAIL

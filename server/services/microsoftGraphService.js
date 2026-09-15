@@ -87,6 +87,22 @@ class MicrosoftGraphService {
         const meData = await meRes.json();
         const msEmail = meData.mail || meData.userPrincipalName || null;
 
+        // Verify if account has an available Outlook / Exchange Calendar
+        let hasCalendar = false;
+        let calendarName = "Outlook Calendar";
+        try {
+            const calRes = await fetch("https://graph.microsoft.com/v1.0/me/calendar", {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` }
+            });
+            const calData = await calRes.json();
+            if (calRes.ok && calData.id) {
+                hasCalendar = true;
+                calendarName = calData.name || "Outlook Calendar";
+            }
+        } catch (calErr) {
+            console.warn("Calendar check warning:", calErr.message);
+        }
+
         const expiryDate = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000);
 
         const integration = await prisma.microsoft_integrations.upsert({
@@ -96,7 +112,7 @@ class MicrosoftGraphService {
                 access_token: tokenData.access_token,
                 refresh_token: tokenData.refresh_token || null,
                 token_expiry: expiryDate,
-                calendar_name: "Outlook Calendar",
+                calendar_name: calendarName,
                 is_connected: true
             },
             create: {
@@ -105,12 +121,19 @@ class MicrosoftGraphService {
                 access_token: tokenData.access_token,
                 refresh_token: tokenData.refresh_token || null,
                 token_expiry: expiryDate,
-                calendar_name: "Outlook Calendar",
+                calendar_name: calendarName,
                 is_connected: true
             }
         });
 
-        return { success: true, integration };
+        return {
+            success: true,
+            hasCalendar,
+            message: hasCalendar
+                ? "Microsoft account and Outlook Calendar connected successfully."
+                : "Microsoft account connected, but this account does not have an available Outlook/Exchange calendar.",
+            integration
+        };
     }
 
     /**
@@ -181,16 +204,36 @@ class MicrosoftGraphService {
     static async getIntegrationStatus(userId) {
         const configured = this.isConfigured();
         if (!userId) {
-            return { configured, isConnected: false };
+            return { configured, isConnected: false, hasOutlookCalendar: false };
         }
 
         const integration = await prisma.microsoft_integrations.findUnique({
             where: { user_id: Number(userId) }
         });
 
+        if (!integration || !integration.is_connected) {
+            return { configured, isConnected: false, hasOutlookCalendar: false };
+        }
+
+        let hasOutlookCalendar = false;
+        try {
+            const auth = await this.getValidAccessToken(userId);
+            if (auth?.token) {
+                const calRes = await fetch("https://graph.microsoft.com/v1.0/me/calendar", {
+                    headers: { Authorization: `Bearer ${auth.token}` }
+                });
+                if (calRes.ok) {
+                    hasOutlookCalendar = true;
+                }
+            }
+        } catch (e) {
+            hasOutlookCalendar = false;
+        }
+
         return {
             configured,
             isConnected: Boolean(integration?.is_connected),
+            hasOutlookCalendar,
             microsoftEmail: integration?.microsoft_email || null,
             calendarName: integration?.calendar_name || "Outlook Calendar",
             updatedAt: integration?.updated_at || null

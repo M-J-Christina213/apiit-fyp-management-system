@@ -99,11 +99,14 @@ export default function VivaAdminDashboard() {
     teams_link: ""
   });
 
-  const adminHeaders = useMemo(() => ({
-    "Content-Type": "application/json",
-    "x-user-role": "admin",
-    "x-user-email": "admin@apiit.lk"
-  }), []);
+  const adminHeaders = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
+    return {
+      "Content-Type": "application/json",
+      "x-user-role": user.role || "ADMIN",
+      "x-user-email": user.email || "testk3@apiit.lk"
+    };
+  }, []);
 
   // Fetch initial data
   const loadInitialData = async () => {
@@ -1812,13 +1815,22 @@ export default function VivaAdminDashboard() {
               <div>
                 <p className="text-xs font-semibold text-slate-500">Integration Status</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`w-3 h-3 rounded-full ${msStatus?.isConnected ? "bg-emerald-500" : "bg-slate-300"}`} />
+                  <span className={`w-3 h-3 rounded-full ${msStatus?.isConnected ? (msStatus.hasOutlookCalendar ? "bg-emerald-500" : "bg-amber-500") : "bg-slate-300"}`} />
                   <span className="font-bold text-sm text-slate-800">
-                    {msStatus?.isConnected ? (msStatus.isSimulated ? "Connected (Local Mode)" : "Connected (Microsoft Graph)") : "Not Connected"}
+                    {msStatus?.isConnected
+                      ? (msStatus.hasOutlookCalendar
+                          ? "Microsoft Account & Outlook Calendar Connected"
+                          : "Microsoft Account Connected (No Outlook Calendar Available)")
+                      : "Not Connected"}
                   </span>
                 </div>
-                {msStatus?.adminEmail && (
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">Account: {msStatus.adminEmail}</p>
+                {msStatus?.microsoftEmail && (
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">Account: {msStatus.microsoftEmail}</p>
+                )}
+                {msStatus?.isConnected && !msStatus?.hasOutlookCalendar && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg mt-2">
+                    ⚠ Microsoft account connected, but this account does not have an available Outlook/Exchange calendar.
+                  </p>
                 )}
               </div>
 
