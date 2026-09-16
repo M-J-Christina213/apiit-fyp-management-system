@@ -148,7 +148,7 @@ export default function AssessorVivaDashboard() {
       <div className="pb-6 border-b border-slate-200">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-600">
           <CalendarDays className="w-4 h-4" />
-          <span>Examiner Portal • Assessor Viva Dashboard</span>
+          <span>Academic Portal • Assessor Viva Dashboard</span>
         </div>
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">My Assessor Viva Schedule</h1>
         <p className="text-sm text-slate-500 mt-0.5">
@@ -255,62 +255,58 @@ export default function AssessorVivaDashboard() {
 
                   {/* Actions Area */}
                   <div className="space-y-2 pt-2 border-t border-slate-100">
-                    {!isFinalized ? (
-                      /* Pre-Finalization: Availability Review */
+                    <div className="grid grid-cols-2 gap-2">
+                      {sch.report_link ? (
+                        <a
+                          href={sch.report_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow-sm"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Open Report</span>
+                        </a>
+                      ) : (
+                        <button disabled className="bg-slate-100 text-slate-400 text-xs font-medium py-2 rounded-xl cursor-not-allowed">
+                          No Report
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleOpenNotes(sch)}
+                        className="flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold py-2 rounded-xl transition-colors"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Viva Notes</span>
+                      </button>
+                    </div>
+
+                    {!isFinalized && (
                       <button
                         onClick={() => {
                           setSelectedSchedule(sch);
                           setReviewAction("CONFIRM");
-                          setConfirmMode(sch.attendance_mode || "PHYSICAL");
+                          setConfirmMode(sch.assessor_attendance_mode || sch.attendance_mode || "PHYSICAL");
                           setConfirmComment("");
                           setChangeReason("");
                         }}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
+                        className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
                       >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Review Availability</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Confirm Availability / Alternative</span>
                       </button>
-                    ) : (
-                      /* Post-Finalization: Open Report, Notes, Join Teams */
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          {sch.report_link ? (
-                            <a
-                              href={sch.report_link}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center justify-center gap-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 rounded-xl transition-colors shadow-sm"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                              <span>Open Report</span>
-                            </a>
-                          ) : (
-                            <button disabled className="bg-slate-100 text-slate-400 text-xs font-medium py-2 rounded-xl cursor-not-allowed">
-                              No Report Link
-                            </button>
-                          )}
+                    )}
 
-                          <button
-                            onClick={() => handleOpenNotes(sch)}
-                            className="flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold py-2 rounded-xl transition-colors"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Viva Notes</span>
-                          </button>
-                        </div>
-
-                        {sch.teams_join_url && mode === "ONLINE" && (
-                          <a
-                            href={sch.teams_join_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-full flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2.5 rounded-xl shadow transition-colors"
-                          >
-                            <Video className="w-4 h-4" />
-                            <span>Join Microsoft Teams</span>
-                          </a>
-                        )}
-                      </div>
+                    {sch.teams_join_url && mode === "ONLINE" && (
+                      <a
+                        href={sch.teams_join_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2.5 rounded-xl shadow transition-colors"
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>Join Microsoft Teams</span>
+                      </a>
                     )}
                   </div>
                 </div>

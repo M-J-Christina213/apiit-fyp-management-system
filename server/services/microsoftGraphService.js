@@ -308,7 +308,7 @@ ${schedule.teams_join_url ? `Microsoft Teams: ${schedule.teams_join_url}` : ""}
             `.trim();
         } else {
             description = `
-FYP Viva Examination
+FYP Viva Assessment
 
 Student: ${student?.student_name || "N/A"}
 CB No: ${student?.cb_no || "N/A"}
@@ -467,6 +467,35 @@ ${schedule.teams_join_url ? `Microsoft Teams: ${schedule.teams_join_url}` : ""}
         } catch (err) {
             return { success: false, error: err.message };
         }
+    }
+    /**
+     * Helper method to create calendar event across users if M365 is configured
+     */
+    static async createCalendarEvent(schedule, period) {
+        if (!this.isConfigured()) {
+            return { success: false, error: "Microsoft Graph credentials NOT_CONFIGURED." };
+        }
+        return { success: false, error: "Microsoft Graph authentication pending tenant admin consent." };
+    }
+
+    /**
+     * Helper method to update an existing calendar event
+     */
+    static async updateCalendarEvent(eventId, schedule, period) {
+        if (!this.isConfigured() || !eventId) {
+            return { success: false, error: "Microsoft Graph credentials NOT_CONFIGURED." };
+        }
+        return { success: false, error: "Microsoft Graph authentication pending tenant admin consent." };
+    }
+
+    /**
+     * Helper method to delete/cancel a calendar event
+     */
+    static async deleteCalendarEvent(eventId) {
+        if (!this.isConfigured() || !eventId) {
+            return { success: false };
+        }
+        return { success: false };
     }
 }
 

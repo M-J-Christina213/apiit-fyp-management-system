@@ -100,7 +100,7 @@ const getStudents = async (req, res) => {
 
         const formattedStudents = students.map((s) => {
 
-            const fypRecord = s.student_fyp_records?.[0];
+            const fypRecord = s.student_fyp_records?.find(r => r.supervisor_id || r.assessor_id) || s.student_fyp_records?.[s.student_fyp_records.length - 1] || s.student_fyp_records?.[0];
 
             const user = users.find(u =>
                 u.email.toLowerCase().startsWith(s.cb_no.toLowerCase())
@@ -108,36 +108,31 @@ const getStudents = async (req, res) => {
 
             return {
                 id: s.cb_no,
+                dbId: s.id,
+                studentId: s.id,
                 studentNo: s.cb_no,
-
+                cb_no: s.cb_no,
                 name: s.student_name,
-
+                student_name: s.student_name,
                 email: user?.email || null,
-
                 batch: s.batches?.batch_intake || null,
-
                 batchId: s.batch_id,
-
                 batchCode: s.batches?.batch_code || null,
-
                 topic: fypRecord?.tentative_topic || null,
-
+                supervisorId: fypRecord?.supervisor_id || null,
                 supervisor:
                     fypRecord?.supervisors
                         ? `${fypRecord.supervisors.title || ""} ${fypRecord.supervisors.name}`.trim()
                         : null,
-
                 supervisorExpertise:
                     fypRecord?.supervisors?.expertise || "-",
-
                 supervisorConfirmationStatus:
                     fypRecord?.supervisor_confirmation_status || "Pending",
-
+                assessorId: fypRecord?.assessor_id || null,
                 assessor:
                     fypRecord?.assessors
                         ? `${fypRecord.assessors.title || ""} ${fypRecord.assessors.name}`.trim()
                         : null,
-
                 assessorAssigned: !!fypRecord?.assessor_id
             };
         });

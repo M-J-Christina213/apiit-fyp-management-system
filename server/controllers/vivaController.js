@@ -26,7 +26,18 @@ exports.getBatchesWithStudents = async (req, res) => {
         const batches = await prisma.batches.findMany({
             include: {
                 students: {
-                    select: { id: true, student_name: true, cb_no: true }
+                    include: {
+                        student_fyp_records: {
+                            include: {
+                                supervisors: true,
+                                assessors: true
+                            }
+                        },
+                        proposal_requests: {
+                            orderBy: { submitted_at: "desc" },
+                            take: 1
+                        }
+                    }
                 }
             }
         });
@@ -491,7 +502,25 @@ exports.importExcelSchedule = async (req, res) => {
                 const data = item.parsedData;
                 if (!data || !data.student_id) continue;
 
-                // Create schedule
+                // Check duplicate schedule in this Viva period for student
+                const existing = await tx.viva_schedules.findFirst({
+                    where: { viva_period_id: periodId, student_id: data.student_id }
+                });
+                if (existing) continue; // Skip duplicate import
+
+                // Auto-resolve report link from student proposal request if missing
+                let reportUrl = data.report_link || null;
+                if (!reportUrl && data.student_id) {
+                    const proposalReq = await tx.proposal_requests.findFirst({
+                        where: { student_id: data.student_id, status: "Approved" },
+                        orderBy: { submitted_at: "desc" }
+                    });
+                    if (proposalReq?.proposal_pdf) {
+                        reportUrl = proposalReq.proposal_pdf;
+                    }
+                }
+
+                // Create schedule in DRAFT status
                 const schedule = await tx.viva_schedules.create({
                     data: {
                         viva_period_id: periodId,
@@ -504,11 +533,13 @@ exports.importExcelSchedule = async (req, res) => {
                         end_time: data.end_time,
                         duration_mins: data.duration_mins || period.slot_duration || 30,
                         attendance_mode: data.attendance_mode || "PHYSICAL",
+                        supervisor_attendance_mode: "PHYSICAL",
+                        assessor_attendance_mode: "PHYSICAL",
                         mode: data.attendance_mode || "PHYSICAL",
                         venue: data.venue || (data.attendance_mode === "ONLINE" ? "Microsoft Teams" : "TBA"),
-                        report_link: data.report_link || null,
+                        report_link: reportUrl,
                         teams_join_url: data.teams_join_url || null,
-                        status: "PENDING",
+                        status: "DRAFT",
                         outlook_sync_status: "NOT_SYNCED"
                     }
                 });
@@ -521,7 +552,7 @@ exports.importExcelSchedule = async (req, res) => {
                             user_id: null,
                             role: "SUPERVISOR",
                             status: "PENDING",
-                            attendance_mode: data.attendance_mode || "PHYSICAL"
+                            attendance_mode: "PHYSICAL"
                         }
                     });
                 }
@@ -532,7 +563,7 @@ exports.importExcelSchedule = async (req, res) => {
                             user_id: null,
                             role: "ASSESSOR",
                             status: "PENDING",
-                            attendance_mode: data.attendance_mode || "PHYSICAL"
+                            attendance_mode: "PHYSICAL"
                         }
                     });
                 }
@@ -540,13 +571,11 @@ exports.importExcelSchedule = async (req, res) => {
                 createdSchedules.push(schedule);
             }
 
-            // Update period status to AWAITING_CONFIRMATIONS if it was DRAFT or SCHEDULING
-            if (period.status === "DRAFT" || period.status === "SCHEDULING") {
-                await tx.viva_periods.update({
-                    where: { id: periodId },
-                    data: { status: "AWAITING_CONFIRMATIONS" }
-                });
-            }
+            // Period status remains DRAFT until Admin sends draft
+            await tx.viva_periods.update({
+                where: { id: periodId },
+                data: { status: "DRAFT" }
+            });
         });
 
         await VivaAuditService.log({
@@ -554,16 +583,74 @@ exports.importExcelSchedule = async (req, res) => {
             action: "EXCEL_SCHEDULE_IMPORTED",
             performed_by: req.headers["x-user-email"] || "Admin",
             role: "ADMIN",
-            details: `Imported ${createdSchedules.length} Viva schedule slots via Excel spreadsheet.`
+            details: `Imported ${createdSchedules.length} Viva schedule slots as DRAFT via Excel spreadsheet.`
         });
 
         res.status(201).json({
-            message: `Successfully imported ${createdSchedules.length} Viva schedules.`,
+            message: `Successfully imported ${createdSchedules.length} Viva schedules into Draft state.`,
             count: createdSchedules.length
         });
     } catch (error) {
         console.error("Import Excel Schedule Error:", error);
         res.status(500).json({ error: "Failed to import schedule rows", details: error.message });
+    }
+};
+
+// ======================================================
+// 10B. DRAFT SCHEDULE DISPATCH (SEND DRAFT TO STAFF ONLY)
+// ======================================================
+exports.sendDraftSchedule = async (req, res) => {
+    const periodId = parseInt(req.params.periodId);
+    if (isNaN(periodId)) return res.status(400).json({ error: "Invalid Viva Period ID" });
+
+    try {
+        const period = await prisma.viva_periods.findUnique({
+            where: { id: periodId },
+            include: { viva_schedules: { include: { supervisors: true, assessors: true, students: true } } }
+        });
+        if (!period) return res.status(404).json({ error: "Viva Period not found" });
+
+        await prisma.$transaction([
+            prisma.viva_periods.update({
+                where: { id: periodId },
+                data: { status: "SENT_FOR_AVAILABILITY" }
+            }),
+            prisma.viva_schedules.updateMany({
+                where: { viva_period_id: periodId },
+                data: { status: "SENT_FOR_AVAILABILITY" }
+            })
+        ]);
+
+        // Dispatch notifications ONLY to assigned Supervisors and Assessors
+        for (const sch of period.viva_schedules) {
+            if (sch.supervisor_id) {
+                await NotificationService.notifySupervisor(
+                    sch.supervisor_id,
+                    "Viva Schedule Draft Released for Review",
+                    `A draft Viva schedule for ${sch.students?.student_name || 'your assigned student'} has been released for your availability review.`
+                );
+            }
+            if (sch.assessor_id) {
+                await NotificationService.notifyAssessor(
+                    sch.assessor_id,
+                    "Viva Schedule Draft Released for Review",
+                    `A draft Viva schedule for ${sch.students?.student_name || 'assigned student'} has been released for your availability review.`
+                );
+            }
+        }
+
+        await VivaAuditService.log({
+            viva_period_id: periodId,
+            action: "DRAFT_SCHEDULE_DISPATCHED",
+            performed_by: req.headers["x-user-email"] || "Admin",
+            role: "ADMIN",
+            details: `Admin dispatched draft schedules to Supervisors and Assessors for Viva Period '${period.name}'.`
+        });
+
+        res.status(200).json({ message: "Schedule draft dispatched successfully to Supervisors and Assessors." });
+    } catch (error) {
+        console.error("Send Draft Schedule Error:", error);
+        res.status(500).json({ error: "Failed to dispatch draft schedule", details: error.message });
     }
 };
 
@@ -939,14 +1026,16 @@ exports.getMyAssignedSchedules = async (req, res) => {
         const schedules = await prisma.viva_schedules.findMany({
             where: {
                 OR: orFilters,
+                status: { notIn: ["DRAFT", "CANCELLED"] },
                 viva_periods: {
-                    status: { notIn: ["DRAFT", "CANCELLED"] }
+                    status: { notIn: ["CANCELLED"] }
                 }
             },
             include: {
                 students: { include: { batches: true } },
                 supervisors: true,
                 assessors: true,
+                physical_rep_user: { select: { id: true, name: true, email: true } },
                 viva_periods: true,
                 viva_confirmations: true,
                 viva_change_requests: {
@@ -956,13 +1045,23 @@ exports.getMyAssignedSchedules = async (req, res) => {
             orderBy: [{ date: "asc" }, { start_time: "asc" }]
         });
 
-        const mapped = schedules.map(sch => {
+        // Resolve student submission report links for all assigned schedules
+        const mapped = await Promise.all(schedules.map(async sch => {
             const isSupervisor = supervisor && sch.supervisor_id === supervisor.id;
             const isAssessor = assessor && sch.assessor_id === assessor.id;
             const userRole = isSupervisor ? "SUPERVISOR" : "ASSESSOR";
 
             const myConfirmation = sch.viva_confirmations.find(c => c.role === userRole) || null;
             const myChangeRequest = sch.viva_change_requests.find(cr => cr.role === userRole) || null;
+
+            let reportLink = sch.report_link;
+            if (!reportLink && sch.student_id) {
+                const prop = await prisma.proposal_requests.findFirst({
+                    where: { student_id: sch.student_id, status: "Approved" },
+                    orderBy: { submitted_at: "desc" }
+                });
+                if (prop?.proposal_pdf) reportLink = prop.proposal_pdf;
+            }
 
             return {
                 ...sch,
@@ -971,11 +1070,10 @@ exports.getMyAssignedSchedules = async (req, res) => {
                 assignedRole: userRole,
                 myConfirmation,
                 myChangeRequest,
-                // Only show report link and Teams link if finalized or approved
-                report_link: sch.status === "FINALIZED" ? sch.report_link : null,
-                teams_join_url: sch.status === "FINALIZED" ? sch.teams_join_url : null
+                report_link: reportLink,
+                teams_join_url: sch.teams_join_url
             };
-        });
+        }));
 
         res.status(200).json({
             schedules: mapped,
@@ -989,16 +1087,17 @@ exports.getMyAssignedSchedules = async (req, res) => {
 };
 
 // ======================================================
-// 16. SUPERVISOR & ASSESSOR - REVIEW AVAILABILITY (CONFIRM / CHANGE REQUEST)
+// 16. SUPERVISOR & ASSESSOR - REVIEW AVAILABILITY (CONFIRM / SUGGEST ALTERNATIVE)
 // ======================================================
 exports.submitReviewAvailability = async (req, res) => {
     const scheduleId = parseInt(req.params.scheduleId);
     const email = req.headers["x-user-email"];
-    const { action, attendance_mode, comment, reason, proposed_date, proposed_time } = req.body;
+    const { action, attendance_mode, comment, reason, proposed_date, proposed_time, proposed_start_time, proposed_end_time } = req.body;
 
     if (isNaN(scheduleId)) return res.status(400).json({ error: "Invalid Schedule ID" });
-    if (!action || !["CONFIRM", "REQUEST_CHANGE"].includes(action.toUpperCase())) {
-        return res.status(400).json({ error: "Action must be either 'CONFIRM' or 'REQUEST_CHANGE'." });
+    const normalizedAction = (action || "").toUpperCase().trim();
+    if (!["CONFIRM", "REQUEST_CHANGE", "SUGGEST_ALTERNATIVE"].includes(normalizedAction)) {
+        return res.status(400).json({ error: "Action must be either 'CONFIRM' or 'SUGGEST_ALTERNATIVE'." });
     }
 
     try {
@@ -1025,7 +1124,6 @@ exports.submitReviewAvailability = async (req, res) => {
             userRole = "ASSESSOR";
             userId = schedule.assessors.id;
         } else {
-            // Check if admin is impersonating or submitting
             const user = await prisma.users.findUnique({ where: { email } });
             if (user?.role === "admin") {
                 userRole = req.body.role || "SUPERVISOR";
@@ -1034,9 +1132,9 @@ exports.submitReviewAvailability = async (req, res) => {
             }
         }
 
-        const mode = (attendance_mode || schedule.attendance_mode || "PHYSICAL").toUpperCase();
+        const mode = (attendance_mode || "PHYSICAL").toUpperCase();
 
-        if (action.toUpperCase() === "CONFIRM") {
+        if (normalizedAction === "CONFIRM") {
             // Update or create confirmation record
             await prisma.viva_confirmations.upsert({
                 where: {
@@ -1045,7 +1143,7 @@ exports.submitReviewAvailability = async (req, res) => {
                 update: {
                     status: "CONFIRMED",
                     attendance_mode: mode,
-                    comment: comment || null,
+                    comment: comment || reason || null,
                     confirmed_at: new Date()
                 },
                 create: {
@@ -1053,24 +1151,23 @@ exports.submitReviewAvailability = async (req, res) => {
                     role: userRole,
                     status: "CONFIRMED",
                     attendance_mode: mode,
-                    comment: comment || null,
+                    comment: comment || reason || null,
                     confirmed_at: new Date()
                 }
             });
 
-            // Check if both supervisor and assessor have confirmed
-            const allConfirmations = await prisma.viva_confirmations.findMany({
-                where: { viva_schedule_id: scheduleId }
-            });
-            const supConfirmed = allConfirmations.find(c => c.role === "SUPERVISOR")?.status === "CONFIRMED";
-            const assConfirmed = allConfirmations.find(c => c.role === "ASSESSOR")?.status === "CONFIRMED";
+            // Update specific role attendance mode on schedule
+            const updateModeObj = {};
+            if (userRole === "SUPERVISOR") updateModeObj.supervisor_attendance_mode = mode;
+            if (userRole === "ASSESSOR") updateModeObj.assessor_attendance_mode = mode;
 
-            if (supConfirmed && assConfirmed) {
-                await prisma.viva_schedules.update({
-                    where: { id: scheduleId },
-                    data: { status: "CONFIRMED" }
-                });
-            }
+            await prisma.viva_schedules.update({
+                where: { id: scheduleId },
+                data: {
+                    ...updateModeObj,
+                    status: "AVAILABILITY_SUBMITTED"
+                }
+            });
 
             await VivaAuditService.log({
                 viva_period_id: schedule.viva_period_id,
@@ -1078,7 +1175,7 @@ exports.submitReviewAvailability = async (req, res) => {
                 action: `${userRole}_CONFIRMED`,
                 performed_by: email,
                 role: userRole,
-                details: `${userRole} confirmed availability (Mode: ${mode})`
+                details: `${userRole} confirmed availability (Attendance Mode: ${mode})`
             });
 
             // Notify Admin
@@ -1090,17 +1187,15 @@ exports.submitReviewAvailability = async (req, res) => {
 
             return res.status(200).json({ message: "Availability confirmed successfully." });
         } else {
-            // REQUEST_CHANGE
-            if (!reason) {
-                return res.status(400).json({ error: "Reason for unavailability is required." });
-            }
-
+            // SUGGEST_ALTERNATIVE / REQUEST_CHANGE (reason/comment is OPTIONAL!)
             const origDate = schedule.date;
             const origTimeStr = schedule.start_time 
                 ? VivaValidationService.minutesToTimeString(schedule.start_time.getUTCHours() * 60 + schedule.start_time.getUTCMinutes())
                 : "";
 
-            const changeReq = await prisma.viva_change_requests.create({
+            const targetProposedTime = proposed_start_time || proposed_time || null;
+
+            await prisma.viva_change_requests.create({
                 data: {
                     viva_schedule_id: scheduleId,
                     requested_by: userId,
@@ -1108,61 +1203,352 @@ exports.submitReviewAvailability = async (req, res) => {
                     original_date: origDate,
                     original_time: origTimeStr,
                     proposed_date: proposed_date ? new Date(proposed_date) : null,
-                    proposed_time: proposed_time || null,
+                    proposed_time: targetProposedTime,
                     attendance_mode: mode,
-                    reason: reason,
+                    reason: comment || reason || "Suggested alternative slot",
                     status: "PENDING"
                 }
             });
 
-            // Update confirmation state
+            // Update confirmation state to ALTERNATIVE_SUGGESTED
             await prisma.viva_confirmations.upsert({
                 where: {
                     id: schedule.viva_confirmations.find(c => c.role === userRole)?.id || 0
                 },
                 update: {
-                    status: "CHANGE_REQUESTED",
+                    status: "ALTERNATIVE_SUGGESTED",
                     attendance_mode: mode,
-                    comment: reason
+                    comment: comment || reason || "Suggested alternative time",
+                    confirmed_at: new Date()
                 },
                 create: {
                     viva_schedule_id: scheduleId,
                     role: userRole,
-                    status: "CHANGE_REQUESTED",
+                    status: "ALTERNATIVE_SUGGESTED",
                     attendance_mode: mode,
-                    comment: reason
+                    comment: comment || reason || "Suggested alternative time",
+                    confirmed_at: new Date()
                 }
             });
 
             await prisma.viva_schedules.update({
                 where: { id: scheduleId },
-                data: { status: "CHANGE_REQUESTED" }
+                data: { status: "AVAILABILITY_SUBMITTED" }
             });
 
             await VivaAuditService.log({
                 viva_period_id: schedule.viva_period_id,
                 viva_schedule_id: scheduleId,
-                action: `${userRole}_CHANGE_REQUESTED`,
+                action: `${userRole}_SUGGESTED_ALTERNATIVE`,
                 performed_by: email,
                 role: userRole,
-                details: `${userRole} requested schedule change. Reason: ${reason}`
+                details: `${userRole} suggested alternative date/time: ${proposed_date} ${targetProposedTime}`
             });
 
             // Notify Admin
             await NotificationService.notifyRole(
                 "admin",
-                "Viva Change Request Submitted",
-                `${userRole} submitted a change request for student ${schedule.students?.student_name} (${schedule.students?.cb_no}).`
+                "Viva Alternative Suggested",
+                `${userRole} for student ${schedule.students?.student_name} suggested an alternative date/time.`
             );
-
-            return res.status(201).json({
-                message: "Change request submitted successfully to Admin.",
-                changeRequest: changeReq
-            });
+            return res.status(200).json({ message: "Alternative date/time submitted to Administrator for review." });
         }
     } catch (error) {
-        console.error("Submit Review Availability Error:", error);
-        res.status(500).json({ error: "Failed to submit availability review", details: error.message });
+        console.error("Submit Availability Error:", error);
+        res.status(500).json({ error: "Failed to submit availability", details: error.message });
+    }
+};
+
+// ======================================================
+// 16B. ADMIN - VIVA AVAILABILITY REVIEW MATRIX
+// ======================================================
+exports.getAvailabilityReview = async (req, res) => {
+    const periodId = parseInt(req.params.periodId);
+    if (isNaN(periodId)) return res.status(400).json({ error: "Invalid Viva Period ID" });
+
+    try {
+        const schedules = await prisma.viva_schedules.findMany({
+            where: { viva_period_id: periodId },
+            include: {
+                students: { include: { batches: true } },
+                supervisors: true,
+                assessors: true,
+                physical_rep_user: { select: { id: true, name: true, email: true } },
+                viva_confirmations: true,
+                viva_change_requests: true
+            },
+            orderBy: [{ date: "asc" }, { start_time: "asc" }]
+        });
+
+        const reviewList = [];
+
+        for (const sch of schedules) {
+            const supConf = sch.viva_confirmations.find(c => c.role === "SUPERVISOR");
+            const assConf = sch.viva_confirmations.find(c => c.role === "ASSESSOR");
+            const supChange = sch.viva_change_requests.find(c => c.role === "SUPERVISOR" && c.status === "PENDING");
+            const assChange = sch.viva_change_requests.find(c => c.role === "ASSESSOR" && c.status === "PENDING");
+
+            let supervisorStatus = "PENDING";
+            if (supChange) supervisorStatus = "ALTERNATIVE_SUGGESTED";
+            else if (supConf?.status === "CONFIRMED") supervisorStatus = "CONFIRMED";
+
+            let assessorStatus = "PENDING";
+            if (assChange) assessorStatus = "ALTERNATIVE_SUGGESTED";
+            else if (assConf?.status === "CONFIRMED") assessorStatus = "CONFIRMED";
+
+            const supMode = sch.supervisor_attendance_mode || "PHYSICAL";
+            const assMode = sch.assessor_attendance_mode || "PHYSICAL";
+
+            let caseCode = "CASE_1";
+            let physicalRepRequired = false;
+
+            if (supMode === "ONLINE" && assMode === "ONLINE") {
+                caseCode = "CASE_4";
+                physicalRepRequired = true;
+            } else if (supMode === "PHYSICAL" && assMode === "ONLINE") {
+                caseCode = "CASE_2";
+            } else if (supMode === "ONLINE" && assMode === "PHYSICAL") {
+                caseCode = "CASE_3";
+            }
+
+            const conflicts = [];
+            if (sch.date && sch.start_time && sch.end_time) {
+                const overlaps = schedules.filter(other => 
+                    other.id !== sch.id &&
+                    other.date &&
+                    other.date.toISOString().split("T")[0] === sch.date.toISOString().split("T")[0] &&
+                    other.start_time < sch.end_time &&
+                    other.end_time > sch.start_time
+                );
+
+                for (const o of overlaps) {
+                    if (sch.supervisor_id && o.supervisor_id === sch.supervisor_id) {
+                        conflicts.push(`Supervisor '${sch.supervisors?.name}' assigned to overlapping slot for ${o.students?.student_name}`);
+                    }
+                    if (sch.assessor_id && o.assessor_id === sch.assessor_id) {
+                        conflicts.push(`Assessor '${sch.assessors?.name}' assigned to overlapping slot for ${o.students?.student_name}`);
+                    }
+                    if (sch.physical_rep_user_id && (o.physical_rep_user_id === sch.physical_rep_user_id || o.supervisor_id === sch.physical_rep_user_id || o.assessor_id === sch.physical_rep_user_id)) {
+                        conflicts.push(`Physical Representative '${sch.physical_rep_name}' has an overlapping session.`);
+                    }
+                }
+            }
+
+            let reportLink = sch.report_link;
+            if (!reportLink && sch.student_id) {
+                const prop = await prisma.proposal_requests.findFirst({
+                    where: { student_id: sch.student_id, status: "Approved" }
+                });
+                if (prop?.proposal_pdf) reportLink = prop.proposal_pdf;
+            }
+
+            reviewList.push({
+                id: sch.id,
+                student: {
+                    id: sch.students?.id,
+                    name: sch.students?.student_name || "N/A",
+                    cb_no: sch.students?.cb_no || "N/A",
+                    batch: sch.batch_code || sch.students?.batches?.batch_code || "N/A"
+                },
+                supervisor: {
+                    id: sch.supervisors?.id,
+                    name: sch.supervisors?.name || "Unassigned",
+                    email: sch.supervisors?.email,
+                    status: supervisorStatus,
+                    attendance_mode: supMode
+                },
+                assessor: {
+                    id: sch.assessors?.id,
+                    name: sch.assessors?.name || "Unassigned",
+                    email: sch.assessors?.email,
+                    status: assessorStatus,
+                    attendance_mode: assMode
+                },
+                proposed_date: sch.date ? sch.date.toISOString().split("T")[0] : null,
+                proposed_start_time: sch.start_time ? new Date(sch.start_time).toISOString().substring(11, 16) : null,
+                proposed_end_time: sch.end_time ? new Date(sch.end_time).toISOString().substring(11, 16) : null,
+                venue: sch.venue || "TBA",
+                teams_join_url: sch.teams_join_url,
+                report_link: reportLink,
+                status: sch.status,
+                caseCode,
+                physicalRepRequired,
+                physicalRep: sch.physical_rep_user ? {
+                    id: sch.physical_rep_user.id,
+                    name: sch.physical_rep_user.name || sch.physical_rep_name,
+                    email: sch.physical_rep_user.email || sch.physical_rep_email
+                } : (sch.physical_rep_name ? { name: sch.physical_rep_name, email: sch.physical_rep_email } : null),
+                alternativeSuggestion: (supChange || assChange) ? {
+                    role: supChange ? "SUPERVISOR" : "ASSESSOR",
+                    proposed_date: (supChange || assChange).proposed_date,
+                    proposed_time: (supChange || assChange).proposed_time,
+                    comment: (supChange || assChange).reason
+                } : null,
+                conflicts
+            });
+        }
+
+        res.status(200).json(reviewList);
+    } catch (error) {
+        console.error("Get Availability Review Error:", error);
+        res.status(500).json({ error: "Failed to fetch availability review", details: error.message });
+    }
+};
+
+// ======================================================
+// 16C. ADMIN - RESOLVE INDIVIDUAL VIVA & ASSIGN PHYSICAL REP
+// ======================================================
+exports.resolveVivaSchedule = async (req, res) => {
+    const scheduleId = parseInt(req.params.scheduleId);
+    if (isNaN(scheduleId)) return res.status(400).json({ error: "Invalid Schedule ID" });
+
+    const {
+        date,
+        start_time,
+        end_time,
+        supervisor_attendance_mode,
+        assessor_attendance_mode,
+        physical_rep_user_id,
+        venue,
+        report_link,
+        teams_join_url
+    } = req.body;
+
+    try {
+        const schedule = await prisma.viva_schedules.findUnique({
+            where: { id: scheduleId },
+            include: { students: true, supervisors: true, assessors: true, viva_periods: true }
+        });
+        if (!schedule) return res.status(404).json({ error: "Viva Schedule not found" });
+
+        const supMode = (supervisor_attendance_mode || schedule.supervisor_attendance_mode || "PHYSICAL").toUpperCase();
+        const assMode = (assessor_attendance_mode || schedule.assessor_attendance_mode || "PHYSICAL").toUpperCase();
+
+        let physicalRepUser = null;
+
+        // Case 4 validation: Both Online REQUIRES a Physical Representative
+        if (supMode === "ONLINE" && assMode === "ONLINE") {
+            const repIdVal = physical_rep_user_id || schedule.physical_rep_user_id;
+            if (!repIdVal) {
+                return res.status(400).json({
+                    error: "Case 4 Attendance Conflict: When both Supervisor and Assessor are Online, Admin MUST assign a Physical Representative."
+                });
+            }
+
+            const repId = parseInt(repIdVal);
+            physicalRepUser = await prisma.users.findUnique({ where: { id: repId } });
+
+            if (!physicalRepUser) {
+                return res.status(400).json({ error: "Selected Physical Representative user was not found." });
+            }
+
+            if (physicalRepUser.role === "student") {
+                return res.status(400).json({ error: "Students cannot be assigned as Physical Representatives." });
+            }
+
+            // Check overlap for Physical Representative
+            const targetDateStr = date || (schedule.date ? schedule.date.toISOString().split("T")[0] : null);
+            if (targetDateStr && start_time && end_time) {
+                const startMins = VivaValidationService.timeToMinutes(start_time);
+                const endMins = VivaValidationService.timeToMinutes(end_time);
+
+                const overlaps = await prisma.viva_schedules.findMany({
+                    where: {
+                        id: { not: scheduleId },
+                        date: new Date(targetDateStr),
+                        OR: [
+                            { physical_rep_user_id: repId },
+                            { supervisor_id: repId },
+                            { assessor_id: repId }
+                        ]
+                    }
+                });
+
+                for (const o of overlaps) {
+                    if (o.start_time && o.end_time) {
+                        const oStart = o.start_time.getUTCHours() * 60 + o.start_time.getUTCMinutes();
+                        const oEnd = o.end_time.getUTCHours() * 60 + o.end_time.getUTCMinutes();
+                        if (startMins < oEnd && endMins > oStart) {
+                            return res.status(400).json({
+                                error: `Scheduling Conflict: Physical Representative '${physicalRepUser.name}' has another overlapping session.`
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        const updatedData = {
+            supervisor_attendance_mode: supMode,
+            assessor_attendance_mode: assMode,
+            status: "RESOLVED",
+            updated_at: new Date()
+        };
+
+        if (date) updatedData.date = new Date(date);
+        if (start_time) {
+            const dateStr = date || (schedule.date ? schedule.date.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
+            const startMins = VivaValidationService.timeToMinutes(start_time);
+            updatedData.start_time = new Date(`${dateStr}T${VivaValidationService.minutesToTimeString(startMins)}:00Z`);
+            
+            if (end_time) {
+                const endMins = VivaValidationService.timeToMinutes(end_time);
+                updatedData.end_time = new Date(`${dateStr}T${VivaValidationService.minutesToTimeString(endMins)}:00Z`);
+            } else if (schedule.duration_mins) {
+                updatedData.end_time = new Date(`${dateStr}T${VivaValidationService.minutesToTimeString(startMins + schedule.duration_mins)}:00Z`);
+            }
+        }
+        if (venue !== undefined) updatedData.venue = venue;
+        if (report_link !== undefined) updatedData.report_link = report_link;
+        if (teams_join_url !== undefined) updatedData.teams_join_url = teams_join_url;
+
+        if (physicalRepUser) {
+            updatedData.physical_rep_user_id = physicalRepUser.id;
+            updatedData.physical_rep_name = physicalRepUser.name || physicalRepUser.email;
+            updatedData.physical_rep_email = physicalRepUser.email;
+        } else if (supMode !== "ONLINE" || assMode !== "ONLINE") {
+            updatedData.physical_rep_user_id = null;
+            updatedData.physical_rep_name = null;
+            updatedData.physical_rep_email = null;
+        }
+
+        const updatedSchedule = await prisma.viva_schedules.update({
+            where: { id: scheduleId },
+            data: updatedData,
+            include: { students: true, supervisors: true, assessors: true, physical_rep_user: true }
+        });
+
+        await VivaAuditService.log({
+            viva_period_id: schedule.viva_period_id,
+            viva_schedule_id: scheduleId,
+            action: "ADMIN_RESOLVED_SCHEDULE",
+            performed_by: req.headers["x-user-email"] || "Admin",
+            role: "ADMIN",
+            details: `Admin resolved schedule slot. Supervisor: ${supMode}, Assessor: ${assMode}, Rep: ${updatedSchedule.physical_rep_name || 'None'}`
+        });
+
+        res.status(200).json({ message: "Viva schedule resolved successfully.", schedule: updatedSchedule });
+    } catch (error) {
+        console.error("Resolve Viva Schedule Error:", error);
+        res.status(500).json({ error: "Failed to resolve Viva schedule", details: error.message });
+    }
+};
+
+// ======================================================
+// 16D. ADMIN - ELIGIBLE PHYSICAL REPRESENTATIVES
+// ======================================================
+exports.getEligiblePhysicalReps = async (req, res) => {
+    try {
+        const staffUsers = await prisma.users.findMany({
+            where: {
+                role: { in: ["admin", "supervisor", "assessor", "pm"] },
+                is_active: true
+            },
+            select: { id: true, name: true, email: true, role: true }
+        });
+        res.status(200).json(staffUsers);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch eligible physical representatives", details: error.message });
     }
 };
 
@@ -1591,7 +1977,7 @@ exports.finalizeVivaPeriod = async (req, res) => {
                 await NotificationService.notifyStudent(
                     sch.student_id,
                     "Viva Schedule Finalized",
-                    `Your FYP Viva examination schedule has been finalized for ${sch.date ? new Date(sch.date).toLocaleDateString() : 'scheduled date'}. Venue: ${sch.venue || sch.attendance_mode}.`
+                    `Your Viva Schedule has been finalized for ${sch.date ? new Date(sch.date).toLocaleDateString() : 'scheduled date'}. Venue: ${sch.venue || sch.attendance_mode}.`
                 );
             }
             if (sch.supervisor_id) {
@@ -1786,7 +2172,7 @@ exports.getVivaNotes = async (req, res) => {
 
     // Students are strictly blocked from seeing internal Viva notes
     if (roleHeader === "student") {
-        return res.status(403).json({ error: "Access denied. Private preparation notes are restricted to examiners." });
+        return res.status(403).json({ error: "Access denied. Private preparation notes are restricted to Viva panel members." });
     }
 
     try {
@@ -1884,6 +2270,27 @@ exports.saveVivaNote = async (req, res) => {
     }
 };
 
+exports.deleteVivaNote = async (req, res) => {
+    const scheduleId = parseInt(req.params.scheduleId);
+    const noteId = parseInt(req.params.noteId);
+    const email = req.headers["x-user-email"];
+
+    if (isNaN(scheduleId) || isNaN(noteId)) return res.status(400).json({ error: "Invalid Schedule or Note ID" });
+
+    try {
+        const note = await prisma.viva_notes.findUnique({ where: { id: noteId } });
+        if (!note || note.viva_schedule_id !== scheduleId) {
+            return res.status(404).json({ error: "Viva note not found." });
+        }
+
+        await prisma.viva_notes.delete({ where: { id: noteId } });
+        res.status(200).json({ message: "Viva note deleted successfully." });
+    } catch (error) {
+        console.error("Delete Viva Note Error:", error);
+        res.status(500).json({ error: "Failed to delete Viva note", details: error.message });
+    }
+};
+
 exports.updateReportLink = async (req, res) => {
     const scheduleId = parseInt(req.params.scheduleId);
     const { report_link } = req.body;
@@ -1902,16 +2309,25 @@ exports.updateReportLink = async (req, res) => {
 };
 
 // ======================================================
-// 23. STUDENT - MY VIVA SCHEDULE
+// 23. STUDENT - MY VIVA SCHEDULE (PUBLISHED ONLY)
 // ======================================================
 exports.getMyStudentViva = async (req, res) => {
     const email = req.headers["x-user-email"];
     if (!email) return res.status(400).json({ error: "Student email header required." });
 
     try {
+        const user = await prisma.users.findFirst({
+            where: { email: { equals: email.trim(), mode: "insensitive" } }
+        });
+
         const cbNo = email.split("@")[0].toUpperCase();
         const student = await prisma.students.findFirst({
-            where: { cb_no: { equals: cbNo, mode: "insensitive" } },
+            where: {
+                OR: [
+                    { cb_no: { equals: cbNo, mode: "insensitive" } },
+                    ...(user ? [{ student_name: { equals: user.name || "", mode: "insensitive" } }] : [])
+                ]
+            },
             include: { batches: true }
         });
 
@@ -1919,22 +2335,37 @@ exports.getMyStudentViva = async (req, res) => {
             return res.status(200).json({ schedule: null, message: "No student profile found for this account." });
         }
 
-        // Find finalized viva schedule for this student
+        // Students can ONLY see schedules when status is PUBLISHED (or FINALIZED)
         const schedule = await prisma.viva_schedules.findFirst({
             where: {
                 student_id: student.id,
-                status: "FINALIZED"
+                status: { in: ["PUBLISHED", "FINALIZED"] }
             },
             include: {
                 viva_periods: true,
                 supervisors: { select: { id: true, name: true, email: true, title: true } },
-                assessors: { select: { id: true, name: true, email: true, title: true } }
+                assessors: { select: { id: true, name: true, email: true, title: true } },
+                physical_rep_user: { select: { id: true, name: true, email: true } }
             }
         });
 
+        if (!schedule) {
+            return res.status(200).json({
+                student: { id: student.id, name: student.student_name, cb_no: student.cb_no, batch: student.batches?.batch_code },
+                schedule: null,
+                message: "Your Viva Schedule has not been published yet."
+            });
+        }
+
         res.status(200).json({
             student: { id: student.id, name: student.student_name, cb_no: student.cb_no, batch: student.batches?.batch_code },
-            schedule: schedule || null
+            schedule: {
+                ...schedule,
+                student_attendance_mode: "PHYSICAL", // Student is ALWAYS Physical
+                supervisor_attendance_mode: schedule.supervisor_attendance_mode || "PHYSICAL",
+                assessor_attendance_mode: schedule.assessor_attendance_mode || "PHYSICAL",
+                physical_representative: schedule.physical_rep_user || (schedule.physical_rep_name ? { name: schedule.physical_rep_name, email: schedule.physical_rep_email } : null)
+            }
         });
     } catch (error) {
         console.error("Get Student Viva Error:", error);
@@ -1949,16 +2380,17 @@ exports.getPMVivaOverview = async (req, res) => {
     const periodId = req.params.periodId ? parseInt(req.params.periodId) : null;
 
     try {
-        const where = periodId ? { id: periodId } : { status: "FINALIZED" };
+        const where = periodId ? { id: periodId } : { status: { in: ["FINALIZED", "PUBLISHED"] } };
         const periods = await prisma.viva_periods.findMany({
             where,
             include: {
                 viva_schedules: {
-                    where: { status: "FINALIZED" },
+                    where: { status: { in: ["FINALIZED", "PUBLISHED"] } },
                     include: {
                         students: { include: { batches: true } },
                         supervisors: true,
-                        assessors: true
+                        assessors: true,
+                        physical_rep_user: true
                     }
                 }
             },
@@ -1987,8 +2419,120 @@ exports.getPeriodAuditLogs = async (req, res) => {
     }
 };
 
-// Legacy backward-compatibility endpoints
-exports.publishVivaPeriod = exports.updateVivaPeriodStatus;
+// ======================================================
+// 26. PUBLISH VIVA PERIOD (SEND FINAL SCHEDULE)
+// ======================================================
+exports.publishVivaPeriod = async (req, res) => {
+    const periodId = parseInt(req.params.id || req.params.periodId);
+    if (isNaN(periodId)) return res.status(400).json({ error: "Invalid Viva Period ID" });
+
+    try {
+        const period = await prisma.viva_periods.findUnique({
+            where: { id: periodId },
+            include: {
+                viva_schedules: {
+                    include: {
+                        students: true,
+                        supervisors: true,
+                        assessors: true,
+                        physical_rep_user: true
+                    }
+                }
+            }
+        });
+        if (!period) return res.status(404).json({ error: "Viva Period not found" });
+
+        // Update period and all schedules status to PUBLISHED
+        await prisma.$transaction([
+            prisma.viva_periods.update({
+                where: { id: periodId },
+                data: { status: "PUBLISHED" }
+            }),
+            prisma.viva_schedules.updateMany({
+                where: { viva_period_id: periodId },
+                data: { status: "PUBLISHED" }
+            })
+        ]);
+
+        // Trigger Microsoft Graph calendar sync
+        let syncSuccessCount = 0;
+        let syncFailedCount = 0;
+
+        for (const sch of period.viva_schedules) {
+            try {
+                const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, period);
+                if (syncRes.success) {
+                    syncSuccessCount++;
+                    await prisma.viva_schedules.update({
+                        where: { id: sch.id },
+                        data: {
+                            outlook_event_id: syncRes.eventId,
+                            outlook_sync_status: "SYNCED"
+                        }
+                    });
+                } else {
+                    syncFailedCount++;
+                    await prisma.viva_schedules.update({
+                        where: { id: sch.id },
+                        data: {
+                            outlook_sync_status: MicrosoftGraphService.isConfigured() ? "FAILED" : "NOT_CONFIGURED",
+                            outlook_sync_error: syncRes.error
+                        }
+                    });
+                }
+            } catch (err) {
+                syncFailedCount++;
+            }
+
+            // Dispatch Notifications
+            if (sch.student_id) {
+                await NotificationService.notifyStudent(
+                    sch.student_id,
+                    "Final Viva Schedule Published",
+                    `Your Viva Schedule has been published for ${sch.date ? new Date(sch.date).toLocaleDateString() : 'scheduled date'}. Venue: ${sch.venue || 'Physical'}.`
+                );
+            }
+            if (sch.supervisor_id) {
+                await NotificationService.notifySupervisor(
+                    sch.supervisor_id,
+                    "Final Viva Schedule Published",
+                    `Final Viva Schedule published for student ${sch.students?.student_name} (${sch.students?.cb_no}).`
+                );
+            }
+            if (sch.assessor_id) {
+                await NotificationService.notifyAssessor(
+                    sch.assessor_id,
+                    "Final Viva Schedule Published",
+                    `Final Viva Schedule published for student ${sch.students?.student_name} (${sch.students?.cb_no}).`
+                );
+            }
+        }
+
+        // Notify PM
+        await NotificationService.notifyRole(
+            "pm",
+            "Final Viva Schedule Published",
+            `Final Viva Schedule for period '${period.name || period.type}' has been published.`
+        );
+
+        await VivaAuditService.log({
+            viva_period_id: periodId,
+            action: "PERIOD_PUBLISHED",
+            performed_by: req.headers["x-user-email"] || "Admin",
+            role: "ADMIN",
+            details: `Published final Viva Schedule for period '${period.name}'. Total slots: ${period.viva_schedules.length}.`
+        });
+
+        res.status(200).json({
+            message: "Final Viva Schedule published successfully. Notifications sent to Students, Supervisors, Assessors, and PM.",
+            syncSuccessCount,
+            syncFailedCount
+        });
+    } catch (error) {
+        console.error("Publish Viva Period Error:", error);
+        res.status(500).json({ error: "Failed to publish final Viva Schedule", details: error.message });
+    }
+};
 exports.triggerAutoScheduling = async (req, res) => {
     const periodId = parseInt(req.params.periodId);
     try {

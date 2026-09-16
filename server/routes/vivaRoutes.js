@@ -23,7 +23,7 @@ router.delete("/periods/:id", verifyRole("admin"), vivaController.deleteVivaPeri
 router.get("/dashboard", verifyRole(["admin", "pm"]), vivaController.getDashboardStats);
 
 // ==========================================
-// 2. ADMIN - EXCEL IMPORT & MANUAL SCHEDULE CREATION
+// 2. ADMIN - EXCEL IMPORT & DRAFT DISPATCH
 // ==========================================
 router.post(
     "/periods/:periodId/validate-excel",
@@ -32,12 +32,16 @@ router.post(
     vivaController.validateExcelSchedule
 );
 router.post("/periods/:periodId/import-excel", verifyRole("admin"), vivaController.importExcelSchedule);
+router.post("/periods/:periodId/send-draft", verifyRole("admin"), vivaController.sendDraftSchedule);
 router.post("/periods/:periodId/manual-schedule", verifyRole("admin"), vivaController.createManualSchedule);
 
 // ==========================================
-// 3. ADMIN & PM - SCHEDULE MANAGEMENT
+// 3. ADMIN & PM - SCHEDULE MANAGEMENT & AVAILABILITY REVIEW
 // ==========================================
 router.get("/periods/:periodId/schedules", verifyRole(["admin", "pm"]), vivaController.getSchedules);
+router.get("/periods/:periodId/availability-review", verifyRole("admin"), vivaController.getAvailabilityReview);
+router.put("/schedules/:scheduleId/resolve", verifyRole("admin"), vivaController.resolveVivaSchedule);
+router.get("/eligible-physical-reps", verifyRole("admin"), vivaController.getEligiblePhysicalReps);
 router.put("/schedules/:scheduleId", verifyRole("admin"), vivaController.updateSchedule);
 router.delete("/schedules/:scheduleId", verifyRole("admin"), vivaController.deleteSchedule);
 router.put("/schedules/:scheduleId/report-link", verifyRole("admin"), vivaController.updateReportLink);
@@ -54,6 +58,7 @@ router.put("/change-requests/:requestId/resolve", verifyRole("admin"), vivaContr
 // ==========================================
 router.get("/periods/:periodId/finalization-checklist", verifyRole("admin"), vivaController.getFinalizationChecklist);
 router.post("/periods/:periodId/finalize", verifyRole("admin"), vivaController.finalizeVivaPeriod);
+router.post("/periods/:periodId/publish", verifyRole("admin"), vivaController.publishVivaPeriod);
 router.post("/schedules/:scheduleId/retry-sync", verifyRole("admin"), vivaController.retryOutlookSync);
 router.post("/periods/:periodId/retry-sync", verifyRole("admin"), vivaController.retryOutlookSync);
 
@@ -77,6 +82,7 @@ router.get("/my-assigned-schedules", vivaController.getMyAssignedSchedules);
 router.post("/schedules/:scheduleId/review-availability", vivaController.submitReviewAvailability);
 router.get("/schedules/:scheduleId/notes", vivaController.getVivaNotes);
 router.post("/schedules/:scheduleId/notes", vivaController.saveVivaNote);
+router.delete("/schedules/:scheduleId/notes/:noteId", vivaController.deleteVivaNote);
 
 // ==========================================
 // 9. STUDENT - MY VIVA VIEW

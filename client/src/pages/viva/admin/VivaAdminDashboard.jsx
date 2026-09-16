@@ -86,6 +86,7 @@ export default function VivaAdminDashboard() {
   });
 
   // Manual Schedule Form Data
+  const [manualBatchFilter, setManualBatchFilter] = useState("ALL");
   const [manualForm, setManualForm] = useState({
     student_id: "",
     supervisor_id: "",
@@ -94,7 +95,7 @@ export default function VivaAdminDashboard() {
     proposed_time: "09:00",
     duration_mins: "30",
     attendance_mode: "PHYSICAL",
-    venue: "TBA",
+    venue: "Lab 4A - Physical",
     report_link: "",
     teams_link: ""
   });
@@ -264,6 +265,33 @@ export default function VivaAdminDashboard() {
     }
   };
 
+  // Send Schedule Draft Handler
+  const handleSendDraftSchedule = async () => {
+    if (!selectedPeriodId) return;
+    if (schedules.length === 0) {
+      alert("Cannot send draft: Please upload an Excel schedule or add viva slots first.");
+      return;
+    }
+    if (!confirm(`Are you ready to send the draft schedule containing ${schedules.length} slot(s) to assigned Supervisors and Assessors?`)) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/viva/periods/${selectedPeriodId}/send-draft`, {
+        method: "POST",
+        headers: adminHeaders
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to dispatch draft schedule.");
+      setMessage({ type: "success", text: data.message || "Draft schedule successfully dispatched to staff." });
+      const updatedPeriods = await fetch("/api/viva/periods", { headers: adminHeaders }).then(r => r.json());
+      setPeriods(updatedPeriods);
+      loadPeriodDetails(selectedPeriodId);
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Manual Schedule Creation Handler
   const handleCreateManualSchedule = async (e) => {
     e.preventDefault();
@@ -273,10 +301,22 @@ export default function VivaAdminDashboard() {
     }
     setActionLoading(true);
     try {
+      const selectedStudent = students.find(s => String(s.dbId || s.studentId || s.id || s.cb_no) === String(manualForm.student_id));
+      const payload = {
+        ...manualForm,
+        student_id: selectedStudent?.dbId || selectedStudent?.studentId || manualForm.student_id,
+        cb_no: selectedStudent?.cb_no || selectedStudent?.studentNo || manualForm.student_id,
+        student_name: selectedStudent?.student_name || selectedStudent?.name,
+        supervisor_id: parseInt(manualForm.supervisor_id),
+        assessor_id: parseInt(manualForm.assessor_id),
+        duration_mins: parseInt(manualForm.duration_mins || 30),
+        venue: manualForm.venue || "Lab 4A - Physical"
+      };
+
       const res = await fetch(`/api/viva/periods/${selectedPeriodId}/manual-schedule`, {
         method: "POST",
         headers: adminHeaders,
-        body: JSON.stringify(manualForm)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok) {
@@ -298,7 +338,7 @@ export default function VivaAdminDashboard() {
         proposed_time: "09:00",
         duration_mins: "30",
         attendance_mode: "PHYSICAL",
-        venue: "TBA",
+        venue: "Lab 4A - Physical",
         report_link: "",
         teams_link: ""
       });
@@ -538,14 +578,15 @@ export default function VivaAdminDashboard() {
   // Download Sample Excel Template
   const handleDownloadSampleTemplate = () => {
     const csvContent = "data:text/csv;charset=utf-8," +
-      "Batch Code,Name,CB No,Supervisor,Assessor,Proposed Date,Time,Attendance Mode,Venue,Report Link\n" +
-      "SE24,Alice Student,CB001,Dr. Kavin,Dr. Xavier Assessor,2026-09-15,09:00,PHYSICAL,L4CR2,https://apiit.sharepoint.com/reports/CB001.pdf\n" +
-      "SE24,Bob Student,CB002,Dr. Nirmala,Dr. Xavier Assessor,2026-09-15,09:30,ONLINE,Microsoft Teams,https://apiit.sharepoint.com/reports/CB002.pdf\n" +
-      "CS24,Charlie Student,CB003,Dr. Kavin,Dr. Yasmin Assessor,2026-09-15,10:00,PHYSICAL,TBA,\n";
+      "Batch Code,Student Name,CB No,Supervisor,Assessor,Proposed Date,Time,Attendance Mode,Venue,Report Link\n" +
+      "COM2421,Kavin Student 1,CB001001,Testk1@apiit.lk,assessor.smith@apiit.lk,2026-09-20,09:00,PHYSICAL,Lab 4A - Physical,/uploads/proposals/CB001001_proposal_report.pdf\n" +
+      "SENG2421,Kavin Student 2,CB001002,assessor.smith@apiit.lk,Testk1@apiit.lk,2026-09-20,09:35,PHYSICAL,Lab 4A - Physical,/uploads/proposals/CB001002_proposal_report.pdf\n" +
+      "CYS2421,Kavin Student 3,CB001003,Testk1@apiit.lk,assessor.smith@apiit.lk,2026-09-20,10:10,PHYSICAL,Lab 4B - Physical,/uploads/proposals/CB001003_proposal_report.pdf\n" +
+      "COM2421,Kavin Student 4,CB001004,assessor.smith@apiit.lk,Testk1@apiit.lk,2026-09-20,10:45,PHYSICAL,Lab 4B - Physical,/uploads/proposals/CB001004_proposal_report.pdf\n";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "FYP_Viva_Schedule_Template.csv");
+    link.setAttribute("download", "Proposal_Viva_Schedule_Template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -555,9 +596,8 @@ export default function VivaAdminDashboard() {
     <div className="min-h-screen bg-slate-50 text-slate-800 p-6 md:p-8">
       {/* Toast Notification */}
       {message && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all ${
-          message.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all ${message.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
+          }`}>
           {message.type === "success" ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />}
           <span>{message.text}</span>
           <button onClick={() => setMessage(null)} className="ml-auto text-slate-400 hover:text-slate-600">
@@ -573,7 +613,7 @@ export default function VivaAdminDashboard() {
             <Sparkles className="w-4 h-4" />
             <span>Academic Viva Management</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">Viva Examination Command Center</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">Viva Management Command Center</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Admin controls schedule generation, supervises confirmations, resolves exceptions, and synchronizes with Microsoft 365.
           </p>
@@ -636,43 +676,21 @@ export default function VivaAdminDashboard() {
 
           {/* Period Status Progression Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {selectedPeriod.status === "DRAFT" && (
+            {(selectedPeriod.status === "DRAFT" || selectedPeriod.status === "SCHEDULING") && (
               <button
-                onClick={() => handleTransitionPeriodStatus("SCHEDULING")}
+                onClick={handleSendDraftSchedule}
                 disabled={actionLoading}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm"
               >
-                <span>Open for Scheduling</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-4 h-4" />
+                <span>Send Schedule Draft to Staff</span>
               </button>
             )}
 
-            {selectedPeriod.status === "SCHEDULING" && (
-              <button
-                onClick={() => handleTransitionPeriodStatus("AWAITING_CONFIRMATIONS")}
-                disabled={actionLoading}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-              >
-                <span>Notify Participants & Await Confirmations</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {selectedPeriod.status === "AWAITING_CONFIRMATIONS" && (
-              <button
-                onClick={() => handleTransitionPeriodStatus("READY_TO_FINALIZE")}
-                disabled={actionLoading}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-              >
-                <span>Mark Ready to Finalize</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {selectedPeriod.status === "READY_TO_FINALIZE" && (
+            {(selectedPeriod.status === "SENT_FOR_AVAILABILITY" || selectedPeriod.status === "AWAITING_CONFIRMATIONS" || selectedPeriod.status === "READY_TO_FINALIZE") && (
               <button
                 onClick={() => setShowFinalizeModal(true)}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Review & Finalize Schedule</span>
@@ -680,13 +698,13 @@ export default function VivaAdminDashboard() {
             )}
 
             {selectedPeriod.status === "FINALIZED" && (
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm">
                 <Check className="w-4 h-4 text-emerald-600" />
-                <span>Published & Synced</span>
+                <span>Published & Synced with Outlook</span>
               </span>
             )}
 
-            {selectedPeriod.status !== "CANCELLED" && selectedPeriod.status !== "COMPLETED" && (
+            {selectedPeriod.status !== "CANCELLED" && selectedPeriod.status !== "FINALIZED" && (
               <button
                 onClick={() => {
                   if (confirm("Are you sure you want to cancel this Viva Period?")) {
@@ -770,9 +788,8 @@ export default function VivaAdminDashboard() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "overview" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "overview" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             <Sparkles className="w-4 h-4" />
             <span>Overview</span>
@@ -780,9 +797,8 @@ export default function VivaAdminDashboard() {
 
           <button
             onClick={() => setActiveTab("schedule")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "schedule" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "schedule" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             <CalendarDays className="w-4 h-4" />
             <span>Schedule</span>
@@ -790,10 +806,18 @@ export default function VivaAdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab("import")}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "import" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Excel / Import</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("changes")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "changes" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "changes" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             <MessageSquare className="w-4 h-4" />
             <span>Change Requests</span>
@@ -806,9 +830,8 @@ export default function VivaAdminDashboard() {
 
           <button
             onClick={() => setActiveTab("finalized")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "finalized" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "finalized" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             <CheckCircle className="w-4 h-4" />
             <span>Finalized</span>
@@ -817,9 +840,8 @@ export default function VivaAdminDashboard() {
 
           <button
             onClick={() => setActiveTab("calendar")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "calendar" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "calendar" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             <CalendarIcon className="w-4 h-4" />
             <span>Calendar</span>
@@ -827,9 +849,8 @@ export default function VivaAdminDashboard() {
 
           <button
             onClick={() => setActiveTab("settings")}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "settings" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === "settings" ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             <Video className="w-4 h-4" />
             <span>Microsoft 365 Integration</span>
@@ -935,11 +956,10 @@ export default function VivaAdminDashboard() {
                 <button
                   onClick={() => setShowFinalizeModal(true)}
                   disabled={selectedPeriod?.status === "FINALIZED"}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-colors ${
-                    selectedPeriod?.status === "FINALIZED"
-                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-                  }`}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-colors ${selectedPeriod?.status === "FINALIZED"
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                    }`}
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>{selectedPeriod?.status === "FINALIZED" ? "Period Finalized" : "Review & Finalize"}</span>
@@ -1008,6 +1028,13 @@ export default function VivaAdminDashboard() {
 
             <div className="flex items-center gap-2 shrink-0">
               <button
+                onClick={() => setActiveTab("import")}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload Excel Schedule</span>
+              </button>
+              <button
                 onClick={() => setShowManualScheduleModal(true)}
                 className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-colors"
               >
@@ -1038,8 +1065,39 @@ export default function VivaAdminDashboard() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {filteredSchedules.length === 0 ? (
                     <tr>
-                      <td colSpan="10" className="p-8 text-center text-slate-400">
-                        No Viva schedule entries found matching current criteria.
+                      <td colSpan="10" className="p-12 text-center">
+                        <div className="max-w-md mx-auto space-y-3">
+                          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                            <Upload className="w-6 h-6" />
+                          </div>
+                          <h4 className="text-base font-bold text-slate-800">No Viva Schedules Created Yet</h4>
+                          <p className="text-xs text-slate-500">
+                            Upload your batch Excel schedule containing student records, supervisors, assessors, and proposed time slots, or add individual slots manually.
+                          </p>
+                          <div className="flex items-center justify-center gap-3 pt-2">
+                            <button
+                              onClick={() => setActiveTab("import")}
+                              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-colors"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload Excel Schedule</span>
+                            </button>
+                            <button
+                              onClick={handleDownloadSampleTemplate}
+                              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download Template</span>
+                            </button>
+                            <button
+                              onClick={() => setShowManualScheduleModal(true)}
+                              className="flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add Individual</span>
+                            </button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -1156,7 +1214,7 @@ export default function VivaAdminDashboard() {
         <div className="mt-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Viva Examination Timeline Calendar</h3>
+              <h3 className="text-lg font-bold text-slate-900">Viva Schedule Timeline Calendar</h3>
               <p className="text-xs text-slate-500">Visual mapping of student viva slots by date to spot overlapping times and venue allocations.</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-medium">
@@ -1206,15 +1264,13 @@ export default function VivaAdminDashboard() {
                         return (
                           <div
                             key={sch.id}
-                            className={`p-3.5 rounded-xl border bg-white shadow-sm transition-all hover:shadow-md ${
-                              mode === "ONLINE" ? "border-indigo-200" : "border-slate-200"
-                            }`}
+                            className={`p-3.5 rounded-xl border bg-white shadow-sm transition-all hover:shadow-md ${mode === "ONLINE" ? "border-indigo-200" : "border-slate-200"
+                              }`}
                           >
                             <div className="flex items-center justify-between text-xs mb-1.5">
                               <span className="font-bold text-indigo-600 font-mono">{timeStr}</span>
-                              <span className={`px-2 py-0.5 rounded font-semibold text-[10px] ${
-                                mode === "ONLINE" ? "bg-indigo-50 text-indigo-700" : "bg-blue-50 text-blue-700"
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded font-semibold text-[10px] ${mode === "ONLINE" ? "bg-indigo-50 text-indigo-700" : "bg-blue-50 text-blue-700"
+                                }`}>
                                 {mode}
                               </span>
                             </div>
@@ -1276,12 +1332,11 @@ export default function VivaAdminDashboard() {
                           <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
                             {cr.role} REQUEST
                           </span>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                            cr.status === "PENDING" ? "bg-amber-100 text-amber-800 border-amber-200" :
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cr.status === "PENDING" ? "bg-amber-100 text-amber-800 border-amber-200" :
                             cr.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
-                            cr.status === "REJECTED" ? "bg-rose-100 text-rose-800 border-rose-200" :
-                            "bg-purple-100 text-purple-800 border-purple-200"
-                          }`}>
+                              cr.status === "REJECTED" ? "bg-rose-100 text-rose-800 border-rose-200" :
+                                "bg-purple-100 text-purple-800 border-purple-200"
+                            }`}>
                             {cr.status}
                           </span>
                           <span className="text-xs text-slate-400">Submitted {new Date(cr.created_at).toLocaleDateString()}</span>
@@ -1458,9 +1513,8 @@ export default function VivaAdminDashboard() {
                   <button
                     onClick={handleConfirmExcelImport}
                     disabled={!excelPreview.canImport || actionLoading}
-                    className={`w-full mt-4 flex items-center justify-center gap-2 text-sm font-bold py-2.5 rounded-xl transition-all ${
-                      excelPreview.canImport ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    }`}
+                    className={`w-full mt-4 flex items-center justify-center gap-2 text-sm font-bold py-2.5 rounded-xl transition-all ${excelPreview.canImport ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      }`}
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Confirm & Import Schedule ({excelPreview.validRows} Slots)</span>
@@ -1470,148 +1524,7 @@ export default function VivaAdminDashboard() {
             </div>
           </div>
 
-          {/* Right Panel: Manual Single Viva Creation */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 text-indigo-600 font-bold text-base pb-3 border-b border-slate-100 mb-4">
-              <Plus className="w-5 h-5" />
-              <span>Manual Individual Schedule Creation</span>
-            </div>
 
-            <p className="text-xs text-slate-500 mb-4">
-              Create an individual Viva session directly. Validates student eligibility, supervisor, assessor, date/time, and detects conflicts.
-            </p>
-
-            <form onSubmit={handleCreateManualSchedule} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Select Student *</label>
-                <select
-                  value={manualForm.student_id}
-                  onChange={(e) => setManualForm(prev => ({ ...prev, student_id: e.target.value }))}
-                  required
-                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-800"
-                >
-                  <option value="">-- Choose Student --</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.student_name} ({s.cb_no})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Supervisor *</label>
-                  <select
-                    value={manualForm.supervisor_id}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, supervisor_id: e.target.value }))}
-                    required
-                    className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-800"
-                  >
-                    <option value="">-- Choose Supervisor --</option>
-                    {supervisors.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Assessor *</label>
-                  <select
-                    value={manualForm.assessor_id}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, assessor_id: e.target.value }))}
-                    required
-                    className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-800"
-                  >
-                    <option value="">-- Choose Assessor --</option>
-                    {assessors.map(a => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Proposed Date *</label>
-                  <input
-                    type="date"
-                    value={manualForm.proposed_date}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, proposed_date: e.target.value }))}
-                    required
-                    className="w-full p-2 border border-slate-300 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Time (HH:mm) *</label>
-                  <input
-                    type="time"
-                    value={manualForm.proposed_time}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, proposed_time: e.target.value }))}
-                    required
-                    className="w-full p-2 border border-slate-300 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Duration (Mins)</label>
-                  <input
-                    type="number"
-                    value={manualForm.duration_mins}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, duration_mins: e.target.value }))}
-                    className="w-full p-2 border border-slate-300 rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Attendance Mode</label>
-                  <select
-                    value={manualForm.attendance_mode}
-                    onChange={(e) => setManualForm(prev => ({
-                      ...prev,
-                      attendance_mode: e.target.value,
-                      venue: e.target.value === "ONLINE" ? "Microsoft Teams" : "TBA"
-                    }))}
-                    className="w-full p-2 border border-slate-300 rounded-xl bg-white"
-                  >
-                    <option value="PHYSICAL">Physical</option>
-                    <option value="ONLINE">Online</option>
-                    <option value="HYBRID">Hybrid</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Venue</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. L4CR2 or TBA"
-                    value={manualForm.venue}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, venue: e.target.value }))}
-                    className="w-full p-2 border border-slate-300 rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Student OneDrive Report Link (Optional)</label>
-                <input
-                  type="url"
-                  placeholder="https://apiitlk-my.sharepoint.com/..."
-                  value={manualForm.report_link}
-                  onChange={(e) => setManualForm(prev => ({ ...prev, report_link: e.target.value }))}
-                  className="w-full p-2 border border-slate-300 rounded-xl"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={actionLoading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl shadow transition-colors flex items-center justify-center gap-2 mt-4 text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Validate & Create Viva Slot</span>
-              </button>
-            </form>
-          </div>
         </div>
       )}
 
@@ -1784,11 +1697,10 @@ export default function VivaAdminDashboard() {
             <button
               onClick={() => setShowFinalizeModal(true)}
               disabled={!checklist.isReadyToFinalize || actionLoading || checklist.status === "FINALIZED"}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow transition-all ${
-                checklist.isReadyToFinalize && checklist.status !== "FINALIZED"
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow transition-all ${checklist.isReadyToFinalize && checklist.status !== "FINALIZED"
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                }`}
             >
               <CheckCircle2 className="w-5 h-5" />
               <span>{checklist.status === "FINALIZED" ? "Already Finalized" : "Finalize Viva Schedule"}</span>
@@ -1819,8 +1731,8 @@ export default function VivaAdminDashboard() {
                   <span className="font-bold text-sm text-slate-800">
                     {msStatus?.isConnected
                       ? (msStatus.hasOutlookCalendar
-                          ? "Microsoft Account & Outlook Calendar Connected"
-                          : "Microsoft Account Connected (No Outlook Calendar Available)")
+                        ? "Microsoft Account & Outlook Calendar Connected"
+                        : "Microsoft Account Connected (No Outlook Calendar Available)")
                       : "Not Connected"}
                   </span>
                 </div>
@@ -1855,7 +1767,7 @@ export default function VivaAdminDashboard() {
             <div className="p-4 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-800">Required Microsoft Graph Delegated Permissions:</p>
               <ul className="list-disc list-inside space-y-1 pl-2">
-                <li><code>Calendars.ReadWrite</code> - Creates and updates Viva examination slots on Outlook</li>
+                <li><code>Calendars.ReadWrite</code> - Creates and updates Viva schedule slots on Outlook</li>
                 <li><code>OnlineMeetings.ReadWrite</code> - Generates Microsoft Teams meeting links for online vivas</li>
                 <li><code>User.Read</code> - Identifies the connected administrator profile</li>
                 <li><code>offline_access</code> - Maintains persistent token refresh without repeated logins</li>
@@ -1880,7 +1792,7 @@ export default function VivaAdminDashboard() {
       {activeTab === "audit" && (
         <div className="mt-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="pb-4 border-b border-slate-100 mb-4">
-            <h3 className="text-lg font-bold text-slate-900">Viva Examination Audit Trail</h3>
+            <h3 className="text-lg font-bold text-slate-900">Viva Management Audit Trail</h3>
             <p className="text-xs text-slate-500">Immutable chronological log of all schedule changes, confirmations, and administrative overrides.</p>
           </div>
 
@@ -2186,7 +2098,7 @@ export default function VivaAdminDashboard() {
                 You are about to finalize <strong>{selectedPeriod?.name}</strong> containing <strong>{schedules.length}</strong> Viva sessions.
               </p>
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1.5 font-medium">
-                <p>✓ Outlook Calendar Events will be created/synchronized for all examiners and students.</p>
+                <p>✓ Outlook Calendar Events will be created/synchronized for all assessors, supervisors, and students.</p>
                 <p>✓ Microsoft Teams meeting links will be attached to all online Viva sessions.</p>
                 <p>✓ Finalized schedules will become visible to students, supervisors, assessors, and PM.</p>
                 <p>✓ Schedule will be locked against unauthorized modifications.</p>
@@ -2268,6 +2180,318 @@ export default function VivaAdminDashboard() {
                 Send Alternative
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD INDIVIDUAL VIVA SLOT */}
+      {showManualScheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl p-6 overflow-y-auto max-h-[92vh]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Add Individual Viva Slot</h3>
+                <p className="text-xs text-slate-500">Create a scheduled Viva session for a student in this Viva Period.</p>
+              </div>
+              <button onClick={() => setShowManualScheduleModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateManualSchedule} className="space-y-3.5 text-xs">
+              {/* Batch Filter & Student Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Filter by Batch</label>
+                  <select
+                    value={manualBatchFilter}
+                    onChange={(e) => setManualBatchFilter(e.target.value)}
+                    className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-800 font-medium"
+                  >
+                    <option value="ALL">All Batches</option>
+                    {batches.map(b => (
+                      <option key={b.id || b.batch_code} value={b.batch_code || b.name}>
+                        {b.batch_code || b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block font-semibold text-slate-700 mb-1">Select Student *</label>
+                  <select
+                    value={manualForm.student_id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = students.find(s => String(s.dbId || s.studentId || s.id || s.cb_no) === val);
+                      setManualForm(prev => ({
+                        ...prev,
+                        student_id: val,
+                        supervisor_id: matched?.supervisorId ? String(matched.supervisorId) : "",
+                        assessor_id: matched?.assessorId ? String(matched.assessorId) : ""
+                      }));
+                    }}
+                    required
+                    className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-800 font-medium"
+                  >
+                    <option value="">-- Choose Student --</option>
+                    {students
+                      .filter(s => manualBatchFilter === "ALL" || s.batchCode === manualBatchFilter || s.batch === manualBatchFilter)
+                      .map(s => {
+                        const sId = s.dbId || s.studentId || s.id || s.cb_no;
+                        return (
+                          <option key={sId} value={sId}>
+                            {s.student_name || s.name} ({s.cb_no || s.studentNo}) • {s.batchCode || s.batch || "General"}
+                          </option>
+                        );
+                      })}
+                  </select>
+                </div>
+              </div>
+
+              {/* Auto-derived Supervisor and Assessor Cards & Allocation Status */}
+              {manualForm.student_id && (() => {
+                const currentStudent = students.find(s => String(s.dbId || s.studentId || s.id || s.cb_no) === manualForm.student_id);
+                const hasSup = !!currentStudent?.supervisorId;
+                const hasAss = !!currentStudent?.assessorId;
+                const bothAllocated = hasSup && hasAss;
+
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Supervisor Status Card */}
+                      <div className={`p-3.5 rounded-xl border ${hasSup ? "bg-emerald-50/70 border-emerald-200" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+                        <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-200/50">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            Assigned Supervisor
+                          </span>
+                          {hasSup ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-600" /> Auto-allocated
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" /> In Allocation Process
+                            </span>
+                          )}
+                        </div>
+                        {hasSup ? (
+                          <div>
+                            <p className="font-bold text-slate-900 text-xs">{currentStudent.supervisor}</p>
+                            <p className="text-[11px] text-slate-500">Derived from Student FYP Record</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-xs font-semibold text-amber-800">Supervisor not yet finalized</p>
+                            <p className="text-[11px] text-amber-600">Still in allocation process. Select supervisor below.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Assessor Status Card */}
+                      <div className={`p-3.5 rounded-xl border ${hasAss ? "bg-indigo-50/70 border-indigo-200" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+                        <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-200/50">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            Assigned Assessor
+                          </span>
+                          {hasAss ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 flex items-center gap-1">
+                              <Check className="w-3 h-3 text-indigo-600" /> Auto-allocated
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" /> In Allocation Process
+                            </span>
+                          )}
+                        </div>
+                        {hasAss ? (
+                          <div>
+                            <p className="font-bold text-slate-900 text-xs">{currentStudent.assessor}</p>
+                            <p className="text-[11px] text-slate-500">Derived from Student FYP Record</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-xs font-semibold text-amber-800">Assessor not yet finalized</p>
+                            <p className="text-[11px] text-amber-600">Still in allocation process. Select assessor below.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* If either is missing OR user wants to change, show dropdowns */}
+                    {(!bothAllocated) ? (
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                        <p className="font-bold text-slate-800 text-[11px]">
+                          Select staff for missing allocations:
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Supervisor *</label>
+                            <select
+                              value={manualForm.supervisor_id}
+                              onChange={(e) => setManualForm(prev => ({ ...prev, supervisor_id: e.target.value }))}
+                              required
+                              className="w-full p-2 border border-slate-300 rounded-xl bg-white text-slate-800 font-medium"
+                            >
+                              <option value="">-- Choose Supervisor --</option>
+                              {supervisors.map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name} ({s.email})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Assessor *</label>
+                            <select
+                              value={manualForm.assessor_id}
+                              onChange={(e) => setManualForm(prev => ({ ...prev, assessor_id: e.target.value }))}
+                              required
+                              className="w-full p-2 border border-slate-300 rounded-xl bg-white text-slate-800 font-medium"
+                            >
+                              <option value="">-- Choose Assessor --</option>
+                              {assessors.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.name} ({a.email})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <details className="text-[11px] text-slate-600 border border-slate-200 rounded-xl p-2.5 bg-slate-50/50">
+                        <summary className="font-semibold cursor-pointer text-indigo-600 hover:text-indigo-800">
+                          Override Assigned Staff (Optional)
+                        </summary>
+                        <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-slate-200">
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Override Supervisor</label>
+                            <select
+                              value={manualForm.supervisor_id}
+                              onChange={(e) => setManualForm(prev => ({ ...prev, supervisor_id: e.target.value }))}
+                              className="w-full p-1.5 border border-slate-300 rounded-lg bg-white text-slate-800 text-xs"
+                            >
+                              {supervisors.map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Override Assessor</label>
+                            <select
+                              value={manualForm.assessor_id}
+                              onChange={(e) => setManualForm(prev => ({ ...prev, assessor_id: e.target.value }))}
+                              className="w-full p-1.5 border border-slate-300 rounded-lg bg-white text-slate-800 text-xs"
+                            >
+                              {assessors.map(a => (
+                                <option key={a.id} value={a.id}>
+                                  {a.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Proposed Date & Time & Duration */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Proposed Date *</label>
+                  <input
+                    type="date"
+                    value={manualForm.proposed_date}
+                    onChange={(e) => setManualForm(prev => ({ ...prev, proposed_date: e.target.value }))}
+                    required
+                    className="w-full p-2 border border-slate-300 rounded-xl font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Time (HH:mm) *</label>
+                  <input
+                    type="time"
+                    value={manualForm.proposed_time}
+                    onChange={(e) => setManualForm(prev => ({ ...prev, proposed_time: e.target.value }))}
+                    required
+                    className="w-full p-2 border border-slate-300 rounded-xl font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Duration</label>
+                  <select
+                    value={manualForm.duration_mins}
+                    onChange={(e) => setManualForm(prev => ({ ...prev, duration_mins: e.target.value }))}
+                    className="w-full p-2 border border-slate-300 rounded-xl bg-white font-medium"
+                  >
+                    <option value="15">15 mins</option>
+                    <option value="30">30 mins</option>
+                    <option value="45">45 mins</option>
+                    <option value="60">60 mins</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Mode & Venue */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Initial Attendance Mode</label>
+                  <select
+                    value={manualForm.attendance_mode}
+                    onChange={(e) => setManualForm(prev => ({ ...prev, attendance_mode: e.target.value }))}
+                    className="w-full p-2 border border-slate-300 rounded-xl bg-white font-medium"
+                  >
+                    <option value="PHYSICAL">Physical (In-Person)</option>
+                    <option value="ONLINE">Online (Teams)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Venue</label>
+                  <input
+                    type="text"
+                    value={manualForm.venue}
+                    onChange={(e) => setManualForm(prev => ({ ...prev, venue: e.target.value }))}
+                    placeholder="e.g. Lab 4A - Physical"
+                    className="w-full p-2 border border-slate-300 rounded-xl font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Proposal Report Link */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Proposal Report Link (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. /uploads/proposals/CBKAVIN1_proposal_report.pdf or OneDrive URL"
+                  value={manualForm.report_link}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, report_link: e.target.value }))}
+                  className="w-full p-2 border border-slate-300 rounded-xl font-mono text-[11px]"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowManualScheduleModal(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow transition-colors flex items-center gap-1.5"
+                >
+                  {actionLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Create Viva Slot</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

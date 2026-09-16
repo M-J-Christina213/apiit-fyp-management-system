@@ -130,18 +130,35 @@ export default function StudentVivaDashboard() {
 
                 <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                    {schedule.attendance_mode === "ONLINE" ? <Video className="w-6 h-6" /> : <MapPin className="w-6 h-6" />}
+                    <MapPin className="w-6 h-6" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Attendance & Venue</p>
-                    <p className="text-lg font-bold text-slate-900 mt-0.5">
-                      {schedule.attendance_mode || "Physical"}
+                    <p className="text-lg font-bold text-emerald-800 mt-0.5 flex items-center gap-1.5">
+                      <span>Student: Physical</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold uppercase">In-Person</span>
                     </p>
-                    <p className="text-[11px] text-slate-600 font-semibold">
-                      Location: {schedule.venue || "TBA"}
+                    <p className="text-[11px] text-slate-600 font-semibold mt-1">
+                      Venue: {schedule.venue || "APIIT Campus"}
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Attendance Details Card */}
+              <div className="p-4 bg-blue-50/60 border border-blue-200 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-blue-900">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
+                  <div>
+                    <span className="font-bold">Student Physical Attendance Rule: </span>
+                    <span>Students must be physically present at the venue ({schedule.venue || "APIIT Campus"}). Online attendance is not permitted for students.</span>
+                  </div>
+                </div>
+                {schedule.physical_representative && (
+                  <div className="bg-white px-3 py-1.5 rounded-xl border border-blue-200 font-semibold text-blue-800 shrink-0">
+                    Physical Rep: {schedule.physical_representative.name || schedule.physical_representative.email}
+                  </div>
+                )}
               </div>
 
               {/* Online Teams Joining Option */}
