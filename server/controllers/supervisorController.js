@@ -152,7 +152,23 @@ const createSupervisor = async (req, res) => {
             });
         }
 
-
+        // Automatically include supervisor in the Assessor Pool
+        await prisma.assessors.upsert({
+            where: { email: normEmail },
+            update: {
+                title: title || newSupervisor.title || null,
+                name: name || newSupervisor.name,
+                expertise: expertise || newSupervisor.expertise || null,
+                research_interests: research_interests || newSupervisor.research_interests || null
+            },
+            create: {
+                title: title || newSupervisor.title || null,
+                name: name || newSupervisor.name,
+                email: normEmail,
+                expertise: expertise || newSupervisor.expertise || null,
+                research_interests: research_interests || newSupervisor.research_interests || null
+            }
+        });
 
         res.status(201).json(newSupervisor);
 
@@ -228,6 +244,27 @@ const uploadSupervisors = async (req, res) => {
 
 
             count++;
+
+            // Automatically include supervisor in the Assessor Pool
+            const normSupEmail = String(sup.email || "").trim().toLowerCase();
+            if (normSupEmail) {
+                await prisma.assessors.upsert({
+                    where: { email: normSupEmail },
+                    update: {
+                        title: sup.title || null,
+                        name: sup.name,
+                        expertise: sup.expertise || null,
+                        research_interests: sup.research_interests || null
+                    },
+                    create: {
+                        title: sup.title || null,
+                        name: sup.name,
+                        email: normSupEmail,
+                        expertise: sup.expertise || null,
+                        research_interests: sup.research_interests || null
+                    }
+                });
+            }
 
         }
 
@@ -441,6 +478,19 @@ const updateSupervisor = async (req, res) => {
         });
 
 
+
+        // Keep matching assessor details in sync if present
+        if (updated.email) {
+            await prisma.assessors.updateMany({
+                where: { email: { equals: updated.email.trim().toLowerCase(), mode: "insensitive" } },
+                data: {
+                    title: updated.title,
+                    name: updated.name,
+                    expertise: updated.expertise,
+                    research_interests: updated.research_interests
+                }
+            });
+        }
 
         res.json(updated);
 

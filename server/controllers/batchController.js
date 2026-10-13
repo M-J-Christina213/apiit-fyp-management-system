@@ -438,11 +438,72 @@ const addStudentToBatch = async (req, res) => {
     }
 };
 
+const removeStudentFromBatch = async (req, res) => {
+    try {
+        const { id, studentId } = req.params; // batch id, student id or cb_no
+        const batchId = parseInt(id, 10);
+
+        if (isNaN(batchId)) {
+            return res.status(400).json({ message: "Invalid batch ID" });
+        }
+
+        const batch = await prisma.batches.findUnique({
+            where: { id: batchId }
+        });
+        if (!batch) {
+            return res.status(404).json({ message: "Batch not found" });
+        }
+
+        // Locate student in this batch by numeric db id or cb_no
+        let student;
+        const strId = String(studentId || "").trim();
+        const numId = parseInt(strId, 10);
+
+        if (!isNaN(numId) && String(numId) === strId) {
+            student = await prisma.students.findFirst({
+                where: {
+                    OR: [
+                        { id: numId, batch_id: batchId },
+                        { cb_no: strId, batch_id: batchId }
+                    ]
+                }
+            });
+        } else {
+            student = await prisma.students.findFirst({
+                where: {
+                    cb_no: { equals: strId, mode: "insensitive" },
+                    batch_id: batchId
+                }
+            });
+        }
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found in this batch" });
+        }
+
+        // Disassociate student from batch by setting batch_id to null.
+        // This preserves the student's account, user login, viva records, logsheets, and audit logs.
+        const updatedStudent = await prisma.students.update({
+            where: { id: student.id },
+            data: { batch_id: null }
+        });
+
+        res.json({
+            message: "Student successfully removed from batch",
+            student: updatedStudent
+        });
+    } catch (error) {
+        console.error("Failed to remove student from batch:", error);
+        res.status(500).json({ message: "Failed to remove student from batch", error: error.message });
+    }
+};
+
 module.exports = {
     getBatches,
     createBatch,
     updateBatchStage,
     updateBatch,
     deleteBatch,
-    addStudentToBatch
+    addStudentToBatch,
+    removeStudentFromBatch
 };

@@ -335,21 +335,47 @@ const allocateAssessor = async (req, res) => {
             return res.status(404).json({ message: "No FYP record found for student" });
         }
 
-        // Conflict of interest check: assessor must not be the same person as supervisor
-        if (fypRecord.supervisor_id && fypRecord.supervisor_id === parseInt(assessorId, 10)) {
-            return res.status(400).json({ message: "Conflict of interest: Supervisor cannot be assigned as assessor" });
+        // If assessorId is null or empty, unassign the assessor
+        if (!assessorId) {
+            await prisma.student_fyp_records.update({
+                where: { id: fypRecord.id },
+                data: { assessor_id: null }
+            });
+            return res.json({ message: "Assessor unassigned successfully" });
+        }
+
+        const parsedAssessorId = parseInt(assessorId, 10);
+        const assessor = await prisma.assessors.findUnique({
+            where: { id: parsedAssessorId }
+        });
+
+        if (!assessor) {
+            return res.status(404).json({ message: "Assessor not found" });
+        }
+
+        // Conflict of interest check: A staff member cannot assess a student they supervise
+        if (fypRecord.supervisor_id) {
+            const supervisor = await prisma.supervisors.findUnique({
+                where: { id: fypRecord.supervisor_id }
+            });
+            if (
+                supervisor &&
+                supervisor.email &&
+                assessor.email &&
+                supervisor.email.trim().toLowerCase() === assessor.email.trim().toLowerCase()
+            ) {
+                return res.status(400).json({
+                    message: "Conflict of interest: A supervisor cannot be assigned as assessor for their own student."
+                });
+            }
         }
 
         // Update the assessor_id in student_fyp_records
         await prisma.student_fyp_records.update({
             where: { id: fypRecord.id },
             data: {
-                assessor_id: parseInt(assessorId, 10)
+                assessor_id: parsedAssessorId
             }
-        });
-
-        const assessor = await prisma.assessors.findUnique({
-            where: { id: parseInt(assessorId, 10) }
         });
 
         // Create notification for the student
@@ -365,13 +391,11 @@ const allocateAssessor = async (req, res) => {
             });
         }
 
-        if (assessorId) {
-            await NotificationService.notifyAssessor(
-                parseInt(assessorId, 10),
-                "Assessor Assignment",
-                `You have been allocated as assessor for student ${student.student_name} (${student.cb_no}) by the PM.`
-            );
-        }
+        await NotificationService.notifyAssessor(
+            parsedAssessorId,
+            "Assessor Assignment",
+            `You have been allocated as assessor for student ${student.student_name} (${student.cb_no}) by the PM.`
+        );
 
         res.json({ message: "Assessor allocated successfully" });
     } catch (error) {

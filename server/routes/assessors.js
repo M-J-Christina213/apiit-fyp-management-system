@@ -1,4 +1,6 @@
 const express = require("express");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 const { getAssessors, createAssessor, uploadAssessors, updateAssessor, deleteAssessor } = require("../controllers/assessorController");
 
 const router = express.Router();
@@ -9,34 +11,6 @@ router.post("/upload", uploadAssessors);
 router.put("/:id", updateAssessor);
 router.delete("/:id", deleteAssessor);
 
-router.post("/upload", async (req, res) => {
-    try {
-        const assessors = req.body;
-
-        const created = await prisma.assessors.createMany({
-            data: assessors,
-            skipDuplicates: true,
-        });
-
-        res.json({
-            message: "Assessors uploaded successfully",
-            count: created.count,
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Upload failed" });
-    }
-});
-
-router.get("/", async (req, res) => {
-    const assessors = await prisma.assessors.findMany({
-        orderBy: { id: "desc" }
-    });
-
-    res.json(assessors);
-});
-
 router.post("/assign", async (req, res) => {
     const { studentId, assessorId } = req.body;
 
@@ -44,6 +18,10 @@ router.post("/assign", async (req, res) => {
         const assessor = await prisma.assessors.findUnique({
             where: { id: assessorId }
         });
+
+        if (!assessor) {
+            return res.status(404).json({ error: "Assessor not found" });
+        }
 
         if (assessor.assigned_count >= assessor.preferred_slots) {
             return res.status(400).json({ error: "Assessor fully booked" });
@@ -64,8 +42,10 @@ router.post("/assign", async (req, res) => {
         res.json({ message: "Assessor assigned successfully" });
 
     } catch (err) {
+        console.error("Assessor assign error:", err);
         res.status(500).json({ error: "Assignment failed" });
     }
 });
 
 module.exports = router;
+

@@ -211,8 +211,8 @@ const Login = () => {
             </h2>
             <p className="text-slate-500">
               {showExternalLogin
-                ? "Sign in using your registered external email."
-                : "Sign in with your registered Microsoft Entra ID."}
+                ? "Sign in using your registered external supervisor email."
+                : "Sign in with Microsoft Entra ID or use your student/staff credentials below."}
             </p>
           </div>
 
@@ -222,47 +222,8 @@ const Login = () => {
             </div>
           )}
 
-          {!showExternalLogin ? (
-            <div className="space-y-5">
-              <button
-                type="button"
-                onClick={handleAzureLogin}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-navy-800 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <div className="h-5 w-5 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
-                ) : (
-                  <svg viewBox="0 0 21 21" className="w-5 h-5">
-                    <path fill="#f25022" d="M1 1h9v9H1z" />
-                    <path fill="#00a4ef" d="M1 11h9v9H1z" />
-                    <path fill="#7fba00" d="M11 1h9v9h-9z" />
-                    <path fill="#ffb900" d="M11 11h9v9h-9z" />
-                  </svg>
-                )}
-                {isLoading ? "Signing in..." : "Continue with University Email"}
-              </button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-slate-400 text-xs uppercase font-bold tracking-wider">
-                    Or
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowExternalLogin(true)}
-                className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded text-sm font-semibold text-slate-700 transition-colors"
-              >
-                External Supervisor Login
-              </button>
-            </div>
-          ) : (
+          {showExternalLogin ? (
+            /* External Supervisor Login Form */
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -347,49 +308,174 @@ const Login = () => {
                 </button>
               </div>
             </form>
+          ) : (
+            /* Main Login: Microsoft OAuth + Temporary Login */
+            <div className="space-y-6">
+              {/* Microsoft University Login Section */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Microsoft University Login
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleAzureLogin}
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-navy-800 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="h-5 w-5 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
+                  ) : (
+                    <svg viewBox="0 0 21 21" className="w-5 h-5">
+                      <path fill="#f25022" d="M1 1h9v9H1z" />
+                      <path fill="#00a4ef" d="M1 11h9v9H1z" />
+                      <path fill="#7fba00" d="M11 1h9v9h-9z" />
+                      <path fill="#ffb900" d="M11 11h9v9h-9z" />
+                    </svg>
+                  )}
+                  {isLoading ? "Signing in..." : "Continue with University Email"}
+                </button>
+              </div>
+
+              {/* OR Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-slate-400 text-xs uppercase font-bold tracking-wider">
+                    OR
+                  </span>
+                </div>
+              </div>
+
+              {/* Temporary Login Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Temporary Login
+                  </h3>
+                  <span className="text-[11px] text-slate-400 font-medium">Development / Demo</span>
+                </div>
+
+                <div className="space-y-3.5">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Email</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="CB014695@students.apiit.lk or name@apiit.lk"
+                        className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 transition-all sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Password</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Lock className="h-4 w-4" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="block w-full pl-10 pr-11 py-2.5 bg-slate-50 border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 transition-all sm:text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center py-2.5 px-4 rounded text-sm font-semibold text-white bg-navy-900 hover:bg-navy-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-navy-800 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      Sign In
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* External Supervisor Link */}
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowExternalLogin(true)}
+                  className="text-xs font-semibold text-slate-500 hover:text-navy-900 transition-colors"
+                >
+                  External Supervisor? Sign in here &rarr;
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Quick Demo Access Box */}
-          <div className="p-5 rounded border border-slate-200 bg-slate-50 mt-8">
+          <div className="p-4 rounded border border-slate-200 bg-slate-50 mt-6">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 text-navy-800">
-                <BookOpen className="h-5 w-5" />
+                <BookOpen className="h-4 w-4" />
               </div>
-              <div className="space-y-2.5 w-full">
-                <h4 className="text-sm font-bold text-navy-900">Demo Credentials</h4>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => { setShowExternalLogin(true); handleDemoClick('CB014416@students.apiit.lk'); }}
-                    className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
-                  >
-                    <span className="font-bold text-slate-800">Student</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowExternalLogin(true); handleDemoClick('kavin@apiit.lk'); }}
-                    className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
-                  >
-                    <span className="font-bold text-slate-800">Supervisor</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowExternalLogin(true); handleDemoClick('fathima@apiit.lk'); }}
-                    className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
-                  >
-                    <span className="font-bold text-slate-800">Project Manager</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowExternalLogin(true); handleDemoClick('nirosha@apiit.lk'); }}
-                    className="flex flex-col items-start p-2 border border-slate-200 bg-white hover:border-navy-400 text-left rounded transition-colors"
-                  >
-                    <span className="font-bold text-slate-800">Admin</span>
-                  </button>
+              <div className="space-y-2 w-full">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-navy-900 uppercase tracking-wider">Demo Credentials</h4>
+                  <span className="text-[11px] text-slate-400">Pass: <strong className="font-semibold text-slate-700">123@abc</strong></span>
                 </div>
-                <div className="text-[11px] text-slate-500 border-t border-slate-200 pt-2 flex justify-between">
-                  <span>Pass: <strong className="font-semibold text-slate-700">123@abc</strong></span>
-                  <span className="text-slate-400">Click to pre-fill</span>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => { setShowExternalLogin(false); handleDemoClick('CB014416@students.apiit.lk'); }}
+                    className="p-1.5 border border-slate-200 bg-white hover:border-navy-400 text-center rounded transition-colors font-medium text-slate-800"
+                  >
+                    Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowExternalLogin(false); handleDemoClick('kavin@apiit.lk'); }}
+                    className="p-1.5 border border-slate-200 bg-white hover:border-navy-400 text-center rounded transition-colors font-medium text-slate-800"
+                  >
+                    Supervisor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowExternalLogin(false); handleDemoClick('assessor.smith@apiit.lk'); }}
+                    className="p-1.5 border border-slate-200 bg-white hover:border-navy-400 text-center rounded transition-colors font-medium text-slate-800"
+                  >
+                    Assessor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowExternalLogin(false); handleDemoClick('fathima@apiit.lk'); }}
+                    className="p-1.5 border border-slate-200 bg-white hover:border-navy-400 text-center rounded transition-colors font-medium text-slate-800"
+                  >
+                    PM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowExternalLogin(false); handleDemoClick('nirosha@apiit.lk'); }}
+                    className="p-1.5 border border-slate-200 bg-white hover:border-navy-400 text-center rounded transition-colors font-medium text-slate-800 col-span-2"
+                  >
+                    Admin
+                  </button>
                 </div>
               </div>
             </div>

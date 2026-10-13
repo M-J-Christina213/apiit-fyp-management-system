@@ -24,138 +24,187 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const cleanEmail = String(email || "").trim().toLowerCase();
+        const rawPassword = String(password || "");
+
+        const tempLoginEnabled = process.env.TEMP_LOGIN_ENABLED === "true";
+        const tempPassword = process.env.TEMP_LOGIN_PASSWORD || "123@abc";
+
+        // Helper to check temporary password match
+        const isTempPasswordValid = tempLoginEnabled && (rawPassword === tempPassword);
 
         // ------------------------------------------
-        // Find User (Case-insensitive)
+        // 1. Find User directly in `users` table
         // ------------------------------------------
 
-        const user = await prisma.users.findFirst({
+        let user = await prisma.users.findFirst({
             where: {
                 email: { equals: cleanEmail, mode: "insensitive" }
             }
         });
 
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-        }
-
         // ------------------------------------------
-        // Check Password
+        // 2. If user exists in `users` table
         // ------------------------------------------
+        if (user) {
+            let isPasswordValid = false;
 
-        const isMatch = await bcrypt.compare(
-            password,
-            user.password
-        );
+            if (user.password) {
+                // User has a real hashed password -> strictly verify against real password
+                // Do NOT allow temporary password to bypass an existing real password
+                isPasswordValid = await bcrypt.compare(rawPassword, user.password);
+            } else {
+                // User has no password / password is null -> allow temporary password if enabled
+                if (isTempPasswordValid) {
+                    isPasswordValid = true;
+                }
+            }
 
-        if (!isMatch) {
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid email or password."
+                });
+            }
 
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-
-        }
-
-        // ------------------------------------------
-        // Account Disabled
-        // ------------------------------------------
-
-        if (!user.is_active) {
-
-            // Check whether this is an external supervisor
-            const request =
-                await prisma.external_supervisor_requests.findUnique({
-
-                    where: {
-                        email: user.email
-                    }
-
+            // Check account status
+            if (!user.is_active) {
+                const request = await prisma.external_supervisor_requests.findUnique({
+                    where: { email: user.email }
                 });
 
-            if (request) {
-
-                // Pending
-                if (request.status === "Pending") {
-
-                    return res.status(403).json({
-
-                        success: false,
-
-                        message:
-                            "Your registration is currently pending Admin approval."
-
-                    });
-
+                if (request) {
+                    if (request.status === "Pending") {
+                        return res.status(403).json({
+                            success: false,
+                            message: "Your registration is currently pending Admin approval."
+                        });
+                    }
+                    if (request.status === "Rejected") {
+                        return res.status(403).json({
+                            success: false,
+                            message: `Your registration was rejected.\nReason: ${request.rejection_reason}`
+                        });
+                    }
                 }
 
-                // Rejected
-                if (request.status === "Rejected") {
-
-                    return res.status(403).json({
-
-                        success: false,
-
-                        message:
-                            `Your registration was rejected.\nReason: ${request.rejection_reason}`
-
-                    });
-
-                }
-
+                return res.status(403).json({
+                    success: false,
+                    message: "Your account has been disabled. Please contact the administrator."
+                });
             }
 
-            // Any other inactive account
-            return res.status(403).json({
+            // Student cbNo derivation
+            let derivedCbNo = user.cbNo;
+            if (!derivedCbNo && user.role && user.role.toLowerCase() === "student") {
+                const studentMatch = user.email.match(/^([a-z0-9]+)@students\.apiit\.lk$/i);
+                if (studentMatch) {
+                    derivedCbNo = studentMatch[1].toUpperCase();
+                }
+            }
 
-                success: false,
-
-                message:
-                    "Your account has been disabled. Please contact the administrator."
-
+            return res.status(200).json({
+                success: true,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role.toLowerCase(),
+                    cbNo: derivedCbNo
+                }
             });
-
         }
 
         // ------------------------------------------
-        // Login Success
+        // 3. If not found in `users`, check temporary login for students / staff
         // ------------------------------------------
+        if (!tempLoginEnabled || !isTempPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password."
+            });
+        }
 
-        return res.status(200).json({
+        // Check student format: CB_NUMBER@students.apiit.lk
+        const studentMatch = cleanEmail.match(/^(CB\d+)@students\.apiit\.lk$/i);
+        if (studentMatch) {
+            const cbNumber = studentMatch[1];
+            const student = await prisma.students.findFirst({
+                where: {
+                    cb_no: { equals: cbNumber, mode: "insensitive" }
+                }
+            });
 
-            success: true,
+            if (student) {
+                return res.status(200).json({
+                    success: true,
+                    user: {
+                        id: student.id,
+                        name: student.student_name,
+                        email: cleanEmail,
+                        role: "student",
+                        cbNo: student.cb_no
+                    }
+                });
+            }
+        }
 
-            user: {
+        // Check staff format: name@apiit.lk
+        const staffMatch = cleanEmail.match(/^([^@]+)@apiit\.lk$/i);
+        if (staffMatch) {
+            // Check in supervisors
+            const supervisor = await prisma.supervisors.findFirst({
+                where: {
+                    email: { equals: cleanEmail, mode: "insensitive" }
+                }
+            });
 
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role.toLowerCase(),
-                cbNo: user.cbNo
-
+            if (supervisor) {
+                return res.status(200).json({
+                    success: true,
+                    user: {
+                        id: supervisor.id,
+                        name: supervisor.name,
+                        email: supervisor.email,
+                        role: "supervisor",
+                        cbNo: null
+                    }
+                });
             }
 
-        });
+            // Check in assessors
+            const assessor = await prisma.assessors.findFirst({
+                where: {
+                    email: { equals: cleanEmail, mode: "insensitive" }
+                }
+            });
 
-    }
+            if (assessor) {
+                return res.status(200).json({
+                    success: true,
+                    user: {
+                        id: assessor.id,
+                        name: assessor.name,
+                        email: assessor.email,
+                        role: "assessor",
+                        cbNo: null
+                    }
+                });
+            }
+        }
 
-    catch (error) {
-
-        console.error(error);
-
-        return res.status(500).json({
-
+        // Generic error if no matching record found
+        return res.status(401).json({
             success: false,
-
-            message: "Login failed."
-
+            message: "Invalid email or password."
         });
 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Login failed."
+        });
     }
-
 };
 
 

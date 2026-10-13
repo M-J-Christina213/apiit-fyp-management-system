@@ -242,6 +242,27 @@ const approveExternalSupervisor = async (req, res) => {
 
             });
 
+            // Automatically include approved supervisor in Assessor Pool
+            const normExtEmail = String(request.email || "").trim().toLowerCase();
+            if (normExtEmail) {
+                await tx.assessors.upsert({
+                    where: { email: normExtEmail },
+                    update: {
+                        title: request.title || null,
+                        name: request.name,
+                        expertise: request.expertise || null,
+                        research_interests: request.research_interests || null
+                    },
+                    create: {
+                        title: request.title || null,
+                        name: request.name,
+                        email: normExtEmail,
+                        expertise: request.expertise || null,
+                        research_interests: request.research_interests || null
+                    }
+                });
+            }
+
             // Activate login
             await tx.users.update({
 

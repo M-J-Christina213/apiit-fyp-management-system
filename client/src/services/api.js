@@ -4,6 +4,22 @@ const API = axios.create({
     baseURL: "http://localhost:5000/api",
 });
 
+// Attach authenticated user role and email to outgoing requests
+API.interceptors.request.use((config) => {
+    try {
+        const user = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
+        if (user.role) {
+            config.headers["x-user-role"] = user.role;
+        }
+        if (user.email) {
+            config.headers["x-user-email"] = user.email;
+        }
+    } catch {
+        // Fallback silently if localStorage contains non-JSON
+    }
+    return config;
+});
+
 // GET DATA
 export const getSupervisors = () => API.get("/supervisors");
 export const uploadSupervisors = (data) => API.post("/supervisors/upload", data);
@@ -51,6 +67,7 @@ export const updateBatchStage = (batchId, stage) => API.put(`/batches/${batchId}
 export const updateBatch = (batchId, batchData) => API.put(`/batches/${batchId}`, batchData);
 export const deleteBatch = (batchId) => API.delete(`/batches/${batchId}`);
 export const addStudentToBatch = (batchId, data) => API.post(`/batches/${batchId}/students`, data);
+export const removeStudentFromBatch = (batchId, studentId) => API.delete(`/batches/${batchId}/students/${studentId}`);
 // TEMPLATES
 export const getTemplates = () => API.get("/templates");
 export const uploadTemplate = (formData) => API.post("/templates/upload", formData, {

@@ -52,7 +52,8 @@ import {
   viewTemplate,
   downloadTemplate,
   createSupervisor,
-  addStudentToBatch
+  addStudentToBatch,
+  removeStudentFromBatch
 } from "../../services/api";
 
 import * as XLSX from 'xlsx';
@@ -95,6 +96,10 @@ const PMDashboard = () => {
   const [addStudentCB, setAddStudentCB] = useState('');
   const [addStudentBatchId, setAddStudentBatchId] = useState('');
   const [isAddingStudent, setIsAddingStudent] = useState(false);
+
+  // Delete Student from Batch states
+  const [studentToDelete, setStudentToDelete] = useState(null);
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
 
   // Edit Supervisor states
   const [showEditSupervisor, setShowEditSupervisor] = useState(false);
@@ -312,6 +317,44 @@ const PMDashboard = () => {
     }
   };
 
+  const handleInitiateDeleteStudent = (student, batch) => {
+    setStudentToDelete({
+      ...student,
+      batchId: batch?.id || student.batchId,
+      batchName: batch?.intake || student.batch || 'Selected Batch',
+      batchCode: student.batchCode || batch?.batchCode || '-'
+    });
+  };
+
+  const handleConfirmDeleteStudent = async () => {
+    if (!studentToDelete) return;
+    try {
+      setIsDeletingStudent(true);
+      const batchId = studentToDelete.batchId || selectedBatch?.id;
+      const studentIdentifier = studentToDelete.dbId || studentToDelete.studentId || studentToDelete.cb_no || studentToDelete.id;
+
+      await removeStudentFromBatch(batchId, studentIdentifier);
+
+      // Refresh student and batch lists from backend
+      const [batchRes, stuRes] = await Promise.all([getBatches(), getStudents()]);
+      setBatches(batchRes.data);
+      setStudents(stuRes.data);
+
+      if (selectedBatch) {
+        const remainingStudents = stuRes.data.filter(s => s.batchId === batchId);
+        setSelectedBatch(prev => prev ? { ...prev, actualStudentCount: remainingStudents.length } : null);
+      }
+
+      setStudentToDelete(null);
+      alert("Student removed from batch successfully.");
+    } catch (error) {
+      console.error("Failed to delete student from batch:", error);
+      alert(error.response?.data?.message || "Failed to remove student from batch.");
+    } finally {
+      setIsDeletingStudent(false);
+    }
+  };
+
   const handleEditBatchSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -359,8 +402,9 @@ const PMDashboard = () => {
       }
 
 
-      const res = await getSupervisors();
+      const [res, assessorRes] = await Promise.all([getSupervisors(), getAssessors()]);
       setSupervisors(res.data);
+      if (assessorRes?.data) setAssessors(assessorRes.data);
 
       setShowEditSupervisor(false);
 
@@ -1041,6 +1085,7 @@ const PMDashboard = () => {
                             <th className="px-6 py-3 font-semibold">Student Number</th>
                             <th className="px-6 py-3 font-semibold">Supervisor</th>
                             <th className="px-6 py-3 font-semibold">Assessor</th>
+                            <th className="px-6 py-3 font-semibold text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -1052,6 +1097,16 @@ const PMDashboard = () => {
                               <td className="px-6 py-3 font-mono text-slate-600">{s.id || s.studentNo}</td>
                               <td className="px-6 py-3 text-slate-600">{s.supervisor || '-'}</td>
                               <td className="px-6 py-3 text-slate-600">{s.assessor || '-'}</td>
+                              <td className="px-6 py-3 text-right">
+                                <button
+                                  onClick={() => handleInitiateDeleteStudent(s, selectedBatch)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 border border-red-200 rounded-lg transition-colors shadow-sm"
+                                  title="Delete student from this batch"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1369,8 +1424,9 @@ const PMDashboard = () => {
           await uploadSupervisors(newSupervisors);
 
           // Re-fetch to auto synchronize
-          const res = await getSupervisors();
+          const [res, assessorRes] = await Promise.all([getSupervisors(), getAssessors()]);
           setSupervisors(res.data);
+          if (assessorRes?.data) setAssessors(assessorRes.data);
 
           alert(`Successfully imported ${newSupervisors.length} supervisors.`);
           e.target.value = null; // reset input
@@ -3209,6 +3265,89 @@ const PMDashboard = () => {
                   Import Demo Records
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Student from Batch Confirmation Modal */}
+      {studentToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-red-50 rounded-lg text-red-600">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Delete Student from Batch</h3>
+                  <p className="text-xs text-slate-500">Confirm student removal from batch</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { if (!isDeletingStudent) setStudentToDelete(null); }}
+                disabled={isDeletingStudent}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Warning Alert */}
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm text-amber-800 leading-relaxed font-medium">
+                  Are you sure you want to delete this student? This action cannot be undone. Please review the student details below before confirming.
+                </p>
+              </div>
+
+              {/* Student Details Card */}
+              <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-2.5 text-sm">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Name</span>
+                  <span className="font-bold text-slate-800">{studentToDelete.name || studentToDelete.student_name}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Student ID (CB No)</span>
+                  <span className="font-mono font-bold text-navy-800">{studentToDelete.studentNo || studentToDelete.cb_no || studentToDelete.id}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</span>
+                  <span className="font-medium text-slate-700">
+                    {studentToDelete.email || `${(studentToDelete.studentNo || studentToDelete.cb_no || studentToDelete.id || '').toLowerCase()}@students.apiit.lk`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch / Intake</span>
+                  <span className="font-medium text-slate-800">
+                    {studentToDelete.batchName || selectedBatch?.intake || 'N/A'} {studentToDelete.batchCode ? `(${studentToDelete.batchCode})` : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={isDeletingStudent}
+                onClick={() => setStudentToDelete(null)}
+                className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg text-sm font-semibold text-slate-700 transition-all shadow-sm hover:shadow disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingStudent}
+                onClick={handleConfirmDeleteStudent}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-70 flex items-center gap-2"
+              >
+                {isDeletingStudent && <Loader2 className="h-4 w-4 animate-spin" />}
+                Delete Student
+              </button>
             </div>
           </div>
         </div>

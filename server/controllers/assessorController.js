@@ -3,6 +3,41 @@ const prisma = new PrismaClient();
 
 const getAssessors = async (req, res) => {
     try {
+        // Automatic synchronisation: Check if any supervisors are missing from assessors table
+        const allSupervisors = await prisma.supervisors.findMany();
+        const existingAssessors = await prisma.assessors.findMany({
+            select: { email: true }
+        });
+        const existingAssessorEmails = new Set(
+            existingAssessors.map(a => String(a.email || "").trim().toLowerCase())
+        );
+
+        const missingSupervisors = allSupervisors.filter(
+            s => s.email && !existingAssessorEmails.has(String(s.email).trim().toLowerCase())
+        );
+
+        if (missingSupervisors.length > 0) {
+            for (const sup of missingSupervisors) {
+                const normEmail = String(sup.email).trim().toLowerCase();
+                await prisma.assessors.upsert({
+                    where: { email: normEmail },
+                    update: {
+                        title: sup.title || null,
+                        name: sup.name,
+                        expertise: sup.expertise || null,
+                        research_interests: sup.research_interests || null
+                    },
+                    create: {
+                        title: sup.title || null,
+                        name: sup.name,
+                        email: normEmail,
+                        expertise: sup.expertise || null,
+                        research_interests: sup.research_interests || null
+                    }
+                });
+            }
+        }
+
         const assessors = await prisma.assessors.findMany({
             include: {
                 student_fyp_records: {
@@ -11,7 +46,8 @@ const getAssessors = async (req, res) => {
                         supervisors: true
                     }
                 }
-            }
+            },
+            orderBy: { name: "asc" }
         });
 
         const formatted = assessors.map(a => {
@@ -27,6 +63,9 @@ const getAssessors = async (req, res) => {
                     : ''
             }));
 
+            const preferredSlots = a.preferred_slots ?? 3;
+            const availableSlots = Math.max(0, preferredSlots - assignedStudentCount);
+
             return {
                 id: a.id,
                 title: a.title,
@@ -34,9 +73,12 @@ const getAssessors = async (req, res) => {
                 email: a.email,
                 expertise: a.expertise,
                 research_interests: a.research_interests,
+                preferred_slots: preferredSlots,
                 assignedStudentCount,
+                assignedStudentsCount: assignedStudentCount,
+                availableSlots,
                 assignedStudents,
-                availability: assignedStudentCount === 0 ? 'Available' : 'Assigned'
+                availability: availableSlots > 0 ? 'Available' : 'Assigned'
             };
         });
 
