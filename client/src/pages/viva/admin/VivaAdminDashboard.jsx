@@ -45,6 +45,8 @@ export default function VivaAdminDashboard() {
   const [checklist, setChecklist] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [msStatus, setMsStatus] = useState(null);
+  const [msErrorInfo, setMsErrorInfo] = useState(null);
+  const [msConnecting, setMsConnecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -142,6 +144,40 @@ export default function VivaAdminDashboard() {
 
   useEffect(() => {
     loadInitialData();
+  }, []);
+
+  // Listen for Microsoft OAuth popup postMessage events
+  useEffect(() => {
+    const handleAuthMessage = async (event) => {
+      if (event.data && event.data.type === "MS_AUTH_CALLBACK") {
+        console.log("[OUTLOOK-INTEGRATION] Received callback message from Microsoft auth popup:", event.data);
+        setMsConnecting(false);
+        if (event.data.success) {
+          console.log("[OUTLOOK-INTEGRATION] Microsoft account connection succeeded!");
+          setMessage({ type: "success", text: event.data.message || "Microsoft account and Outlook Calendar connected successfully!" });
+          setMsErrorInfo(null);
+        } else {
+          console.error("[MS-AUTH] Microsoft authentication failed:", event.data.error);
+          setMsErrorInfo(event.data.error || { summary: event.data.message });
+          setMessage({
+            type: "error",
+            text: event.data.error?.summary
+              ? `${event.data.error.title || "Authentication Error"}: ${event.data.error.summary}`
+              : (event.data.message || "Failed to connect Microsoft Outlook.")
+          });
+        }
+        // Refresh status
+        try {
+          const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
+          setMsStatus(s);
+        } catch (e) {
+          console.warn("[OUTLOOK-INTEGRATION] Failed to refresh Microsoft status:", e);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleAuthMessage);
+    return () => window.removeEventListener("message", handleAuthMessage);
   }, []);
 
   // Load period-specific data when selectedPeriodId changes
@@ -539,32 +575,63 @@ export default function VivaAdminDashboard() {
 
   // Connect Microsoft Account
   const handleConnectMicrosoft = async () => {
+    console.log("[OUTLOOK-INTEGRATION] Connect Microsoft Account initiated");
+    setMsErrorInfo(null);
+    setMsConnecting(true);
     try {
+      console.log("[MS-AUTH] Requesting OAuth authorization URL from /api/viva/microsoft/auth-url");
       const res = await fetch("/api/viva/microsoft/auth-url", { headers: adminHeaders });
       const data = await res.json();
-      if (data.authUrl) {
-        // If simulated or live callback
-        window.open(data.authUrl, "_blank", "width=600,height=700");
-        // Simulate immediate connection check after short delay
-        setTimeout(async () => {
+      console.log("[MS-AUTH] Auth URL endpoint response status:", res.status, "isConfigured:", data.isConfigured);
+
+      if (!res.ok || !data.authUrl) {
+        console.error("[MS-AUTH] Failed to obtain Auth URL:", data.error || "Unknown error");
+        alert(data.error || "Microsoft OAuth is not configured in backend environment.");
+        setMsConnecting(false);
+        return;
+      }
+
+      console.log("[MS-AUTH] Opening Microsoft OAuth authorization popup window");
+      const popup = window.open(data.authUrl, "MicrosoftAuthPopup", "width=600,height=720,status=no,toolbar=no,menubar=no");
+
+      if (!popup || popup.closed || typeof popup.closed === "undefined") {
+        console.warn("[MS-AUTH] Popup blocked by browser! Please allow popups for localhost.");
+        alert("Popup was blocked by your browser. Please allow popups for this site to sign in to Microsoft.");
+        setMsConnecting(false);
+        return;
+      }
+
+      // Check popup status periodically
+      const checkPopupInterval = setInterval(async () => {
+        if (!popup || popup.closed) {
+          clearInterval(checkPopupInterval);
+          console.log("[MS-AUTH] Microsoft OAuth popup window closed.");
+          setMsConnecting(false);
           const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
           setMsStatus(s);
-        }, 3000);
-      }
+        }
+      }, 1000);
+
     } catch (err) {
+      console.error("[OUTLOOK-INTEGRATION] Exception initiating Microsoft connection:", err);
       alert("Failed to initiate Microsoft connection: " + err.message);
+      setMsConnecting(false);
     }
   };
 
   // Disconnect Microsoft Account
   const handleDisconnectMicrosoft = async () => {
+    console.log("[OUTLOOK-INTEGRATION] Disconnect Microsoft Account requested");
     if (!confirm("Are you sure you want to disconnect the Microsoft 365 account?")) return;
     try {
       await fetch("/api/viva/microsoft/disconnect", { method: "POST", headers: adminHeaders });
       const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
       setMsStatus(s);
+      setMsErrorInfo(null);
+      console.log("[OUTLOOK-INTEGRATION] Microsoft 365 account disconnected successfully");
       setMessage({ type: "success", text: "Microsoft 365 account disconnected." });
     } catch (err) {
+      console.error("[OUTLOOK-INTEGRATION] Error disconnecting Microsoft account:", err);
       alert("Error: " + err.message);
     }
   };
@@ -1756,13 +1823,40 @@ export default function VivaAdminDashboard() {
               ) : (
                 <button
                   onClick={handleConnectMicrosoft}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition-colors"
+                  disabled={msConnecting}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition-colors"
                 >
                   <Video className="w-4 h-4" />
-                  <span>Connect Microsoft Account</span>
+                  <span>{msConnecting ? "Connecting..." : "Connect Microsoft Account"}</span>
                 </button>
               )}
             </div>
+
+            {msErrorInfo && (
+              <div className="p-4 rounded-xl border border-red-200 bg-red-50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+                    <span className="font-bold text-xs text-red-900 uppercase tracking-wider">
+                      Microsoft Entra ID Diagnostic Info
+                    </span>
+                  </div>
+                  <span className="font-mono text-xs px-2 py-0.5 bg-red-200 text-red-900 rounded font-semibold">
+                    {msErrorInfo.errorCode || "AUTH_ERROR"}
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-red-800">{msErrorInfo.title || "Authentication Issue"}</p>
+                <p className="text-xs text-red-700">{msErrorInfo.summary}</p>
+                {msErrorInfo.correlationId && msErrorInfo.correlationId !== "N/A" && (
+                  <p className="text-xs font-mono text-red-600">Correlation ID: {msErrorInfo.correlationId}</p>
+                )}
+                {msErrorInfo.recommendation && (
+                  <div className="pt-2 border-t border-red-200 text-xs text-red-900 font-medium">
+                    <span className="font-bold">Required IT Action: </span>{msErrorInfo.recommendation}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="p-4 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-800">Required Microsoft Graph Delegated Permissions:</p>

@@ -661,17 +661,21 @@ const AdminDashboard = () => {
                       type="button"
                       onClick={async () => {
                         const user = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
+                        console.log("[OUTLOOK-INTEGRATION] Connect Microsoft Account initiated from AdminDashboard");
                         try {
+                          console.log("[MS-AUTH] Requesting Auth URL from /api/viva/microsoft/auth-url");
                           const res = await fetch("http://localhost:5000/api/viva/microsoft/auth-url", {
                             headers: { "x-user-email": user.email || "" }
                           });
                           const data = await res.json();
+                          console.log("[MS-AUTH] Auth URL received, opening popup");
                           if (data.authUrl) {
-                            window.location.href = data.authUrl;
+                            window.open(data.authUrl, "MicrosoftAuthPopup", "width=600,height=720,status=no,toolbar=no");
                           } else {
                             alert(data.error || "Microsoft OAuth is not configured.");
                           }
                         } catch (e) {
+                          console.error("[OUTLOOK-INTEGRATION] Failed to initiate Microsoft login:", e);
                           alert("Failed to initiate Microsoft login: " + e.message);
                         }
                       }}

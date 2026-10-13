@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const ExcelJS = require("exceljs");
 const VivaValidationService = require("../services/vivaValidationService");
 const MicrosoftGraphService = require("../services/microsoftGraphService");
+const { parseMicrosoftError, generateCallbackHtml } = require("../utils/msErrorHelper");
 const VivaAuditService = require("../services/vivaAuditService");
 const NotificationService = require("../services/notificationService");
 const schedulingService = require("../services/vivaSchedulingService");
@@ -2090,22 +2091,67 @@ exports.retryOutlookSync = async (req, res) => {
 exports.getMicrosoftAuthUrl = async (req, res) => {
     try {
         const email = req.headers["x-user-email"];
+        console.log(`[OUTLOOK-INTEGRATION] Received request for Microsoft Auth URL (email header: ${email || "NONE"})`);
         const user = email ? await prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }) : null;
         if (!user) {
+            console.warn("[OUTLOOK-INTEGRATION] Auth URL rejected: user identity not found in database.");
             return res.status(401).json({ error: "User identity required to generate Microsoft Auth URL." });
         }
 
         const url = MicrosoftGraphService.getAuthUrl(user.id, "viva_user_auth");
+        console.log(`[OUTLOOK-INTEGRATION] Returning Auth URL to client for user #${user.id} (${user.email})`);
         res.status(200).json({ authUrl: url, isConfigured: MicrosoftGraphService.isConfigured() });
     } catch (error) {
+        console.error("[OUTLOOK-INTEGRATION] Error generating Microsoft Auth URL:", error.message);
         res.status(500).json({ error: "Failed to generate auth URL", details: error.message });
     }
 };
 
 exports.handleMicrosoftCallback = async (req, res) => {
-    const { code, state } = req.query;
+    const { code, state, error, error_description, error_uri } = req.query;
+    console.log(`[OUTLOOK-INTEGRATION] Callback endpoint reached (/api/viva/microsoft/callback)`);
+    console.log(`[MS-AUTH] Query params present: code=${Boolean(code)}, state=${Boolean(state)}, error=${Boolean(error)}`);
+
+    // Check if client expects HTML (browser popup/redirect)
+    const acceptsHtml = req.headers.accept && req.headers.accept.includes("text/html");
+
+    // Case 1: Microsoft returned an error parameter (e.g. AADSTS65001, AADSTS90094, access_denied)
+    if (error) {
+        const parsed = parseMicrosoftError(error, error_description);
+        console.error(`[MS-AUTH] Microsoft returned an OAuth error during user authentication:`);
+        console.error(`[MS-AUTH] Error Code: ${parsed.errorCode}`);
+        console.error(`[MS-AUTH] Category: ${parsed.category}`);
+        console.error(`[MS-AUTH] Summary: ${parsed.summary}`);
+        console.error(`[MS-AUTH] Technical Detail: ${parsed.technicalDetail}`);
+        console.error(`[MS-AUTH] Correlation ID: ${parsed.correlationId}`);
+        console.error(`[MS-AUTH] Recommended Action: ${parsed.recommendation}`);
+
+        if (acceptsHtml) {
+            return res.status(400).send(generateCallbackHtml({
+                success: false,
+                message: parsed.summary,
+                error: parsed
+            }));
+        } else {
+            return res.status(400).json({
+                success: false,
+                error: parsed.summary,
+                details: parsed
+            });
+        }
+    }
+
     if (!code) {
-        return res.status(400).json({ error: "Authorization code missing from Microsoft callback." });
+        console.warn("[MS-AUTH] Callback called without authorization code and without error.");
+        const fallbackError = parseMicrosoftError("MISSING_CODE", "No authorization code was provided in the callback query parameters.");
+        if (acceptsHtml) {
+            return res.status(400).send(generateCallbackHtml({
+                success: false,
+                message: fallbackError.summary,
+                error: fallbackError
+            }));
+        }
+        return res.status(400).json({ error: "Authorization code missing from Microsoft callback.", details: fallbackError });
     }
 
     try {
@@ -2115,7 +2161,7 @@ exports.handleMicrosoftCallback = async (req, res) => {
                 const parsed = JSON.parse(state);
                 userId = parsed.userId;
             } catch (e) {
-                console.log("State is not JSON:", state);
+                console.log("[MS-AUTH] State is not JSON:", state);
             }
         }
 
@@ -2125,14 +2171,40 @@ exports.handleMicrosoftCallback = async (req, res) => {
         }
 
         if (!userId) {
-            return res.status(400).json({ error: "Unable to associate Microsoft authorization code with a valid system user." });
+            console.error("[MS-AUTH] Callback error: unable to associate authorization code with a system user.");
+            const userError = parseMicrosoftError("USER_ASSOCIATION_FAILED", "Unable to associate Microsoft authorization code with a valid system user.");
+            if (acceptsHtml) {
+                return res.status(400).send(generateCallbackHtml({ success: false, message: userError.summary, error: userError }));
+            }
+            return res.status(400).json({ error: userError.summary, details: userError });
         }
 
+        console.log(`[MS-AUTH] Exchanging authorization code for user ID #${userId}...`);
         const result = await MicrosoftGraphService.handleAuthCallback(code, userId);
-        res.status(200).json({ message: "Microsoft account connected successfully.", ...result });
+        console.log(`[OUTLOOK-INTEGRATION] Microsoft connection successfully established for user ID #${userId}`);
+
+        if (acceptsHtml) {
+            return res.status(200).send(generateCallbackHtml({
+                success: true,
+                message: result.message,
+                payload: result
+            }));
+        } else {
+            return res.status(200).json({ message: "Microsoft account connected successfully.", ...result });
+        }
     } catch (error) {
-        console.error("Microsoft Auth Callback Error:", error);
-        res.status(500).json({ error: "Failed to connect Microsoft account", details: error.message });
+        console.error(`[MS-AUTH] Error in handleMicrosoftCallback:`, error.message);
+        const parsed = error.details || parseMicrosoftError(error.errorCode || "CALLBACK_PROCESSING_FAILED", error.message, error.correlationId);
+
+        if (acceptsHtml) {
+            return res.status(500).send(generateCallbackHtml({
+                success: false,
+                message: parsed.summary,
+                error: parsed
+            }));
+        } else {
+            return res.status(500).json({ error: parsed.summary, details: parsed });
+        }
     }
 };
 
@@ -2140,9 +2212,11 @@ exports.getMicrosoftStatus = async (req, res) => {
     try {
         const email = req.headers["x-user-email"];
         const user = email ? await prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }) : null;
+        console.log(`[OUTLOOK-INTEGRATION] Status check requested for user: ${email || "NONE"} (ID: ${user?.id || "N/A"})`);
         const status = await MicrosoftGraphService.getIntegrationStatus(user?.id);
         res.status(200).json(status);
     } catch (error) {
+        console.error(`[OUTLOOK-INTEGRATION] Status check failed:`, error.message);
         res.status(500).json({ error: "Failed to get Microsoft integration status", details: error.message });
     }
 };
@@ -2151,11 +2225,14 @@ exports.disconnectMicrosoft = async (req, res) => {
     try {
         const email = req.headers["x-user-email"];
         const user = email ? await prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }) : null;
+        console.log(`[OUTLOOK-INTEGRATION] Disconnect requested for user: ${email || "NONE"} (ID: ${user?.id || "N/A"})`);
         if (user) {
             await MicrosoftGraphService.disconnect(user.id);
+            console.log(`[OUTLOOK-INTEGRATION] User #${user.id} Microsoft integration removed.`);
         }
         res.status(200).json({ message: "Microsoft account disconnected." });
     } catch (error) {
+        console.error(`[OUTLOOK-INTEGRATION] Disconnect failed:`, error.message);
         res.status(500).json({ error: "Failed to disconnect Microsoft account", details: error.message });
     }
 };
