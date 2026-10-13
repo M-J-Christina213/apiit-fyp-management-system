@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   CalendarDays, Clock, Users, CheckCircle2, AlertCircle, AlertTriangle,
   RefreshCw, Plus, Upload, Download, FileText, Video, MapPin, ExternalLink,
@@ -47,6 +47,8 @@ export default function VivaAdminDashboard() {
   const [msStatus, setMsStatus] = useState(null);
   const [msErrorInfo, setMsErrorInfo] = useState(null);
   const [msConnecting, setMsConnecting] = useState(false);
+  const popupRef = useRef(null);
+  const popupIntervalRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -149,8 +151,23 @@ export default function VivaAdminDashboard() {
   // Listen for Microsoft OAuth popup postMessage events
   useEffect(() => {
     const handleAuthMessage = async (event) => {
+      // Validate allowed origin (backend API or client origin)
+      const allowedOrigins = [window.location.origin, "http://localhost:5000", "http://localhost:5173"];
+      if (!allowedOrigins.includes(event.origin)) {
+        return;
+      }
+
+      // Validate message source if popup is tracked
+      if (popupRef.current && event.source && event.source !== popupRef.current) {
+        return;
+      }
+
       if (event.data && event.data.type === "MS_AUTH_CALLBACK") {
-        console.log("[OUTLOOK-INTEGRATION] Received callback message from Microsoft auth popup:", event.data);
+        console.log("[OUTLOOK-INTEGRATION] Received validated callback from Microsoft auth popup:", event.data);
+        if (popupIntervalRef.current) {
+          clearInterval(popupIntervalRef.current);
+          popupIntervalRef.current = null;
+        }
         setMsConnecting(false);
         if (event.data.success) {
           console.log("[OUTLOOK-INTEGRATION] Microsoft account connection succeeded!");
@@ -177,7 +194,13 @@ export default function VivaAdminDashboard() {
     };
 
     window.addEventListener("message", handleAuthMessage);
-    return () => window.removeEventListener("message", handleAuthMessage);
+    return () => {
+      window.removeEventListener("message", handleAuthMessage);
+      if (popupIntervalRef.current) {
+        clearInterval(popupIntervalRef.current);
+        popupIntervalRef.current = null;
+      }
+    };
   }, []);
 
   // Load period-specific data when selectedPeriodId changes
@@ -592,7 +615,12 @@ export default function VivaAdminDashboard() {
       }
 
       console.log("[MS-AUTH] Opening Microsoft OAuth authorization popup window");
+      if (popupIntervalRef.current) {
+        clearInterval(popupIntervalRef.current);
+        popupIntervalRef.current = null;
+      }
       const popup = window.open(data.authUrl, "MicrosoftAuthPopup", "width=600,height=720,status=no,toolbar=no,menubar=no");
+      popupRef.current = popup;
 
       if (!popup || popup.closed || typeof popup.closed === "undefined") {
         console.warn("[MS-AUTH] Popup blocked by browser! Please allow popups for localhost.");
@@ -602,9 +630,12 @@ export default function VivaAdminDashboard() {
       }
 
       // Check popup status periodically
-      const checkPopupInterval = setInterval(async () => {
+      popupIntervalRef.current = setInterval(async () => {
         if (!popup || popup.closed) {
-          clearInterval(checkPopupInterval);
+          if (popupIntervalRef.current) {
+            clearInterval(popupIntervalRef.current);
+            popupIntervalRef.current = null;
+          }
           console.log("[MS-AUTH] Microsoft OAuth popup window closed.");
           setMsConnecting(false);
           const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
@@ -1861,9 +1892,8 @@ export default function VivaAdminDashboard() {
             <div className="p-4 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-800">Required Microsoft Graph Delegated Permissions:</p>
               <ul className="list-disc list-inside space-y-1 pl-2">
-                <li><code>Calendars.ReadWrite</code> - Creates and updates Viva schedule slots on Outlook</li>
-                <li><code>OnlineMeetings.ReadWrite</code> - Generates Microsoft Teams meeting links for online vivas</li>
-                <li><code>User.Read</code> - Identifies the connected administrator profile</li>
+                <li><code>Calendars.ReadWrite</code> - Creates and updates Viva schedule slots and online Teams meetings on Outlook</li>
+                <li><code>User.Read</code> - Identifies the connected user profile</li>
                 <li><code>offline_access</code> - Maintains persistent token refresh without repeated logins</li>
               </ul>
             </div>

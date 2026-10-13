@@ -2115,6 +2115,8 @@ exports.handleMicrosoftCallback = async (req, res) => {
     // Check if client expects HTML (browser popup/redirect)
     const acceptsHtml = req.headers.accept && req.headers.accept.includes("text/html");
 
+    const clientOrigin = process.env.CLIENT_URL || "http://localhost:5173";
+
     // Case 1: Microsoft returned an error parameter (e.g. AADSTS65001, AADSTS90094, access_denied)
     if (error) {
         const parsed = parseMicrosoftError(error, error_description);
@@ -2130,7 +2132,8 @@ exports.handleMicrosoftCallback = async (req, res) => {
             return res.status(400).send(generateCallbackHtml({
                 success: false,
                 message: parsed.summary,
-                error: parsed
+                error: parsed,
+                targetOrigin: clientOrigin
             }));
         } else {
             return res.status(400).json({
@@ -2148,7 +2151,8 @@ exports.handleMicrosoftCallback = async (req, res) => {
             return res.status(400).send(generateCallbackHtml({
                 success: false,
                 message: fallbackError.summary,
-                error: fallbackError
+                error: fallbackError,
+                targetOrigin: clientOrigin
             }));
         }
         return res.status(400).json({ error: "Authorization code missing from Microsoft callback.", details: fallbackError });
@@ -2174,7 +2178,7 @@ exports.handleMicrosoftCallback = async (req, res) => {
             console.error("[MS-AUTH] Callback error: unable to associate authorization code with a system user.");
             const userError = parseMicrosoftError("USER_ASSOCIATION_FAILED", "Unable to associate Microsoft authorization code with a valid system user.");
             if (acceptsHtml) {
-                return res.status(400).send(generateCallbackHtml({ success: false, message: userError.summary, error: userError }));
+                return res.status(400).send(generateCallbackHtml({ success: false, message: userError.summary, error: userError, targetOrigin: clientOrigin }));
             }
             return res.status(400).json({ error: userError.summary, details: userError });
         }
@@ -2187,7 +2191,8 @@ exports.handleMicrosoftCallback = async (req, res) => {
             return res.status(200).send(generateCallbackHtml({
                 success: true,
                 message: result.message,
-                payload: result
+                payload: result,
+                targetOrigin: clientOrigin
             }));
         } else {
             return res.status(200).json({ message: "Microsoft account connected successfully.", ...result });
@@ -2200,7 +2205,8 @@ exports.handleMicrosoftCallback = async (req, res) => {
             return res.status(500).send(generateCallbackHtml({
                 success: false,
                 message: parsed.summary,
-                error: parsed
+                error: parsed,
+                targetOrigin: clientOrigin
             }));
         } else {
             return res.status(500).json({ error: parsed.summary, details: parsed });

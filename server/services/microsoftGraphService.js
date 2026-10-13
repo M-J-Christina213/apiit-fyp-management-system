@@ -9,7 +9,7 @@ class MicrosoftGraphService {
             clientSecret: process.env.AZURE_CLIENT_SECRET || process.env.MICROSOFT_CLIENT_SECRET || "",
             tenantId: process.env.AZURE_TENANT_ID || process.env.MICROSOFT_TENANT_ID || "common",
             redirectUri: process.env.MICROSOFT_REDIRECT_URI || "http://localhost:5000/api/viva/microsoft/callback",
-            prompt: process.env.MICROSOFT_PROMPT || "consent"
+            prompt: process.env.MICROSOFT_PROMPT !== undefined ? process.env.MICROSOFT_PROMPT : "select_account"
         };
     }
 
@@ -28,21 +28,31 @@ class MicrosoftGraphService {
             throw new Error("Microsoft OAuth credentials are not configured in environment variables (AZURE_CLIENT_ID / MICROSOFT_CLIENT_ID).");
         }
 
-        const scopes = [
+        // Required Delegated Scopes for Viva Outlook Calendar synchronization:
+        // - openid, profile, email: standard identity
+        // - offline_access: long-lived refresh tokens for background calendar sync
+        // - Calendars.ReadWrite: create, read, update viva calendar events with embedded Teams meetings
+        // - User.Read: identify the user's Microsoft 365 profile
+        // Note: OnlineMeetings.ReadWrite is not required because Teams meetings embedded in calendar
+        // events are automatically provisioned by Graph API via Calendars.ReadWrite.
+        const defaultScopes = [
             "openid",
             "profile",
             "email",
             "offline_access",
             "Calendars.ReadWrite",
-            "OnlineMeetings.ReadWrite",
             "User.Read"
-        ].join(" ");
+        ];
+
+        const scopes = process.env.MICROSOFT_SCOPES
+            ? process.env.MICROSOFT_SCOPES.split(",").map(s => s.trim()).join(" ")
+            : defaultScopes.join(" ");
 
         console.log(`[OUTLOOK-INTEGRATION] Connect request initiated for user ID: ${userId}`);
         console.log(`[MS-AUTH] Authentication flow started (Authorization Code Flow)`);
         console.log(`[MS-AUTH] Configuration: Tenant=${tenantId ? tenantId.slice(0, 8) + "..." : "MISSING"} | ClientID=${clientId ? clientId.slice(0, 8) + "..." : "MISSING"} | RedirectURI=${redirectUri}`);
         console.log(`[MS-AUTH] Requested Delegated Scopes: ${scopes}`);
-        console.log(`[MS-AUTH] OAuth prompt parameter: ${prompt}`);
+        console.log(`[MS-AUTH] OAuth prompt parameter: ${prompt || "[OMITTED]"}`);
 
         const combinedState = JSON.stringify({ userId, state });
         const authEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`;
@@ -52,9 +62,13 @@ class MicrosoftGraphService {
             redirect_uri: redirectUri,
             response_mode: "query",
             scope: scopes,
-            state: combinedState,
-            prompt: prompt
+            state: combinedState
         });
+
+        // Only append prompt if explicitly set to a non-empty, non-unset value
+        if (prompt && prompt !== "none" && prompt !== "unset" && prompt.trim() !== "") {
+            params.set("prompt", prompt.trim());
+        }
 
         const fullAuthUrl = `${authEndpoint}?${params.toString()}`;
         console.log(`[MS-AUTH] Authorization URL generated successfully`);

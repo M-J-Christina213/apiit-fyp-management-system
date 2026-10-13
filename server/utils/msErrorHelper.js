@@ -68,11 +68,24 @@ const KNOWN_AADSTS_ERRORS = {
 };
 
 /**
+ * Safely decode URL-encoded string
+ */
+function safeDecode(val) {
+    if (!val || typeof val !== "string") return "";
+    try {
+        return decodeURIComponent(val.replace(/\+/g, " "));
+    } catch (e) {
+        return val;
+    }
+}
+
+/**
  * Redact sensitive patterns like tokens, secrets, or long hexadecimal hashes
  */
 function sanitizeString(str) {
     if (!str || typeof str !== "string") return "";
-    return str
+    const decoded = safeDecode(str);
+    return decoded
         .replace(/client_secret=[^&]+/gi, "client_secret=[REDACTED]")
         .replace(/access_token=[^&]+/gi, "access_token=[REDACTED]")
         .replace(/refresh_token=[^&]+/gi, "refresh_token=[REDACTED]")
@@ -84,7 +97,7 @@ function sanitizeString(str) {
  * Parse a Microsoft OAuth or Graph error into structured safe diagnostics
  */
 function parseMicrosoftError(errorParam, descriptionParam, correlationIdParam = null) {
-    const rawError = String(errorParam || "").trim();
+    const rawError = safeDecode(String(errorParam || "")).trim();
     const rawDesc = sanitizeString(String(descriptionParam || "").trim());
 
     // Extract AADSTS code if present in description or error
@@ -106,7 +119,7 @@ function parseMicrosoftError(errorParam, descriptionParam, correlationIdParam = 
         if (corrMatch) correlationId = corrMatch[1];
     }
 
-    // Clean description: take first sentence or up to 200 chars
+    // Clean description: take first sentence or up to 250 chars
     let cleanDesc = rawDesc;
     if (cleanDesc.length > 250) {
         cleanDesc = cleanDesc.slice(0, 250) + "...";
@@ -126,7 +139,8 @@ function parseMicrosoftError(errorParam, descriptionParam, correlationIdParam = 
 /**
  * Generate a clean HTML response page for browser popups/redirects
  */
-function generateCallbackHtml({ success, message, error = null, payload = null }) {
+function generateCallbackHtml({ success, message, error = null, payload = null, targetOrigin = null }) {
+    const safeTargetOrigin = targetOrigin || process.env.CLIENT_URL || "http://localhost:5173";
     const postData = JSON.stringify({
         type: "MS_AUTH_CALLBACK",
         success,
@@ -237,9 +251,10 @@ function generateCallbackHtml({ success, message, error = null, payload = null }
 
   <script>
     const eventData = ${postData};
+    const targetOrigin = ${JSON.stringify(safeTargetOrigin)};
     if (window.opener) {
       try {
-        window.opener.postMessage(eventData, "*");
+        window.opener.postMessage(eventData, targetOrigin);
       } catch (err) {
         console.error("Failed to postMessage to opener:", err);
       }
