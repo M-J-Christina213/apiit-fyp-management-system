@@ -140,3 +140,32 @@ export const getStudentMilestoneProgress = (studentId) => API.get(`/milestones/p
 export const getStudentMilestoneProgressByCb = (cbNo) => API.get(`/milestones/progress/cb/${cbNo}`);
 export const getSupervisorMilestoneOverview = (email) => API.get(`/milestones/supervisor/${encodeURIComponent(email)}`);
 export const getAssessorMilestoneOverview = (email) => API.get(`/milestones/assessor/${encodeURIComponent(email)}`);
+
+// ===============================
+// SUBMISSION REVIEW WORKSPACE
+// ===============================
+export const getReviewWorkspace = (studentId, stage = "Proposal") =>
+    API.get(`/submissions/review-workspace/${studentId}`, { params: { stage } });
+
+export const uploadManualReviewCopy = (formData) =>
+    API.post("/submissions/upload-manual-copy", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+
+export const getSubmissionFileUrl = (submissionId, download = false) =>
+    `http://localhost:5000/api/submissions/${submissionId}/file${download ? "?download=true" : ""}`;
+
+export const saveReviewerNotes = (data) =>
+    API.post("/submissions/notes/save", data);
+
+export const releaseFeedback = (data) =>
+    API.post("/submissions/feedback/release", data);
+
+export const syncWithLms = (data) =>
+    API.post("/submissions/lms/sync", data);
+
+export const getLmsMappings = () =>
+    API.get("/submissions/lms/mappings");
+
+export const saveLmsMapping = (data) =>
+    API.post("/submissions/lms/mappings", data);

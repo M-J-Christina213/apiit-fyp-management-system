@@ -31,6 +31,7 @@ model batches {
   students            students[]
   viva_period_batches viva_period_batches[]
   milestones          milestones[]
+  lms_course_mappings lms_course_mappings[]
 }
 
 model notifications {
@@ -83,6 +84,9 @@ model students {
   viva_availabilities      viva_availabilities[]
   viva_schedules           viva_schedules[]
   studentMilestoneStatuses student_milestone_status[]
+  student_submissions      student_submissions[]
+  reviewer_notes           reviewer_notes[]
+  lms_user_mapping         lms_user_mappings?
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -398,3 +402,91 @@ model sent_reminders {
 
   @@unique([student_id, milestone_id, reminder_type])
 }
+
+model student_submissions {
+  id                   Int       @id @default(autoincrement())
+  student_id           Int
+  batch_id             Int?
+  stage                String    @db.VarChar(30) // "Proposal", "Midpoint", "Final"
+  title                String?   @db.VarChar(255)
+  file_name            String    @db.VarChar(255)
+  file_path            String    @db.Text
+  file_size_bytes      Int?
+  file_type            String?   @db.VarChar(100) // MIME or extension
+  source               String    @default("MANUAL_REVIEW_COPY") @db.VarChar(40) // "MANUAL_REVIEW_COPY" or "LMS"
+  lms_activity_url     String?   @db.Text
+  lms_submission_id    String?   @db.VarChar(100)
+  version_number       Int       @default(1)
+  attempt_number       Int?      @default(1)
+  submission_date      DateTime  @default(now())
+  last_synced_at       DateTime?
+  sync_status          String?   @default("NOT_SYNCED") @db.VarChar(30) // "NOT_SYNCED", "SYNCED", "SYNC_FAILED", "NO_SUBMISSION"
+  sync_error           String?   @db.Text
+  uploaded_by_email    String?   @db.VarChar(150)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @default(now()) @updatedAt
+
+  students             students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  reviewer_notes       reviewer_notes[]
+
+  @@index([student_id, stage])
+}
+
+model reviewer_notes {
+  id                     Int       @id @default(autoincrement())
+  student_id             Int
+  reviewer_email         String    @db.VarChar(150)
+  reviewer_role          String    @db.VarChar(30) // "SUPERVISOR", "ASSESSOR", "ADMIN"
+  stage                  String    @db.VarChar(30) // "Proposal", "Midpoint", "Final"
+  submission_id          Int?
+  submission_version     Int?
+  page_reference         String?   @db.VarChar(50)
+  private_notes          String?   @db.Text
+  viva_questions         Json?     // [{ id, question, is_asked, created_at }]
+  draft_feedback         String?   @db.Text
+  released_feedback      String?   @db.Text
+  feedback_released_at   DateTime?
+  feedback_released_by   String?   @db.VarChar(150)
+  version                Int       @default(1) // For optimistic concurrency check
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @default(now()) @updatedAt
+
+  students               students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  student_submissions    student_submissions? @relation(fields: [submission_id], references: [id], onDelete: SetNull)
+
+  @@unique([student_id, reviewer_email, stage])
+  @@index([student_id, stage])
+}
+
+model lms_course_mappings {
+  id                 Int       @id @default(autoincrement())
+  batch_id           Int
+  stage              String    @db.VarChar(30) // "Proposal", "Midpoint", "Final"
+  lms_course_id      String?   @db.VarChar(100)
+  lms_course_name    String?   @db.VarChar(255)
+  lms_activity_id    String?   @db.VarChar(100) // e.g., "248585"
+  lms_activity_type  String?   @default("turnitintooltwo") @db.VarChar(50) // "turnitintooltwo", "assign"
+  lms_activity_url   String?   @db.Text
+  assignment_part    String?   @db.VarChar(50)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @default(now()) @updatedAt
+
+  batches            batches   @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  @@unique([batch_id, stage])
+}
+
+model lms_user_mappings {
+  id                 Int       @id @default(autoincrement())
+  student_id         Int       @unique
+  institutional_id   String    @unique @db.VarChar(50) // cb_no
+  institutional_email String   @unique @db.VarChar(150)
+  lms_user_id        String?   @db.VarChar(100)
+  verification_status String   @default("UNVERIFIED") @db.VarChar(30) // "VERIFIED", "UNVERIFIED"
+  verified_at        DateTime?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @default(now()) @updatedAt
+
+  students           students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}
+

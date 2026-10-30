@@ -43,6 +43,18 @@ const AssessorDashboard = () => {
                     Assigned for Assessment
                 </span>
             )
+        },
+        {
+            header: 'Evaluation & Viva',
+            render: (row) => (
+                <Link
+                    to={`/assessor/review/${row.studentId || row.dbId || row.id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-800 text-white hover:bg-purple-900 text-xs font-bold rounded-lg shadow-2xs transition"
+                >
+                    <FileText size={13} />
+                    Review Workspace
+                </Link>
+            )
         }
     ];
 

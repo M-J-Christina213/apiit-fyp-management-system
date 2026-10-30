@@ -279,6 +279,17 @@ export default function AssessorVivaDashboard() {
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Viva Notes</span>
                       </button>
+
+                      {sch.student_id && (
+                        <a
+                          href={`/assessor/review/${sch.student_id}`}
+                          className="flex items-center justify-center gap-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 text-xs font-bold py-2 rounded-xl transition-colors"
+                          title="Open Submission Review Workspace"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-purple-700" />
+                          <span>Review Workspace</span>
+                        </a>
+                      )}
                     </div>
 
                     {!isFinalized && (

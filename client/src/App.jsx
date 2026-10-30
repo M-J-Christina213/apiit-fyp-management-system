@@ -16,6 +16,7 @@ import SupervisorVivaDashboard from './pages/viva/supervisor/SupervisorVivaDashb
 import AssessorVivaDashboard from './pages/viva/assessor/AssessorVivaDashboard.jsx';
 import StudentVivaDashboard from './pages/viva/student/StudentVivaDashboard.jsx';
 import PMVivaDashboard from './pages/viva/pm/PMVivaDashboard.jsx';
+import StudentReviewWorkspace from './pages/workspace/StudentReviewWorkspace.jsx';
 
 import { getLoggedInUser } from './utils/auth';
 
@@ -205,6 +206,7 @@ function App() {
             <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
             <Route path="/supervisor/requests" element={<SupervisorDashboard />} />
             <Route path="/supervisor/students" element={<SupervisorDashboard />} />
+            <Route path="/supervisor/review/:studentId" element={<StudentReviewWorkspace />} />
             <Route path="/supervisor/logsheets" element={<SupervisorDashboard />} />
             <Route path="/supervisor/viva" element={<SupervisorVivaDashboard />} />
             <Route path="/supervisor/profile" element={<SupervisorDashboard />} />
@@ -223,6 +225,7 @@ function App() {
             }
           >
             <Route path="/assessor/dashboard" element={<AssessorDashboard />} />
+            <Route path="/assessor/review/:studentId" element={<StudentReviewWorkspace />} />
             <Route path="/assessor/viva" element={<AssessorVivaDashboard />} />
             <Route path="/assessor/*" element={<Navigate to="/assessor/dashboard" replace />} />
           </Route>

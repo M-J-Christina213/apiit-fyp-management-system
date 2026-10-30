@@ -592,7 +592,19 @@ const SupervisorDashboard = () => {
           }`}>
             {row.supervisorConfirmationStatus || 'Confirmed'}
           </span>
-        )}
+        )},
+        {
+          header: 'Review & Viva',
+          render: (row) => (
+            <Link
+              to={`/supervisor/review/${row.studentId || row.dbId || row.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-navy-900 text-white hover:bg-navy-950 text-xs font-bold rounded-lg shadow-2xs transition"
+            >
+              <FileText size={13} />
+              Review Workspace
+            </Link>
+          )
+        }
       ];
 
       return (

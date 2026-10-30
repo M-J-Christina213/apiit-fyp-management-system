@@ -626,20 +626,24 @@ export default function VivaAdminDashboard() {
         console.warn("[MS-AUTH] Popup blocked by browser! Please allow popups for localhost.");
         alert("Popup was blocked by your browser. Please allow popups for this site to sign in to Microsoft.");
         setMsConnecting(false);
-        return;
+        return; 
       }
 
       // Check popup status periodically
       popupIntervalRef.current = setInterval(async () => {
-        if (!popup || popup.closed) {
-          if (popupIntervalRef.current) {
-            clearInterval(popupIntervalRef.current);
-            popupIntervalRef.current = null;
+        try {
+          if (!popup || popup.closed) {
+            if (popupIntervalRef.current) {
+              clearInterval(popupIntervalRef.current);
+              popupIntervalRef.current = null;
+            }
+            console.log("[MS-AUTH] Microsoft OAuth popup window closed.");
+            setMsConnecting(false);
+            const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
+            setMsStatus(s);
           }
-          console.log("[MS-AUTH] Microsoft OAuth popup window closed.");
-          setMsConnecting(false);
-          const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
-          setMsStatus(s);
+        } catch (coopErr) {
+          // Cross-Origin-Opener-Policy (COOP) restricts reading popup properties while navigated to login.microsoftonline.com
         }
       }, 1000);
 

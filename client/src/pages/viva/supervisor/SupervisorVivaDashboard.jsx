@@ -279,6 +279,17 @@ export default function SupervisorVivaDashboard() {
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Viva Notes</span>
                       </button>
+
+                      {sch.student_id && (
+                        <a
+                          href={`/supervisor/review/${sch.student_id}`}
+                          className="flex items-center justify-center gap-1.5 bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-800 text-xs font-bold py-2 rounded-xl transition-colors"
+                          title="Open Submission Review Workspace"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-navy-700" />
+                          <span>Review Workspace</span>
+                        </a>
+                      )}
                     </div>
 
                     {!isFinalized && (

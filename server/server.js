@@ -18,6 +18,7 @@ const externalSupervisorRoutes = require("./routes/externalSupervisors");
 const adminRoutes = require("./routes/adminRoutes");
 const vivaRoutes = require("./routes/vivaRoutes");
 const milestoneRoutes = require("./routes/milestoneRoutes");
+const submissionRoutes = require("./routes/submissionRoutes");
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use(
 );
 app.use("/api/viva", vivaRoutes);
 app.use("/api/milestones", milestoneRoutes);
+app.use("/api/submissions", submissionRoutes);
 
 const PORT = 5000;
 
