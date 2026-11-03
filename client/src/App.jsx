@@ -252,6 +252,7 @@ function App() {
             <Route path="/pm/templates" element={<PMDashboard />} />
             <Route path="/pm/reports" element={<PMDashboard />} />
             <Route path="/pm/viva" element={<PMVivaDashboard />} />
+            <Route path="/pm/review/:studentId" element={<StudentReviewWorkspace />} />
             <Route path="/pm/*" element={<Navigate to="/pm/dashboard" replace />} />
           </Route>
         </Route>
@@ -275,6 +276,7 @@ function App() {
               element={<AdminDashboard />}
             />
             <Route path="/admin/viva" element={<VivaAdminDashboard />} />
+            <Route path="/admin/review/:studentId" element={<StudentReviewWorkspace />} />
             <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>

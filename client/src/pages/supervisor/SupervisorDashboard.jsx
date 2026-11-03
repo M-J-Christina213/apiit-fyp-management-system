@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import DashboardCard from '../../components/common/DashboardCard';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -433,6 +433,18 @@ const SupervisorDashboard = () => {
               </div>
             );
           }
+        },
+        {
+          header: 'Review & Viva',
+          render: (row) => (
+            <Link
+              to={`/supervisor/review/${row.studentId || row.dbId || row.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-navy-900 text-white hover:bg-navy-950 text-xs font-bold rounded-lg shadow-2xs transition"
+            >
+              <FileText size={12} />
+              Review
+            </Link>
+          )
         }
       ];
 

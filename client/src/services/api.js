@@ -152,8 +152,23 @@ export const uploadManualReviewCopy = (formData) =>
         headers: { "Content-Type": "multipart/form-data" }
     });
 
-export const getSubmissionFileUrl = (submissionId, download = false) =>
-    `http://localhost:5000/api/submissions/${submissionId}/file${download ? "?download=true" : ""}`;
+export const getSubmissionFileUrl = (submissionId, download = false) => {
+    const user = getLoggedInUser();
+    const query = new URLSearchParams();
+    if (download) query.set("download", "true");
+    if (user?.email) query.set("email", user.email);
+    if (user?.role) query.set("role", user.role);
+    const qs = query.toString();
+    return `http://localhost:5000/api/submissions/${submissionId}/file${qs ? `?${qs}` : ""}`;
+};
+
+export const getSubmissionFileBlob = async (submissionId, download = false) => {
+    const res = await API.get(`/submissions/${submissionId}/file`, {
+        params: download ? { download: "true" } : {},
+        responseType: "blob"
+    });
+    return res.data;
+};
 
 export const saveReviewerNotes = (data) =>
     API.post("/submissions/notes/save", data);
@@ -164,8 +179,17 @@ export const releaseFeedback = (data) =>
 export const syncWithLms = (data) =>
     API.post("/submissions/lms/sync", data);
 
+export const getStudentReleasedFeedback = (studentId, stage = "Proposal") =>
+    API.get(`/submissions/student/feedback/${studentId}`, { params: { stage } });
+
 export const getLmsMappings = () =>
     API.get("/submissions/lms/mappings");
 
 export const saveLmsMapping = (data) =>
     API.post("/submissions/lms/mappings", data);
+
+export const getStudentLmsMapping = (studentId) =>
+    API.get(`/submissions/lms/user-mapping/${studentId}`);
+
+export const saveStudentLmsMapping = (data) =>
+    API.post("/submissions/lms/user-mapping", data);

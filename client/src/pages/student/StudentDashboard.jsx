@@ -34,7 +34,8 @@ import {
   getStudentProposals,
   submitProposal,
   getStudentLogsheets,
-  submitLogsheet
+  submitLogsheet,
+  getStudentReleasedFeedback
 } from "../../services/api.js";
 
 const StudentDashboard = () => {
@@ -48,6 +49,7 @@ const StudentDashboard = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [studentStage, setStudentStage] = useState("Proposal");
   const [dbNotifications, setDbNotifications] = useState([]);
+  const [releasedFeedbackList, setReleasedFeedbackList] = useState([]);
 
   // Templates state
   const [templates, setTemplates] = useState([]);
@@ -119,6 +121,13 @@ const StudentDashboard = () => {
         setStudents(stuRes.data);
         setProposals(propRes.data);
         setLogsheets(logsheetsRes.data || []);
+
+        try {
+          const fbRes = await getStudentReleasedFeedback(studentId, "Proposal");
+          setReleasedFeedbackList(fbRes.data || []);
+        } catch {
+          // Fallback if no feedback exists
+        }
 
         if (loggedIn?.id) {
           try {
@@ -513,6 +522,43 @@ const StudentDashboard = () => {
                     <StatusBadge status="Pending" type="progress" />
                   </div>
                 </div>
+              </div>
+
+              {/* Academic Reviewer Feedback Card */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-indigo-700" /> Academic Reviewer Feedback
+                    </h3>
+                    <p className="text-xs text-slate-500">Official formative and summative feedback released by your supervisor.</p>
+                  </div>
+                </div>
+
+                {releasedFeedbackList.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl space-y-1">
+                    <p className="text-xs font-semibold text-slate-600">No released feedback recorded yet</p>
+                    <p className="text-[11px] text-slate-400">Feedback will appear here once your supervisor officially releases their review comments.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {releasedFeedbackList.map((fb) => (
+                      <div key={fb.id} className="p-4 rounded-xl border border-blue-100 bg-blue-50/40 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-navy-900">
+                            {fb.reviewer_role === "SUPERVISOR" ? "Supervisor Feedback" : "Assessor Feedback"} ({fb.stage} Stage)
+                          </span>
+                          <span className="text-slate-500 text-[11px]">
+                            {fb.feedback_released_at ? new Date(fb.feedback_released_at).toLocaleDateString() : ""}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                          {fb.released_feedback}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               {/* Supervisors Table */}

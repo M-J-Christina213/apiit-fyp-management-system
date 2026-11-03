@@ -16,10 +16,19 @@ const AssessorDashboard = () => {
             try {
                 const res = await getStudents();
                 if (res.data) {
-                    const filtered = res.data.filter(s => 
-                        s.assessor === user?.name || 
-                        s.assessor?.toLowerCase().includes((user?.name || '').toLowerCase())
-                    );
+                    const filtered = res.data.filter(s => {
+                        if (!user) return false;
+                        const normUserEmail = (user.email || '').trim().toLowerCase();
+                        const normUserName = (user.name || '').trim().toLowerCase();
+                        const normAssessorEmail = (s.assessorEmail || '').trim().toLowerCase();
+                        const normAssessorName = (s.assessor || '').trim().toLowerCase();
+
+                        return (
+                            (normAssessorEmail && normAssessorEmail === normUserEmail) ||
+                            (normAssessorName && normUserName && (normAssessorName.includes(normUserName) || normUserName.includes(normAssessorName))) ||
+                            (s.assessorId && user.id && s.assessorId === user.id)
+                        );
+                    });
                     setAssessedStudents(filtered);
                 }
             } catch (err) {

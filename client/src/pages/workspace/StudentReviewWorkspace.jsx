@@ -22,15 +22,22 @@ import {
   Loader2,
   Check,
   Eye,
-  Info
+  Info,
+  Settings,
+  UserCheck,
+  AlertTriangle,
+  RotateCcw
 } from "lucide-react";
 import {
   getReviewWorkspace,
   uploadManualReviewCopy,
   getSubmissionFileUrl,
+  getSubmissionFileBlob,
   saveReviewerNotes,
   releaseFeedback,
   syncWithLms,
+  saveLmsMapping,
+  saveStudentLmsMapping,
   getLoggedInUser
 } from "../../services/api";
 
@@ -48,6 +55,11 @@ export default function StudentReviewWorkspace() {
   // Selected submission file for viewing
   const [selectedSubmission, setSelectedSubmission] = useState(null);
 
+  // PDF Preview Blob state
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
+
   // Notes & Viva questions state
   const [activeRightTab, setActiveRightTab] = useState("notes"); // 'notes', 'questions', 'feedback'
   const [privateNotes, setPrivateNotes] = useState("");
@@ -61,6 +73,7 @@ export default function StudentReviewWorkspace() {
   const [noteVersion, setNoteVersion] = useState(1);
   const [saveStatus, setSaveStatus] = useState("saved"); // 'saved', 'saving', 'unsaved', 'error', 'conflict'
   const [saveMessage, setSaveMessage] = useState("");
+  const [conflictData, setConflictData] = useState(null);
   const [releasingFeedback, setReleasingFeedback] = useState(false);
   const [feedbackSuccessMessage, setFeedbackSuccessMessage] = useState("");
 
@@ -75,16 +88,81 @@ export default function StudentReviewWorkspace() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncNotice, setSyncNotice] = useState(null);
 
+  // LMS Mapping Config Modal (Admin / PM)
+  const [isLmsModalOpen, setIsLmsModalOpen] = useState(false);
+  const [mappingCourseId, setMappingCourseId] = useState("");
+  const [mappingCourseName, setMappingCourseName] = useState("");
+  const [mappingActivityId, setMappingActivityId] = useState("");
+  const [mappingActivityType, setMappingActivityType] = useState("turnitintooltwo");
+  const [mappingAssignmentPart, setMappingAssignmentPart] = useState("");
+  const [mappingActivityUrl, setMappingActivityUrl] = useState("");
+  const [savingMapping, setSavingMapping] = useState(false);
+
+  // Student LMS User ID verification modal
+  const [isUserMappingModalOpen, setIsUserMappingModalOpen] = useState(false);
+  const [lmsUserIdInput, setLmsUserIdInput] = useState("");
+  const [savingUserMapping, setSavingUserMapping] = useState(false);
+
   // Responsive active panel for small screens
   const [mobilePanel, setMobilePanel] = useState("document"); // 'submissions', 'document', 'notes'
 
   const user = getLoggedInUser();
+  const isAdminOrPm = Boolean(
+    workspaceData?.reviewerContext?.role === "ADMIN" ||
+    workspaceData?.reviewerContext?.role === "PM" ||
+    ["admin", "pm"].includes(user?.role?.toLowerCase())
+  );
 
   // Load workspace data when studentId or selectedStage changes
   useEffect(() => {
     if (!studentId) return;
     loadWorkspace(selectedStage);
   }, [studentId, selectedStage]);
+
+  // Load preview blob whenever selected submission changes
+  useEffect(() => {
+    if (!selectedSubmission) {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+      setPreviewBlobUrl(null);
+      return;
+    }
+
+    const isPdf =
+      selectedSubmission.file_name.toLowerCase().endsWith(".pdf") ||
+      selectedSubmission.file_type === "application/pdf";
+
+    if (!isPdf) {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+      setPreviewBlobUrl(null);
+      return;
+    }
+
+    let active = true;
+    setPreviewLoading(true);
+    setPreviewError(null);
+
+    getSubmissionFileBlob(selectedSubmission.id)
+      .then((blob) => {
+        if (active) {
+          if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+          const url = URL.createObjectURL(blob);
+          setPreviewBlobUrl(url);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          console.error("PDF Preview Error:", err);
+          setPreviewError(err.response?.data?.message || err.response?.data?.error || "Failed to stream document preview.");
+        }
+      })
+      .finally(() => {
+        if (active) setPreviewLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedSubmission]);
 
   const loadWorkspace = async (stage) => {
     setLoading(true);
@@ -103,6 +181,28 @@ export default function StudentReviewWorkspace() {
       setPageReference(noteData.page_reference || "");
       setNoteVersion(noteData.version || 1);
       setSaveStatus("saved");
+      setConflictData(null);
+
+      // Populate LMS Mapping config fields if existing
+      const existingMapping = data.lmsIntegration?.courseMapping;
+      if (existingMapping) {
+        setMappingCourseId(existingMapping.lms_course_id || "");
+        setMappingCourseName(existingMapping.lms_course_name || "");
+        setMappingActivityId(existingMapping.lms_activity_id || "");
+        setMappingActivityType(data.lmsIntegration.activityType || "turnitintooltwo");
+        setMappingActivityUrl(data.lmsIntegration.activityUrl || "");
+      } else {
+        setMappingCourseId("");
+        setMappingCourseName("");
+        setMappingActivityId("248585");
+        setMappingActivityType("turnitintooltwo");
+        setMappingActivityUrl("https://lms.apiit.lk/mod/turnitintooltwo/view.php?id=248585");
+      }
+
+      // Student mapping fields
+      if (data.studentMapping) {
+        setLmsUserIdInput(data.studentMapping.lms_user_id || "");
+      }
 
       // Auto-select latest submission if available
       if (data.submissions && data.submissions.length > 0) {
@@ -117,9 +217,6 @@ export default function StudentReviewWorkspace() {
       setLoading(false);
     }
   };
-
-  // Auto-save debounce tracker
-  const debounceTimer = useRef(null);
 
   const handleNotesChange = (value) => {
     setPrivateNotes(value);
@@ -174,7 +271,7 @@ export default function StudentReviewWorkspace() {
     setSaveMessage("");
     try {
       const payload = {
-        student_id: parseInt(studentId),
+        student_id: workspaceData?.student?.id || parseInt(studentId),
         stage: selectedStage,
         private_notes: overrides.private_notes !== undefined ? overrides.private_notes : privateNotes,
         viva_questions: overrides.viva_questions !== undefined ? overrides.viva_questions : vivaQuestions,
@@ -182,7 +279,7 @@ export default function StudentReviewWorkspace() {
         submission_id: selectedSubmission ? selectedSubmission.id : null,
         submission_version: selectedSubmission ? selectedSubmission.version_number : null,
         page_reference: overrides.page_reference !== undefined ? overrides.page_reference : pageReference,
-        client_version: noteVersion
+        client_version: overrides.forceVersion !== undefined ? overrides.forceVersion : noteVersion
       };
 
       const res = await saveReviewerNotes(payload);
@@ -190,17 +287,36 @@ export default function StudentReviewWorkspace() {
         setNoteVersion(res.data.note.version);
       }
       setSaveStatus("saved");
+      setConflictData(null);
       setSaveMessage("All changes saved");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (err) {
       console.error("Save note error:", err);
       if (err.response?.status === 409) {
         setSaveStatus("conflict");
-        setSaveMessage("Conflict: Changes made elsewhere. Please reload stage.");
+        setConflictData(err.response?.data);
+        setSaveMessage("Conflict: Changes made elsewhere. Please review options.");
       } else {
         setSaveStatus("error");
         setSaveMessage(err.response?.data?.error || "Error saving changes");
       }
+    }
+  };
+
+  // Handle Download File with Auth Headers
+  const handleDownloadFile = async (sub) => {
+    try {
+      const blob = await getSubmissionFileBlob(sub.id, true);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = sub.file_name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to download file: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -218,7 +334,7 @@ export default function StudentReviewWorkspace() {
     setFeedbackSuccessMessage("");
     try {
       const res = await releaseFeedback({
-        student_id: parseInt(studentId),
+        student_id: workspaceData?.student?.id || parseInt(studentId),
         stage: selectedStage,
         feedback_content: draftFeedback
       });
@@ -244,7 +360,7 @@ export default function StudentReviewWorkspace() {
     setUploadError("");
     try {
       const formData = new FormData();
-      formData.append("student_id", studentId);
+      formData.append("student_id", workspaceData?.student?.id || studentId);
       formData.append("stage", selectedStage);
       formData.append("title", uploadTitle || uploadFile.name);
       formData.append("file", uploadFile);
@@ -268,7 +384,7 @@ export default function StudentReviewWorkspace() {
     setSyncNotice(null);
     try {
       const res = await syncWithLms({
-        student_id: parseInt(studentId),
+        student_id: workspaceData?.student?.id || parseInt(studentId),
         stage: selectedStage
       });
       setSyncNotice(res.data);
@@ -280,6 +396,57 @@ export default function StudentReviewWorkspace() {
       });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // Handle Save LMS Course Mapping
+  const handleSaveLmsMapping = async (e) => {
+    e.preventDefault();
+    if (!workspaceData?.student?.batch_id) {
+      alert("Student batch is not defined. Cannot associate batch course mapping.");
+      return;
+    }
+    setSavingMapping(true);
+    try {
+      const computedUrl = mappingActivityType === "turnitintooltwo"
+        ? `https://lms.apiit.lk/mod/turnitintooltwo/view.php?id=${encodeURIComponent(mappingActivityId)}`
+        : `https://lms.apiit.lk/mod/assign/view.php?id=${encodeURIComponent(mappingActivityId)}`;
+
+      await saveLmsMapping({
+        batch_id: workspaceData.student.batch_id,
+        stage: selectedStage,
+        lms_course_id: mappingCourseId,
+        lms_course_name: mappingCourseName,
+        lms_activity_id: mappingActivityId,
+        lms_activity_type: mappingActivityType,
+        lms_activity_url: mappingActivityUrl || computedUrl,
+        assignment_part: mappingAssignmentPart
+      });
+      setIsLmsModalOpen(false);
+      await loadWorkspace(selectedStage);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to save LMS mapping.");
+    } finally {
+      setSavingMapping(false);
+    }
+  };
+
+  // Handle Save Student LMS User ID mapping
+  const handleSaveUserMapping = async (e) => {
+    e.preventDefault();
+    setSavingUserMapping(true);
+    try {
+      await saveStudentLmsMapping({
+        student_id: workspaceData?.student?.id || studentId,
+        lms_user_id: lmsUserIdInput,
+        verification_status: lmsUserIdInput ? "VERIFIED" : "UNVERIFIED"
+      });
+      setIsUserMappingModalOpen(false);
+      await loadWorkspace(selectedStage);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to save student user mapping.");
+    } finally {
+      setSavingUserMapping(false);
     }
   };
 
@@ -301,7 +468,7 @@ export default function StudentReviewWorkspace() {
             <h2 className="text-lg font-bold">Access Denied or Record Unavailable</h2>
             <p className="text-sm text-red-700">{error}</p>
             <p className="text-xs text-red-600">
-              Only designated supervisors, assessors, and FYP administrators can access student review workspaces.
+              Only designated supervisors, assessors, and FYP administrators can access student review workspaces. Changing URL parameters or identifiers does not expose unauthorized student data.
             </p>
             <div className="pt-2">
               <button
@@ -317,7 +484,7 @@ export default function StudentReviewWorkspace() {
     );
   }
 
-  const { student, reviewerContext, submissions = [], lmsIntegration } = workspaceData;
+  const { student, reviewerContext, submissions = [], lmsIntegration, studentMapping } = workspaceData;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-[1920px] mx-auto bg-slate-50 overflow-hidden font-sans">
@@ -345,11 +512,24 @@ export default function StudentReviewWorkspace() {
                 <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-xs font-semibold">
                   {student.batch_intake || student.batch_code}
                 </span>
+
                 {/* Reviewer Relationship Badge */}
                 <span className="px-3 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-2xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
                   Your Role: {reviewerContext?.relationship || "Reviewer"}
                 </span>
+
+                {/* Verified Student Mapping Badge */}
+                {studentMapping && (
+                  <button
+                    onClick={() => setIsUserMappingModalOpen(true)}
+                    className="px-2.5 py-0.5 bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-md text-[11px] font-medium flex items-center gap-1"
+                    title="Click to view/verify LMS institutional identity mapping"
+                  >
+                    <UserCheck size={12} className={studentMapping.verification_status === "VERIFIED" ? "text-emerald-600" : "text-amber-500"} />
+                    <span>LMS ID: {studentMapping.lms_user_id || "Unmapped"}</span>
+                  </button>
+                )}
               </div>
               <p className="text-xs text-slate-500 mt-1 flex items-center gap-2 truncate max-w-2xl">
                 <span className="font-semibold text-slate-600">Project:</span> {student.project_title}
@@ -400,6 +580,32 @@ export default function StudentReviewWorkspace() {
         </div>
       </header>
 
+      {/* ── CONFLICT BANNER ── */}
+      {conflictData && (
+        <div className="bg-amber-100 border-b border-amber-300 px-6 py-2.5 flex items-center justify-between text-xs text-amber-900">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-700" />
+            <span>
+              <strong>Concurrency Conflict:</strong> Another session updated these notes (Server Version #{conflictData.currentVersion}). You have unsaved local changes.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => loadWorkspace(selectedStage)}
+              className="px-3 py-1 bg-white border border-amber-300 rounded text-amber-900 font-semibold hover:bg-amber-50"
+            >
+              Reload Server Version
+            </button>
+            <button
+              onClick={() => saveNotesPayload({ forceVersion: conflictData.currentVersion })}
+              className="px-3 py-1 bg-amber-800 text-white rounded font-semibold hover:bg-amber-900"
+            >
+              Overwrite with My Edits
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── WORKSPACE 3-PANE LAYOUT ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* ── PANE 1: Submissions & LMS Panel (Left) ── */}
@@ -432,14 +638,26 @@ export default function StudentReviewWorkspace() {
                 <span className={`w-2 h-2 rounded-full ${lmsIntegration?.connected ? "bg-emerald-500" : "bg-amber-400"}`} />
                 APIIT LMS Sync
               </span>
-              <button
-                onClick={handleSyncLms}
-                disabled={isSyncing}
-                className="text-[11px] text-navy-700 hover:text-navy-900 font-semibold flex items-center gap-1 disabled:opacity-50"
-              >
-                <RefreshCw size={11} className={isSyncing ? "animate-spin" : ""} />
-                Check Sync
-              </button>
+              <div className="flex items-center gap-2">
+                {isAdminOrPm && (
+                  <button
+                    onClick={() => setIsLmsModalOpen(true)}
+                    className="text-slate-400 hover:text-slate-700"
+                    title="Configure Batch & Stage LMS Mapping"
+                  >
+                    <Settings size={13} />
+                  </button>
+                )}
+                <button
+                  onClick={handleSyncLms}
+                  disabled={isSyncing}
+                  className="text-[11px] text-navy-700 hover:text-navy-900 font-semibold flex items-center gap-1 disabled:opacity-50"
+                  title="Query LMS sync status"
+                >
+                  <RefreshCw size={11} className={isSyncing ? "animate-spin" : ""} />
+                  Sync
+                </button>
+              </div>
             </div>
 
             <div className="text-[11px] text-slate-600">
@@ -456,10 +674,10 @@ export default function StudentReviewWorkspace() {
                 href={lmsIntegration.activityUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded-md border border-purple-200 w-full justify-center transition"
+                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg border border-purple-200 w-full justify-center transition shadow-2xs"
               >
                 <ExternalLink size={12} />
-                Open Assignment in LMS ({lmsIntegration.activityType === "turnitintooltwo" ? "Turnitin V2" : "Moodle"})
+                Open Assignment in LMS ({lmsIntegration.activityType === "turnitintooltwo" ? "Turnitin Direct V2" : "Moodle"})
               </a>
             )}
 
@@ -477,9 +695,9 @@ export default function StudentReviewWorkspace() {
               <div className="p-6 text-center text-slate-400 space-y-3">
                 <FileText className="w-10 h-10 mx-auto text-slate-300" />
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-slate-600">No submission files recorded</p>
-                  <p className="text-[11px] text-slate-500">
-                    LMS sync is unconfigured for automated extraction. You can upload an authorized review copy or inspect the LMS activity link above.
+                  <p className="text-xs font-semibold text-slate-600">No local submission copies</p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Automated Turnitin Direct V2 sync is unconfigured for local download. The student may have submitted on the APIIT LMS assignment activity. Click <strong>Open Assignment in LMS</strong> above or upload an authorized review copy.
                   </p>
                 </div>
                 <button
@@ -559,30 +777,48 @@ export default function StudentReviewWorkspace() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <a
-                    href={getSubmissionFileUrl(selectedSubmission.id, true)}
+                  <button
+                    onClick={() => handleDownloadFile(selectedSubmission)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition"
-                    title="Download original file"
+                    title="Download original file with verified permissions"
                   >
                     <Download size={13} /> Download
-                  </a>
-                  <a
-                    href={getSubmissionFileUrl(selectedSubmission.id, false)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-navy-800 bg-navy-50 hover:bg-navy-100 border border-navy-200 rounded-lg shadow-2xs transition"
-                    title="Open full page preview"
-                  >
-                    <ExternalLink size={13} /> Full Window
-                  </a>
+                  </button>
+
+                  {previewBlobUrl && (
+                    <button
+                      onClick={() => window.open(previewBlobUrl, "_blank")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-navy-800 bg-navy-50 hover:bg-navy-100 border border-navy-200 rounded-lg shadow-2xs transition"
+                      title="Open full page preview"
+                    >
+                      <ExternalLink size={13} /> Full Window
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Document Viewer Frame */}
-              <div className="flex-1 bg-slate-200/80 p-2 overflow-hidden flex flex-col">
-                {selectedSubmission.file_name.toLowerCase().endsWith(".pdf") ? (
+              <div className="flex-1 bg-slate-200/80 p-2 overflow-hidden flex flex-col relative">
+                {previewLoading ? (
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-2 text-slate-500">
+                    <Loader2 className="w-8 h-8 animate-spin text-navy-700" />
+                    <p className="text-xs font-semibold">Streaming verified document preview…</p>
+                  </div>
+                ) : previewError ? (
+                  <div className="m-auto max-w-md bg-white p-6 rounded-2xl border border-red-200 shadow-sm text-center space-y-3">
+                    <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
+                    <h4 className="font-bold text-slate-800 text-sm">Preview Unavailable</h4>
+                    <p className="text-xs text-red-600">{previewError}</p>
+                    <button
+                      onClick={() => handleDownloadFile(selectedSubmission)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded-lg text-xs font-bold shadow-sm"
+                    >
+                      <Download size={14} /> Download File Directly
+                    </button>
+                  </div>
+                ) : previewBlobUrl ? (
                   <iframe
-                    src={getSubmissionFileUrl(selectedSubmission.id, false)}
+                    src={previewBlobUrl}
                     title="Document Preview"
                     className="w-full h-full bg-white rounded-lg shadow-inner border border-slate-300"
                   />
@@ -595,12 +831,12 @@ export default function StudentReviewWorkspace() {
                         Inline browser preview is natively supported for PDF documents. Word files (.doc, .docx) can be securely downloaded to your device for review.
                       </p>
                     </div>
-                    <a
-                      href={getSubmissionFileUrl(selectedSubmission.id, true)}
+                    <button
+                      onClick={() => handleDownloadFile(selectedSubmission)}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-navy-900 text-white rounded-lg text-xs font-bold shadow-sm hover:bg-navy-950 transition"
                     >
                       <Download size={14} /> Download Document for Review
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
@@ -842,14 +1078,20 @@ export default function StudentReviewWorkspace() {
                     >
                       Save Draft
                     </button>
-                    <button
-                      onClick={handleReleaseFeedback}
-                      disabled={releasingFeedback || !draftFeedback.trim()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-800 transition shadow-xs disabled:opacity-50"
-                    >
-                      {releasingFeedback ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-                      Release to Student
-                    </button>
+                    {reviewerContext?.canReleaseFeedback ? (
+                      <button
+                        onClick={handleReleaseFeedback}
+                        disabled={releasingFeedback || !draftFeedback.trim()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-800 transition shadow-xs disabled:opacity-50"
+                      >
+                        {releasingFeedback ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                        Release to Student
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic">
+                        Feedback release restricted to designated supervisor
+                      </span>
+                    )}
                   </div>
 
                   {feedbackSuccessMessage && (
@@ -946,6 +1188,169 @@ export default function StudentReviewWorkspace() {
                 >
                   {isUploading ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />}
                   Upload Copy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CONFIGURE LMS COURSE / ACTIVITY MAPPING (ADMIN / PM) ── */}
+      {isLmsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Settings className="h-5 w-5 text-purple-700" /> Configure LMS Activity Mapping
+              </h3>
+              <button
+                onClick={() => setIsLmsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Configure the APIIT LMS course and assignment activity mapping for batch <strong>{student.batch_code || student.batch_intake}</strong> and <strong>{selectedStage}</strong> stage.
+            </p>
+
+            <form onSubmit={handleSaveLmsMapping} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Activity Type:
+                  </label>
+                  <select
+                    value={mappingActivityType}
+                    onChange={(e) => setMappingActivityType(e.target.value)}
+                    className="w-full text-xs border border-slate-200 rounded-lg p-2 focus:outline-navy-700 bg-white"
+                  >
+                    <option value="turnitintooltwo">Turnitin Direct V2 (/mod/turnitintooltwo/)</option>
+                    <option value="assign">Standard Moodle Assignment (/mod/assign/)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    LMS Activity ID:
+                  </label>
+                  <input
+                    type="text"
+                    value={mappingActivityId}
+                    onChange={(e) => setMappingActivityId(e.target.value)}
+                    placeholder="e.g. 248585"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-navy-700"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Assignment Part / Stage Name (Optional):
+                </label>
+                <input
+                  type="text"
+                  value={mappingAssignmentPart}
+                  onChange={(e) => setMappingAssignmentPart(e.target.value)}
+                  placeholder="e.g. Part 1, Proposal Document"
+                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-navy-700"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Direct Activity URL (Generated):
+                </label>
+                <input
+                  type="text"
+                  value={
+                    mappingActivityType === "turnitintooltwo"
+                      ? `https://lms.apiit.lk/mod/turnitintooltwo/view.php?id=${mappingActivityId}`
+                      : `https://lms.apiit.lk/mod/assign/view.php?id=${mappingActivityId}`
+                  }
+                  readOnly
+                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-600 font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsLmsModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingMapping}
+                  className="px-4 py-2 bg-navy-900 text-white rounded-lg text-xs font-bold hover:bg-navy-950 flex items-center gap-1.5"
+                >
+                  {savingMapping ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  Save LMS Mapping
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: VERIFY STUDENT INSTITUTIONAL LMS USER ID ── */}
+      {isUserMappingModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-navy-800" /> Student LMS Identity Mapping
+              </h3>
+              <button
+                onClick={() => setIsUserMappingModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div><strong>Student Name:</strong> {student.student_name}</div>
+              <div><strong>Institutional ID (CB No):</strong> {student.cb_no}</div>
+              <div><strong>Institutional Email:</strong> {studentMapping?.institutional_email || `${student.cb_no.toLowerCase()}@students.apiit.lk`}</div>
+              <div><strong>Verification Status:</strong> {studentMapping?.verification_status || "UNVERIFIED"}</div>
+            </div>
+
+            <form onSubmit={handleSaveUserMapping} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Moodle / LMS User ID (Numeric):
+                </label>
+                <input
+                  type="text"
+                  value={lmsUserIdInput}
+                  onChange={(e) => setLmsUserIdInput(e.target.value)}
+                  placeholder="e.g. 10425"
+                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-navy-700"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Matched strictly using institutional CB number or institutional email. Never matched silently by student name.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsUserMappingModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingUserMapping}
+                  className="px-4 py-2 bg-navy-900 text-white rounded-lg text-xs font-bold hover:bg-navy-950 flex items-center gap-1.5"
+                >
+                  {savingUserMapping ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  Save Verified ID
                 </button>
               </div>
             </form>

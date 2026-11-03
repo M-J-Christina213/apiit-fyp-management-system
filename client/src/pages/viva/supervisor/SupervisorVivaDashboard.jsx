@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   CalendarDays, Clock, MapPin, Video, CheckCircle2, AlertCircle,
   ExternalLink, FileText, Edit3, MessageSquare, Check, X, Layers,
@@ -279,18 +280,18 @@ export default function SupervisorVivaDashboard() {
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Viva Notes</span>
                       </button>
-
-                      {sch.student_id && (
-                        <a
-                          href={`/supervisor/review/${sch.student_id}`}
-                          className="flex items-center justify-center gap-1.5 bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-800 text-xs font-bold py-2 rounded-xl transition-colors"
-                          title="Open Submission Review Workspace"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-navy-700" />
-                          <span>Review Workspace</span>
-                        </a>
-                      )}
                     </div>
+
+                    {sch.student_id && (
+                      <Link
+                        to={`/supervisor/review/${sch.student_id}`}
+                        className="w-full flex items-center justify-center gap-1.5 bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-900 text-xs font-bold py-2 rounded-xl transition-colors shadow-2xs"
+                        title="Open Student Submission Review Workspace"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-navy-700" />
+                        <span>Review Workspace</span>
+                      </Link>
+                    )}
 
                     {!isFinalized && (
                       <button

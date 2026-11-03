@@ -128,11 +128,13 @@ const getStudents = async (req, res) => {
                     fypRecord?.supervisors?.expertise || "-",
                 supervisorConfirmationStatus:
                     fypRecord?.supervisor_confirmation_status || "Pending",
+                supervisorEmail: fypRecord?.supervisors?.email || null,
                 assessorId: fypRecord?.assessor_id || null,
                 assessor:
                     fypRecord?.assessors
                         ? `${fypRecord.assessors.title || ""} ${fypRecord.assessors.name}`.trim()
                         : null,
+                assessorEmail: fypRecord?.assessors?.email || null,
                 assessorAssigned: !!fypRecord?.assessor_id
             };
         });

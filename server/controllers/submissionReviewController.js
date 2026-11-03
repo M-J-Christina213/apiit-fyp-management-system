@@ -12,9 +12,28 @@ const lmsAdapter = require("../services/lmsIntegrationAdapter");
  * 3. An allocated viva supervisor or assessor in viva_schedules.
  * 4. A PM or Admin global role.
  */
-async function getStudentReviewAuthorization(studentId, userEmail, userRole) {
-    if (!studentId || !userEmail) {
+/**
+ * Helper: Resolve numeric student ID from raw ID (integer or CB Number like "CB001")
+ */
+async function resolveStudentId(rawId) {
+    if (!rawId) return null;
+    const parsed = parseInt(rawId);
+    if (!isNaN(parsed)) return parsed;
+
+    const student = await prisma.students.findFirst({
+        where: { cb_no: { equals: String(rawId).trim(), mode: "insensitive" } }
+    });
+    return student ? student.id : null;
+}
+
+async function getStudentReviewAuthorization(rawStudentId, userEmail, userRole) {
+    if (!rawStudentId || !userEmail) {
         return { authorized: false, reason: "Missing credentials or student identifier" };
+    }
+
+    const studentId = await resolveStudentId(rawStudentId);
+    if (!studentId) {
+        return { authorized: false, reason: "Student record not found" };
     }
 
     const normalizedEmail = userEmail.trim().toLowerCase();
@@ -33,7 +52,7 @@ async function getStudentReviewAuthorization(studentId, userEmail, userRole) {
 
     // 2. Fetch student with FYP records and viva schedules
     const student = await prisma.students.findUnique({
-        where: { id: parseInt(studentId) },
+        where: { id: studentId },
         include: {
             batches: true,
             student_fyp_records: {
@@ -115,13 +134,13 @@ async function getStudentReviewAuthorization(studentId, userEmail, userRole) {
  */
 exports.getReviewWorkspace = async (req, res) => {
     try {
-        const studentId = parseInt(req.params.studentId);
+        const studentId = await resolveStudentId(req.params.studentId);
         const stage = req.query.stage || "Proposal";
         const userEmail = req.headers["x-user-email"];
         const userRole = req.headers["x-user-role"];
 
-        if (isNaN(studentId)) {
-            return res.status(400).json({ error: "Invalid Student ID" });
+        if (!studentId) {
+            return res.status(404).json({ error: "Student not found" });
         }
 
         const auth = await getStudentReviewAuthorization(studentId, userEmail, userRole);
@@ -174,6 +193,22 @@ exports.getReviewWorkspace = async (req, res) => {
             }
         });
 
+        // Retrieve verified institutional student LMS mapping
+        let userMapping = await prisma.lms_user_mappings.findUnique({
+            where: { student_id: studentId }
+        });
+
+        if (!userMapping && student?.cb_no) {
+            userMapping = {
+                student_id: student.id,
+                institutional_id: student.cb_no,
+                institutional_email: `${student.cb_no.toLowerCase()}@students.apiit.lk`,
+                lms_user_id: null,
+                verification_status: "UNVERIFIED",
+                verified_at: null
+            };
+        }
+
         const lmsStatus = lmsAdapter.getConnectionStatus();
 
         // Calculate available LMS activity URL for this batch & stage
@@ -181,6 +216,7 @@ exports.getReviewWorkspace = async (req, res) => {
             (courseMapping?.lms_activity_id ? lmsAdapter.formatActivityUrl(courseMapping.lms_activity_id, courseMapping.lms_activity_type) : "https://lms.apiit.lk");
 
         res.status(200).json({
+            studentMapping: userMapping,
             student: {
                 id: student.id,
                 student_name: student.student_name,
@@ -266,14 +302,14 @@ exports.getReviewWorkspace = async (req, res) => {
  */
 exports.uploadManualReviewCopy = async (req, res) => {
     try {
-        const studentId = parseInt(req.body.student_id);
+        const studentId = await resolveStudentId(req.body.student_id);
         const stage = req.body.stage || "Proposal";
         const title = req.body.title || null;
         const userEmail = req.headers["x-user-email"];
         const userRole = req.headers["x-user-role"];
 
-        if (isNaN(studentId)) {
-            return res.status(400).json({ error: "Invalid Student ID" });
+        if (!studentId) {
+            return res.status(400).json({ error: "Invalid Student ID or CB Number" });
         }
         if (!req.file) {
             return res.status(400).json({ error: "No file uploaded" });
@@ -340,9 +376,9 @@ exports.uploadManualReviewCopy = async (req, res) => {
 exports.getSubmissionFile = async (req, res) => {
     try {
         const submissionId = parseInt(req.params.submissionId);
-        const userEmail = req.headers["x-user-email"];
-        const userRole = req.headers["x-user-role"];
-        const asDownload = req.query.download === "true";
+        const userEmail = req.headers["x-user-email"] || req.query?.email;
+        const userRole = req.headers["x-user-role"] || req.query?.role;
+        const asDownload = req.query?.download === "true";
 
         if (isNaN(submissionId)) {
             return res.status(400).json({ error: "Invalid Submission ID" });
@@ -408,17 +444,30 @@ exports.saveReviewerNotes = async (req, res) => {
             client_version
         } = req.body;
 
-        const studentId = parseInt(student_id);
+        const studentId = await resolveStudentId(student_id);
         const userEmail = req.headers["x-user-email"];
         const userRole = req.headers["x-user-role"];
 
-        if (isNaN(studentId) || !stage || !userEmail) {
+        if (!studentId || !stage || !userEmail) {
             return res.status(400).json({ error: "Missing required fields (student_id, stage, email)." });
         }
 
         const auth = await getStudentReviewAuthorization(studentId, userEmail, userRole);
         if (!auth.authorized) {
             return res.status(403).json({ error: "Access Denied", message: auth.reason });
+        }
+
+        // Validate submission ownership if submission_id is provided
+        if (submission_id) {
+            const parsedSubId = parseInt(submission_id);
+            if (!isNaN(parsedSubId)) {
+                const sub = await prisma.student_submissions.findUnique({
+                    where: { id: parsedSubId }
+                });
+                if (!sub || sub.student_id !== studentId) {
+                    return res.status(400).json({ error: "The associated submission does not belong to this student." });
+                }
+            }
         }
 
         const normalizedEmail = userEmail.trim().toLowerCase();
@@ -497,11 +546,11 @@ exports.saveReviewerNotes = async (req, res) => {
 exports.releaseFeedback = async (req, res) => {
     try {
         const { student_id, stage, feedback_content } = req.body;
-        const studentId = parseInt(student_id);
+        const studentId = await resolveStudentId(student_id);
         const userEmail = req.headers["x-user-email"];
         const userRole = req.headers["x-user-role"];
 
-        if (isNaN(studentId) || !stage || !userEmail) {
+        if (!studentId || !stage || !userEmail) {
             return res.status(400).json({ error: "Missing required fields." });
         }
 
@@ -527,6 +576,7 @@ exports.releaseFeedback = async (req, res) => {
                 released_feedback: feedback_content,
                 feedback_released_at: new Date(),
                 feedback_released_by: normalizedEmail,
+                version: { increment: 1 },
                 updated_at: new Date()
             },
             create: {
@@ -559,11 +609,11 @@ exports.releaseFeedback = async (req, res) => {
 exports.syncWithLms = async (req, res) => {
     try {
         const { student_id, stage } = req.body;
-        const studentId = parseInt(student_id);
+        const studentId = await resolveStudentId(student_id);
         const userEmail = req.headers["x-user-email"];
         const userRole = req.headers["x-user-role"];
 
-        if (isNaN(studentId) || !stage) {
+        if (!studentId || !stage) {
             return res.status(400).json({ error: "Missing student_id or stage." });
         }
 
@@ -664,11 +714,11 @@ exports.saveLmsMapping = async (req, res) => {
  */
 exports.getStudentReleasedFeedback = async (req, res) => {
     try {
-        const studentId = parseInt(req.params.studentId);
+        const studentId = await resolveStudentId(req.params.studentId);
         const stage = req.query.stage || "Proposal";
 
-        if (isNaN(studentId)) {
-            return res.status(400).json({ error: "Invalid Student ID" });
+        if (!studentId) {
+            return res.status(400).json({ error: "Invalid Student ID or CB Number" });
         }
 
         const notes = await prisma.reviewer_notes.findMany({
@@ -682,7 +732,8 @@ exports.getStudentReleasedFeedback = async (req, res) => {
                 reviewer_role: true,
                 stage: true,
                 released_feedback: true,
-                feedback_released_at: true
+                feedback_released_at: true,
+                feedback_released_by: true
             }
         });
 
@@ -692,4 +743,75 @@ exports.getStudentReleasedFeedback = async (req, res) => {
         res.status(500).json({ error: "Failed to load released feedback", details: error.message });
     }
 };
+
+/**
+ * 9. GET /api/submissions/lms/user-mapping/:studentId
+ * Verified institutional mapping between student and LMS user ID
+ */
+exports.getStudentLmsMapping = async (req, res) => {
+    try {
+        const studentId = await resolveStudentId(req.params.studentId);
+        if (!studentId) return res.status(404).json({ error: "Student not found" });
+
+        const student = await prisma.students.findUnique({ where: { id: studentId } });
+        if (!student) return res.status(404).json({ error: "Student not found" });
+
+        let mapping = await prisma.lms_user_mappings.findUnique({
+            where: { student_id: studentId }
+        });
+
+        if (!mapping && student.cb_no) {
+            mapping = {
+                student_id: student.id,
+                institutional_id: student.cb_no,
+                institutional_email: `${student.cb_no.toLowerCase()}@students.apiit.lk`,
+                lms_user_id: null,
+                verification_status: "UNVERIFIED",
+                verified_at: null
+            };
+        }
+
+        res.status(200).json(mapping);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch student LMS mapping", details: error.message });
+    }
+};
+
+/**
+ * 10. POST /api/submissions/lms/user-mapping
+ * Saves verified LMS user mapping using confirmed institutional identifier (cb_no)
+ */
+exports.saveStudentLmsMapping = async (req, res) => {
+    try {
+        const { student_id, lms_user_id, verification_status } = req.body;
+        const studentId = await resolveStudentId(student_id);
+        if (!studentId) return res.status(400).json({ error: "Invalid Student ID" });
+
+        const student = await prisma.students.findUnique({ where: { id: studentId } });
+        if (!student) return res.status(404).json({ error: "Student not found" });
+
+        const mapping = await prisma.lms_user_mappings.upsert({
+            where: { student_id: studentId },
+            update: {
+                lms_user_id: lms_user_id || null,
+                verification_status: verification_status || "VERIFIED",
+                verified_at: verification_status === "VERIFIED" ? new Date() : null,
+                updated_at: new Date()
+            },
+            create: {
+                student_id: studentId,
+                institutional_id: student.cb_no,
+                institutional_email: `${student.cb_no.toLowerCase()}@students.apiit.lk`,
+                lms_user_id: lms_user_id || null,
+                verification_status: verification_status || "VERIFIED",
+                verified_at: verification_status === "VERIFIED" ? new Date() : null
+            }
+        });
+
+        res.status(200).json({ message: "Student LMS mapping saved successfully.", mapping });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to save student LMS mapping", details: error.message });
+    }
+};
+
 

@@ -12,7 +12,9 @@ const {
     syncWithLms,
     getLmsMappings,
     saveLmsMapping,
-    getStudentReleasedFeedback
+    getStudentReleasedFeedback,
+    getStudentLmsMapping,
+    saveStudentLmsMapping
 } = require("../controllers/submissionReviewController");
 
 const router = express.Router();
@@ -51,5 +53,7 @@ router.get("/student/feedback/:studentId", getStudentReleasedFeedback);
 // ── LMS Mappings (Admin / PM) ───────────────────────────────────────────────
 router.get("/lms/mappings", getLmsMappings);
 router.post("/lms/mappings", saveLmsMapping);
+router.get("/lms/user-mapping/:studentId", getStudentLmsMapping);
+router.post("/lms/user-mapping", saveStudentLmsMapping);
 
 module.exports = router;
