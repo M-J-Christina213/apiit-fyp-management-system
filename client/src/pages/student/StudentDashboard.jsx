@@ -408,7 +408,7 @@ const StudentDashboard = () => {
             navigate('/student/proposal');
           }}
           disabled={row.availableSlots === 0}
-          className="px-3 py-1 bg-navy-900 hover:bg-navy-950 text-white text-xs font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 bg-navy-900 hover:bg-navy-950 text-white text-xs font-semibold rounded-lg shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-800"
         >
           Select for Proposal
         </button>
@@ -440,22 +440,22 @@ const StudentDashboard = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Welcome, Christina Wanigasekara
               </h1>
 
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 mt-1">
                 Student ID: CB014416
               </p>
             </div>
           </div>
 
           {showLogsheetAlert && (
-            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-sm mb-6 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div className="bg-amber-50/70 border border-amber-200/90 p-4 sm:p-5 rounded-xl shadow-2xs mb-6 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
               <div>
-                <h3 className="text-sm font-bold text-amber-800">Logsheet Reminder</h3>
-                <p className="text-sm text-amber-700 mt-1">
+                <h3 className="text-sm font-bold text-amber-900">Logsheet Reminder</h3>
+                <p className="text-xs sm:text-sm text-amber-800 mt-1 leading-relaxed">
                   You haven't submitted a supervisor meeting logsheet in the last month. Please ensure you record your recent meeting to stay on track with FYP requirements.
                 </p>
               </div>
@@ -494,49 +494,49 @@ const StudentDashboard = () => {
             {/* Main Content Area */}
             <div className="xl:col-span-2 space-y-6">
               {/* Project Progress Section */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-800 mb-6">FYP Journey Progress</h3>
-                <div className="relative flex items-center justify-between before:absolute before:inset-0 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:w-full before:bg-slate-200">
+              <div className="bg-white p-6 rounded-xl border border-slate-200/90 shadow-2xs">
+                <h3 className="text-base font-bold text-slate-900 mb-6">FYP Journey Progress</h3>
+                <div className="relative flex items-center justify-between before:absolute before:inset-0 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:w-full before:bg-slate-200/90">
                   {/* Proposal */}
                   <div className="relative z-10 flex flex-col items-center bg-white px-2">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white shadow-md bg-emerald-500">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white shadow-2xs bg-emerald-600 ring-4 ring-white">
                       <CheckCircle className="h-5 w-5" />
                     </div>
-                    <span className="mt-3 text-sm font-bold text-slate-800">Proposal</span>
+                    <span className="mt-3 text-xs sm:text-sm font-bold text-slate-800">Proposal</span>
                     <StatusBadge status="Completed" type="progress" />
                   </div>
                   {/* Midpoint */}
                   <div className="relative z-10 flex flex-col items-center bg-white px-2">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-md bg-blue-50 text-blue-600 border-2 border-blue-500">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-2xs bg-blue-50 text-blue-700 border-2 border-blue-600 ring-4 ring-white">
                       <Target className="h-5 w-5" />
                     </div>
-                    <span className="mt-3 text-sm font-bold text-slate-800">Midpoint</span>
+                    <span className="mt-3 text-xs sm:text-sm font-bold text-slate-800">Midpoint</span>
                     <StatusBadge status="In Progress" type="progress" />
                   </div>
                   {/* Final */}
                   <div className="relative z-10 flex flex-col items-center bg-white px-2">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 border-2 border-slate-200 shadow-sm">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 border-2 border-slate-300 ring-4 ring-white shadow-2xs">
                       <Clock className="h-5 w-5" />
                     </div>
-                    <span className="mt-3 text-sm font-bold text-slate-400">Final</span>
+                    <span className="mt-3 text-xs sm:text-sm font-bold text-slate-400">Final</span>
                     <StatusBadge status="Pending" type="progress" />
                   </div>
                 </div>
               </div>
 
               {/* Academic Reviewer Feedback Card */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-4">
+              <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden p-6 space-y-4">
                 <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                   <div>
-                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                       <FileText className="h-5 w-5 text-indigo-700" /> Academic Reviewer Feedback
                     </h3>
-                    <p className="text-xs text-slate-500">Official formative and summative feedback released by your supervisor.</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Official formative and summative feedback released by your supervisor.</p>
                   </div>
                 </div>
 
                 {releasedFeedbackList.length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl space-y-1">
+                  <div className="p-6 text-center text-slate-400 bg-slate-50/80 rounded-xl space-y-1 border border-slate-100">
                     <p className="text-xs font-semibold text-slate-600">No released feedback recorded yet</p>
                     <p className="text-[11px] text-slate-400">Feedback will appear here once your supervisor officially releases their review comments.</p>
                   </div>
@@ -562,10 +562,10 @@ const StudentDashboard = () => {
               </div>
               
               {/* Supervisors Table */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                  <h3 className="text-base font-bold text-slate-800">Available Supervisors</h3>
-                  <Link to="/student/supervisors" className="text-xs font-semibold text-navy-600 hover:text-navy-800 flex items-center gap-0.5">
+              <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200/80 flex justify-between items-center bg-slate-50/80">
+                  <h3 className="text-base font-bold text-slate-900">Available Supervisors</h3>
+                  <Link to="/student/supervisors" className="text-xs font-semibold text-navy-900 hover:text-navy-950 hover:underline flex items-center gap-0.5">
                     View Full Pool <ChevronRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -577,8 +577,8 @@ const StudentDashboard = () => {
 
             {/* Right Panel - Recent Activity */}
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-base font-bold text-slate-800 mb-4">Recent Activity</h3>
+              <div className="bg-white p-6 rounded-xl border border-slate-200/90 shadow-2xs">
+                <h3 className="text-base font-bold text-slate-900 mb-4">Recent Activity</h3>
                 <div className="space-y-4">
                   {[
                     { action: myProposalRequest ? `Submitted proposal: "${myProposalRequest.topic}"` : 'Updated project details', time: 'Recently' },
@@ -586,11 +586,11 @@ const StudentDashboard = () => {
                     { action: 'Logged into APIIT FYPMS Portal', time: '2 days ago' }
                   ].map((activity, idx) => (
                     <div key={idx} className="flex items-start gap-3 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
-                      <div className="mt-0.5 p-1.5 bg-slate-100 text-slate-500 rounded">
+                      <div className="mt-0.5 p-1.5 bg-slate-50 border border-slate-200/80 text-slate-600 rounded-lg">
                         <Clock className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs md:text-sm font-semibold text-slate-700">{activity.action}</p>
+                        <p className="text-xs md:text-sm font-semibold text-slate-800">{activity.action}</p>
                         <p className="text-[10px] text-slate-400 mt-0.5">{activity.time}</p>
                       </div>
                     </div>
@@ -623,20 +623,20 @@ const StudentDashboard = () => {
 
       return (
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-800">Faculty Supervisors Pool</h1>
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Faculty Supervisors Pool</h1>
             <p className="text-sm text-slate-500">Explore supervisor availability, research fields, and areas of expertise to match your project ideas.</p>
           </div>
 
-          <div className="bg-white p-5 rounded border border-slate-200 shadow-sm space-y-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs space-y-4">
             <div className="relative w-full max-w-md">
-              <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter by name, expertise, interests..."
-                className="pl-10 pr-4 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 w-full transition-colors"
+                className="pl-9 pr-4 py-2 border border-slate-200 bg-slate-50/70 focus:bg-white rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-navy-900 focus:ring-2 focus:ring-navy-900/15 w-full transition-all"
               />
             </div>
 

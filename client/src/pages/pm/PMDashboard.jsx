@@ -211,17 +211,23 @@ const PMDashboard = () => {
   const COLORS = ["#0C2340", "#2563eb", "#38bdf8", "#94a3b8", "#f59e0b"];
 
   function StatCard({ title, value, icon: Icon, accent }) {
+    let iconColors = "bg-navy-50 text-navy-900 border-navy-100/80";
+    if (accent.includes("amber")) {
+      iconColors = "bg-amber-50 text-amber-700 border-amber-200/80";
+    } else if (accent.includes("emerald") || accent.includes("green")) {
+      iconColors = "bg-emerald-50 text-emerald-700 border-emerald-200/80";
+    } else if (accent.includes("blue")) {
+      iconColors = "bg-blue-50 text-blue-700 border-blue-200/80";
+    }
+
     return (
-      <div className="relative overflow-hidden bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-        <div className={`absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 ${accent}`} />
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{title}</p>
-            <p className="text-3xl font-bold text-[#0C2340] mt-2">{value}</p>
-          </div>
-          <div className={`h-11 w-11 rounded-lg flex items-center justify-center ${accent} bg-opacity-15`}>
-            <Icon className="h-5 w-5" style={{ color: accent.replace("bg-", "").includes("navy") ? "#0C2340" : undefined }} />
-          </div>
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow duration-150 p-5 flex items-start justify-between select-none">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">{value}</p>
+        </div>
+        <div className={`p-2.5 rounded-xl border flex items-center justify-center shrink-0 ${iconColors}`}>
+          <Icon className="h-5 w-5" />
         </div>
       </div>
     );
@@ -229,8 +235,8 @@ const PMDashboard = () => {
 
   function ChartCard({ title, children }) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-        <h3 className="text-sm font-bold text-[#0C2340] mb-4">{title}</h3>
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-5">
+        <h3 className="text-sm font-semibold text-slate-900 mb-4 tracking-tight">{title}</h3>
         {children}
       </div>
     );
@@ -884,7 +890,7 @@ const PMDashboard = () => {
       return (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">FYP Allocation Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">FYP Allocation Dashboard</h1>
             <p className="text-sm text-slate-500 mt-1">Live overview of student–supervisor allocation progress</p>
           </div>
 
@@ -959,14 +965,14 @@ const PMDashboard = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold text-slate-800">Academic Batches</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Academic Batches</h1>
               <p className="text-sm text-slate-500">Manage intake groups and student assignment cycles</p>
             </div>
 
             <div className="flex gap-2">
               <button
                 onClick={() => setShowAddBatch(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded font-bold text-sm shadow-md transition-all hover:shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded-lg font-semibold text-sm shadow-2xs hover:shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-800"
               >
                 <Plus className="h-4 w-4" /> Add Intake
               </button>
@@ -975,22 +981,22 @@ const PMDashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {intakeSummaries.map((summary, idx) => (
-              <div key={idx} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4 hover:shadow-md transition-shadow">
+              <div key={idx} className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-6 space-y-4 hover:shadow-xs transition-shadow">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-lg font-bold text-navy-900">{summary.intake}</h3>
-                    <p className="text-sm text-slate-500">Started: {summary.startDate || 'N/A'}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Started: {summary.startDate || 'N/A'}</p>
                   </div>
                   {(() => {
                     const stage = summary.stage || 'Proposal';
                     const colors = {
                       Proposal: "bg-blue-50 text-blue-700 border-blue-200",
-                      Midpoint: "bg-orange-50 text-orange-700 border-orange-200",
+                      Midpoint: "bg-amber-50 text-amber-700 border-amber-200",
                       Final: "bg-purple-50 text-purple-700 border-purple-200",
-                      Completed: "bg-green-50 text-green-700 border-green-200"
+                      Completed: "bg-emerald-50 text-emerald-700 border-emerald-200"
                     };
                     return (
-                      <span className={`px-2.5 py-1 text-xs rounded-full border font-bold ${colors[stage] || 'bg-slate-50 text-slate-700 border-slate-200'}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 text-xs rounded-full border font-semibold ${colors[stage] || 'bg-slate-50 text-slate-700 border-slate-200'}`}>
                         {stage}
                       </span>
                     );
@@ -998,22 +1004,22 @@ const PMDashboard = () => {
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-600">Students:</span>
-                  <span className="text-base font-bold text-slate-800">{summary.actualStudentCount > 0 ? summary.actualStudentCount : summary.studentCount}</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Students:</span>
+                  <span className="text-sm font-bold text-slate-800">{summary.actualStudentCount > 0 ? summary.actualStudentCount : summary.studentCount}</span>
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Batch Codes</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch Codes</span>
                   {summary.batchCodes.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {summary.batchCodes.map(code => (
-                        <span key={code} className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-bold">
+                        <span key={code} className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/80 rounded-md text-xs font-semibold">
                           {code}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-400 italic">No batch codes found</p>
+                    <p className="text-xs text-slate-400 italic">No batch codes found</p>
                   )}
                 </div>
 
