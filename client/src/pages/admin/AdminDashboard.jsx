@@ -86,12 +86,17 @@ const AdminDashboard = () => {
           getStudents(),
           getSupervisors(),
           getExternalSupervisorRequests(),
-          fetch("http://localhost:5000/api/viva/microsoft/status", {
+          fetch("/api/viva/microsoft/status", {
             headers: {
               "x-user-email": currentUser.email || "",
               "x-user-role": currentUser.role || "admin"
             }
-          }).then(r => r.json()).catch(() => null)
+          }).catch(() => fetch("http://localhost:5000/api/viva/microsoft/status", {
+            headers: {
+              "x-user-email": currentUser.email || "",
+              "x-user-role": currentUser.role || "admin"
+            }
+          })).then(r => r.json()).catch(() => null)
         ]);
 
         setExternalRequests(externalRequestsRes.data);
@@ -647,13 +652,19 @@ const AdminDashboard = () => {
                       onClick={async () => {
                         if (window.confirm("Are you sure you want to disconnect Microsoft 365?")) {
                           const user = JSON.parse(localStorage.getItem("fyp_current_user") || "{}");
-                          await fetch("http://localhost:5000/api/viva/microsoft/disconnect", {
+                          await fetch("/api/viva/microsoft/disconnect", {
                             method: "POST",
                             headers: {
                               "x-user-email": user.email || "",
                               "x-user-role": user.role || "admin"
                             }
-                          });
+                          }).catch(() => fetch("http://localhost:5000/api/viva/microsoft/disconnect", {
+                            method: "POST",
+                            headers: {
+                              "x-user-email": user.email || "",
+                              "x-user-role": user.role || "admin"
+                            }
+                          }));
                           setMsStatus({ isConnected: false });
                           alert("Disconnected Microsoft 365.");
                         }
@@ -670,12 +681,20 @@ const AdminDashboard = () => {
                         console.log("[OUTLOOK-INTEGRATION] Connect Microsoft Account initiated from AdminDashboard");
                         try {
                           console.log("[MS-AUTH] Requesting Auth URL from /api/viva/microsoft/auth-url");
-                          const res = await fetch("http://localhost:5000/api/viva/microsoft/auth-url", {
+                          let res = await fetch("/api/viva/microsoft/auth-url", {
                             headers: {
                               "x-user-email": user.email || "",
                               "x-user-role": user.role || "admin"
                             }
-                          });
+                          }).catch(() => null);
+                          if (!res || !res.ok) {
+                            res = await fetch("http://localhost:5000/api/viva/microsoft/auth-url", {
+                              headers: {
+                                "x-user-email": user.email || "",
+                                "x-user-role": user.role || "admin"
+                              }
+                            });
+                          }
                           const data = await res.json();
                           console.log("[MS-AUTH] Auth URL received, opening popup");
                           if (data.authUrl) {

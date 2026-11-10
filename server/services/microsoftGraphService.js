@@ -266,8 +266,22 @@ class MicrosoftGraphService {
      */
     static async getIntegrationStatus(userId) {
         const configured = this.isConfigured();
+        const { clientId, tenantId, redirectUri } = this.getCredentials();
+        const adminConsentUrl = clientId && tenantId
+            ? `https://login.microsoftonline.com/${tenantId}/v2.0/adminconsent?client_id=${clientId}&scope=https://graph.microsoft.com/Calendars.ReadWrite+https://graph.microsoft.com/User.Read+openid+profile+email+offline_access&redirect_uri=${encodeURIComponent(redirectUri)}`
+            : null;
+
+        const diagnostics = {
+            tenantId: tenantId || null,
+            clientId: clientId || null,
+            redirectUri: redirectUri || null,
+            requiredScopes: ["Calendars.ReadWrite", "User.Read", "offline_access", "openid", "profile", "email"],
+            permissionType: "Delegated",
+            adminConsentUrl
+        };
+
         if (!userId) {
-            return { configured, isConnected: false, hasOutlookCalendar: false };
+            return { configured, isConnected: false, hasOutlookCalendar: false, diagnostics };
         }
 
         const integration = await prisma.microsoft_integrations.findUnique({
@@ -275,7 +289,7 @@ class MicrosoftGraphService {
         });
 
         if (!integration || !integration.is_connected) {
-            return { configured, isConnected: false, hasOutlookCalendar: false };
+            return { configured, isConnected: false, hasOutlookCalendar: false, diagnostics };
         }
 
         let hasOutlookCalendar = false;
@@ -299,7 +313,8 @@ class MicrosoftGraphService {
             hasOutlookCalendar,
             microsoftEmail: integration?.microsoft_email || null,
             calendarName: integration?.calendar_name || "Outlook Calendar",
-            updatedAt: integration?.updated_at || null
+            updatedAt: integration?.updated_at || null,
+            diagnostics
         };
     }
 
@@ -548,31 +563,234 @@ ${schedule.teams_join_url ? `Microsoft Teams: ${schedule.teams_join_url}` : ""}
     /**
      * Helper method to create calendar event across users if M365 is configured
      */
-    static async createCalendarEvent(schedule, period) {
+    static async createCalendarEvent(schedule, period, actingUserId = null) {
         if (!this.isConfigured()) {
-            return { success: false, error: "Microsoft Graph credentials NOT_CONFIGURED." };
+            return { success: false, error: "Microsoft Graph credentials are not configured in environment." };
         }
-        return { success: false, error: "Microsoft Graph authentication pending tenant admin consent." };
+
+        let auth = null;
+        if (actingUserId) {
+            auth = await this.getValidAccessToken(actingUserId);
+        }
+        if (!auth) {
+            const connectedUser = await prisma.microsoft_integrations.findFirst({
+                where: { is_connected: true }
+            });
+            if (connectedUser) {
+                auth = await this.getValidAccessToken(connectedUser.user_id);
+            }
+        }
+
+        if (!auth || !auth.token) {
+            return {
+                success: false,
+                error: "No connected Microsoft account found. Please connect Outlook Calendar in Viva Settings before synchronizing."
+            };
+        }
+
+        const student = schedule.students;
+        const supervisor = schedule.supervisors;
+        const assessor = schedule.assessors;
+        const mode = schedule.attendance_mode || "PHYSICAL";
+        const venue = schedule.venue || (mode === "ONLINE" ? "Microsoft Teams" : "TBA");
+
+        const dateStr = schedule.date
+            ? (schedule.date instanceof Date ? schedule.date.toISOString().split("T")[0] : String(schedule.date).split("T")[0])
+            : new Date().toISOString().split("T")[0];
+        let startTimeStr = "09:00:00";
+        let endTimeStr = "09:30:00";
+
+        if (schedule.start_time) {
+            const d = new Date(schedule.start_time);
+            const h = String(d.getUTCHours()).padStart(2, "0");
+            const m = String(d.getUTCMinutes()).padStart(2, "0");
+            startTimeStr = `${h}:${m}:00`;
+        }
+        if (schedule.end_time) {
+            const d = new Date(schedule.end_time);
+            const h = String(d.getUTCHours()).padStart(2, "0");
+            const m = String(d.getUTCMinutes()).padStart(2, "0");
+            endTimeStr = `${h}:${m}:00`;
+        }
+
+        const startDateTime = `${dateStr}T${startTimeStr}`;
+        const endDateTime = `${dateStr}T${endTimeStr}`;
+
+        const subject = `FYP Viva Assessment - ${student?.student_name || "Student"} (${student?.cb_no || schedule.batch_code || "Viva"})`;
+        const description = `
+FYP Viva Assessment
+
+Student: ${student?.student_name || "N/A"} (${student?.cb_no || "N/A"})
+Batch: ${schedule.batch_code || "N/A"}
+Supervisor: ${supervisor?.name || "N/A"}
+Assessor: ${assessor?.name || "N/A"}
+Date: ${dateStr}
+Time: ${startTimeStr.slice(0, 5)} - ${endTimeStr.slice(0, 5)}
+Mode: ${mode}
+Venue: ${venue}
+`.trim();
+
+        const attendees = [];
+        if (supervisor?.email) attendees.push({ emailAddress: { address: supervisor.email, name: supervisor.name }, type: "required" });
+        if (assessor?.email) attendees.push({ emailAddress: { address: assessor.email, name: assessor.name }, type: "required" });
+        if (student?.email) attendees.push({ emailAddress: { address: student.email, name: student.student_name }, type: "required" });
+
+        const isOnline = mode === "ONLINE";
+        const payload = {
+            subject,
+            body: { contentType: "Text", content: description },
+            start: { dateTime: startDateTime, timeZone: "UTC" },
+            end: { dateTime: endDateTime, timeZone: "UTC" },
+            location: { displayName: venue },
+            attendees: attendees.length > 0 ? attendees : undefined,
+            isOnlineMeeting: isOnline,
+            onlineMeetingProvider: isOnline ? "teamsForBusiness" : "unknown"
+        };
+
+        try {
+            console.log(`[MS-GRAPH] Creating calendar event on connected user's calendar: POST https://graph.microsoft.com/v1.0/me/events`);
+            const res = await fetch("https://graph.microsoft.com/v1.0/me/events", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                console.error(`[MS-GRAPH] Calendar event creation failed: HTTP ${res.status} | Code: ${data.error?.code} | Message: ${data.error?.message}`);
+                return {
+                    success: false,
+                    error: `Microsoft Graph API error (${data.error?.code || res.status}): ${data.error?.message || "Event creation failed"}`
+                };
+            }
+
+            console.log(`[MS-GRAPH] Calendar event created successfully (ID: ${data.id})`);
+            return {
+                success: true,
+                eventId: data.id,
+                teamsMeetingId: data.onlineMeeting?.conferenceId || data.id,
+                teamsJoinUrl: data.onlineMeeting?.joinUrl || null
+            };
+        } catch (err) {
+            console.error(`[MS-GRAPH] Calendar event creation exception:`, err.message);
+            return { success: false, error: err.message };
+        }
     }
 
     /**
      * Helper method to update an existing calendar event
      */
-    static async updateCalendarEvent(eventId, schedule, period) {
+    static async updateCalendarEvent(eventId, schedule, period, actingUserId = null) {
         if (!this.isConfigured() || !eventId) {
-            return { success: false, error: "Microsoft Graph credentials NOT_CONFIGURED." };
+            return { success: false, error: "Microsoft Graph credentials not configured or missing eventId." };
         }
-        return { success: false, error: "Microsoft Graph authentication pending tenant admin consent." };
+
+        let auth = null;
+        if (actingUserId) {
+            auth = await this.getValidAccessToken(actingUserId);
+        }
+        if (!auth) {
+            const connectedUser = await prisma.microsoft_integrations.findFirst({
+                where: { is_connected: true }
+            });
+            if (connectedUser) {
+                auth = await this.getValidAccessToken(connectedUser.user_id);
+            }
+        }
+
+        if (!auth || !auth.token) {
+            return { success: false, error: "No connected Microsoft account found." };
+        }
+
+        const mode = schedule.attendance_mode || "PHYSICAL";
+        const venue = schedule.venue || (mode === "ONLINE" ? "Microsoft Teams" : "TBA");
+
+        const dateStr = schedule.date
+            ? (schedule.date instanceof Date ? schedule.date.toISOString().split("T")[0] : String(schedule.date).split("T")[0])
+            : new Date().toISOString().split("T")[0];
+        let startTimeStr = "09:00:00";
+        let endTimeStr = "09:30:00";
+
+        if (schedule.start_time) {
+            const d = new Date(schedule.start_time);
+            const h = String(d.getUTCHours()).padStart(2, "0");
+            const m = String(d.getUTCMinutes()).padStart(2, "0");
+            startTimeStr = `${h}:${m}:00`;
+        }
+        if (schedule.end_time) {
+            const d = new Date(schedule.end_time);
+            const h = String(d.getUTCHours()).padStart(2, "0");
+            const m = String(d.getUTCMinutes()).padStart(2, "0");
+            endTimeStr = `${h}:${m}:00`;
+        }
+
+        const payload = {
+            start: { dateTime: `${dateStr}T${startTimeStr}`, timeZone: "UTC" },
+            end: { dateTime: `${dateStr}T${endTimeStr}`, timeZone: "UTC" },
+            location: { displayName: venue }
+        };
+
+        try {
+            const res = await fetch(`https://graph.microsoft.com/v1.0/me/events/${eventId}`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                return {
+                    success: false,
+                    error: `Microsoft Graph API error (${data.error?.code || res.status}): ${data.error?.message || "Event update failed"}`
+                };
+            }
+
+            return { success: true, eventId };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
     }
 
     /**
      * Helper method to delete/cancel a calendar event
      */
-    static async deleteCalendarEvent(eventId) {
+    static async deleteCalendarEvent(eventId, actingUserId = null) {
         if (!this.isConfigured() || !eventId) {
             return { success: false };
         }
-        return { success: false };
+
+        let auth = null;
+        if (actingUserId) {
+            auth = await this.getValidAccessToken(actingUserId);
+        }
+        if (!auth) {
+            const connectedUser = await prisma.microsoft_integrations.findFirst({
+                where: { is_connected: true }
+            });
+            if (connectedUser) {
+                auth = await this.getValidAccessToken(connectedUser.user_id);
+            }
+        }
+
+        if (!auth || !auth.token) {
+            return { success: false };
+        }
+
+        try {
+            const res = await fetch(`https://graph.microsoft.com/v1.0/me/events/${eventId}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
+            return { success: res.ok };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
     }
 }
 

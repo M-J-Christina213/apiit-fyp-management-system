@@ -2045,11 +2045,16 @@ exports.retryOutlookSync = async (req, res) => {
             return res.status(404).json({ error: "No finalized schedules found to synchronize." });
         }
 
+        const callerEmail = req.headers["x-user-email"];
+        const callerUser = callerEmail
+            ? await prisma.users.findFirst({ where: { email: { equals: callerEmail, mode: "insensitive" } } })
+            : null;
+
         let successCount = 0;
         let failCount = 0;
 
         for (const sch of schedules) {
-            const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, sch.viva_periods);
+            const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, sch.viva_periods, callerUser?.id);
             if (syncRes.success) {
                 successCount++;
                 await prisma.viva_schedules.update({
@@ -2538,12 +2543,17 @@ exports.publishVivaPeriod = async (req, res) => {
         ]);
 
         // Trigger Microsoft Graph calendar sync
+        const callerEmail = req.headers["x-user-email"];
+        const callerUser = callerEmail
+            ? await prisma.users.findFirst({ where: { email: { equals: callerEmail, mode: "insensitive" } } })
+            : null;
+
         let syncSuccessCount = 0;
         let syncFailedCount = 0;
 
         for (const sch of period.viva_schedules) {
             try {
-                const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, period);
+                const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, period, callerUser?.id);
                 if (syncRes.success) {
                     syncSuccessCount++;
                     await prisma.viva_schedules.update({

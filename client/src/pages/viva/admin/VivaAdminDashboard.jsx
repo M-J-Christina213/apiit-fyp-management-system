@@ -47,6 +47,7 @@ export default function VivaAdminDashboard() {
   const [msStatus, setMsStatus] = useState(null);
   const [msErrorInfo, setMsErrorInfo] = useState(null);
   const [msConnecting, setMsConnecting] = useState(false);
+  const [msPopupClosedHint, setMsPopupClosedHint] = useState(false);
   const popupRef = useRef(null);
   const popupIntervalRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -173,6 +174,7 @@ export default function VivaAdminDashboard() {
           console.log("[OUTLOOK-INTEGRATION] Microsoft account connection succeeded!");
           setMessage({ type: "success", text: event.data.message || "Microsoft account and Outlook Calendar connected successfully!" });
           setMsErrorInfo(null);
+          setMsPopupClosedHint(false);
         } else {
           console.error("[MS-AUTH] Microsoft authentication failed:", event.data.error);
           setMsErrorInfo(event.data.error || { summary: event.data.message });
@@ -600,6 +602,7 @@ export default function VivaAdminDashboard() {
   const handleConnectMicrosoft = async () => {
     console.log("[OUTLOOK-INTEGRATION] Connect Microsoft Account initiated");
     setMsErrorInfo(null);
+    setMsPopupClosedHint(false);
     setMsConnecting(true);
     try {
       console.log("[MS-AUTH] Requesting OAuth authorization URL from /api/viva/microsoft/auth-url");
@@ -641,6 +644,9 @@ export default function VivaAdminDashboard() {
             setMsConnecting(false);
             const s = await fetch("/api/viva/microsoft/status", { headers: adminHeaders }).then(r => r.json());
             setMsStatus(s);
+            if (!s?.isConnected) {
+              setMsPopupClosedHint(true);
+            }
           }
         } catch (coopErr) {
           // Cross-Origin-Opener-Policy (COOP) restricts reading popup properties while navigated to login.microsoftonline.com
@@ -1892,6 +1898,65 @@ export default function VivaAdminDashboard() {
                 )}
               </div>
             )}
+
+            {msPopupClosedHint && !msStatus?.isConnected && !msErrorInfo && (
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <span className="font-bold text-xs text-amber-900 uppercase tracking-wider">
+                    Sign-in Window Closed / Consent Required
+                  </span>
+                </div>
+                <p className="text-xs text-amber-800">
+                  The Microsoft sign-in window was closed before authorization was completed. If you saw a screen from Microsoft stating <strong>&quot;Need admin approval&quot;</strong>, your institutional Microsoft 365 Tenant Administrator must grant tenant-wide admin consent for <code>Calendars.ReadWrite</code> (Delegated).
+                </p>
+                <p className="text-xs text-amber-700">
+                  Share the <strong>IT Admin Checklist &amp; Direct Consent Link</strong> below with your IT administrator.
+                </p>
+              </div>
+            )}
+
+            <div className="p-4 border border-indigo-100 rounded-xl bg-indigo-50/50 space-y-3 text-xs text-slate-700">
+              <div className="flex items-center justify-between">
+                <p className="font-bold text-indigo-950 flex items-center gap-1.5">
+                  <span>🏛</span> IT Administrator &amp; Entra ID Configuration Reference
+                </p>
+                {msStatus?.diagnostics?.adminConsentUrl && (
+                  <a
+                    href={msStatus.diagnostics.adminConsentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-white border border-indigo-200 hover:border-indigo-300 px-2.5 py-1 rounded-lg shadow-sm"
+                  >
+                    Direct Admin Consent Link ↗
+                  </a>
+                )}
+              </div>
+              <p className="text-slate-600">
+                To enable calendar sync for faculty and students, an IT administrator with <strong>Global Administrator</strong> or <strong>Privileged Role Administrator</strong> privileges must grant consent:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono bg-white p-3 rounded-lg border border-indigo-100">
+                <div>
+                  <span className="text-slate-400 block font-sans text-[10px] uppercase font-bold">Tenant ID</span>
+                  <span className="text-slate-800 select-all">{msStatus?.diagnostics?.tenantId || "4da585ed-d638-4e1c-bf37-02b73167e1b4"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-sans text-[10px] uppercase font-bold">Application (Client) ID</span>
+                  <span className="text-slate-800 select-all">{msStatus?.diagnostics?.clientId || "5ef7b3ca-2f71-4db3-9cec-1ca70519ef6d"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-sans text-[10px] uppercase font-bold">Redirect URI</span>
+                  <span className="text-slate-800 select-all">{msStatus?.diagnostics?.redirectUri || "http://localhost:5000/api/viva/microsoft/callback"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-sans text-[10px] uppercase font-bold">Required Permission (Delegated)</span>
+                  <span className="text-emerald-700 font-bold select-all">Calendars.ReadWrite</span>
+                </div>
+              </div>
+              <div className="text-[11px] text-indigo-900 bg-indigo-100/60 p-2.5 rounded-lg border border-indigo-200">
+                <strong>Why IT sees &quot;Already granted&quot; while Microsoft blocks:</strong> In Entra ID, granting <em>Application</em> permissions (for headless daemons) does <u>not</u> authorize <em>Delegated</em> user logins. The administrator must ensure <strong>Microsoft Graph &gt; Delegated &gt; Calendars.ReadWrite</strong> is added, and the button <strong>&quot;Grant admin consent for APIIT&quot;</strong> is explicitly clicked until green checkmarks appear.
+              </div>
+            </div>
 
             <div className="p-4 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-800">Required Microsoft Graph Delegated Permissions:</p>
