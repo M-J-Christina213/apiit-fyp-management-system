@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BookOpen,
@@ -20,6 +20,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showExternalLogin, setShowExternalLogin] = useState(false);
+  const submittedAzureCode = useRef(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +33,10 @@ const Login = () => {
     if (errorParam) {
       setError(errorParam);
     } else if (codeParam) {
+      // StrictMode replays effects in development; each Azure code is single use.
+      if (submittedAzureCode.current === codeParam) return;
+      submittedAzureCode.current = codeParam;
+
       // We just returned from Microsoft with an authorization code
       setIsLoading(true);
       

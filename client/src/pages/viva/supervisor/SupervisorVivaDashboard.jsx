@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   CalendarDays, Clock, MapPin, Video, CheckCircle2, AlertCircle,
   ExternalLink, FileText, Edit3, MessageSquare, Check, X, Layers,
-  Lock, RefreshCw, Send, AlertTriangle
+  Lock, RefreshCw, Send, AlertTriangle, Award
 } from "lucide-react";
 import "../viva-styles.css";
 
@@ -283,14 +283,24 @@ export default function SupervisorVivaDashboard() {
                     </div>
 
                     {sch.student_id && (
-                      <Link
-                        to={`/supervisor/review/${sch.student_id}`}
-                        className="w-full flex items-center justify-center gap-1.5 bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-900 text-xs font-bold py-2 rounded-xl transition-colors shadow-2xs"
-                        title="Open Student Submission Review Workspace"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-navy-700" />
-                        <span>Review Workspace</span>
-                      </Link>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link
+                          to={`/supervisor/review/${sch.student_id}`}
+                          className="flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold py-2 rounded-xl transition-colors"
+                          title="Open Student Submission Review Workspace"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Review</span>
+                        </Link>
+                        <Link
+                          to={`/supervisor/review/${sch.student_id}?vivaScheduleId=${sch.id}${sch.milestone_id ? `&milestoneId=${sch.milestone_id}` : ''}`}
+                          className="flex items-center justify-center gap-1.5 bg-navy-900 hover:bg-navy-950 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow-xs"
+                          title="Open Live Marking Workspace with Rubric"
+                        >
+                          <Award className="w-3.5 h-3.5 text-blue-300" />
+                          <span>Live Marking</span>
+                        </Link>
+                      </div>
                     )}
 
                     {!isFinalized && (

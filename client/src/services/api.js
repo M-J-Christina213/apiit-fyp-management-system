@@ -132,6 +132,8 @@ export const rejectExternalSupervisor = (id, data) =>
 // MILESTONE TRACKER
 // ===============================
 export const getMilestonesByBatch = (batchId) => API.get(`/milestones/batch/${batchId}`);
+export const applyApprovedMilestoneTemplate = (batchId) => API.post(`/milestones/batch/${batchId}/apply-template`);
+export const publishBatchMilestones = (batchId) => API.patch(`/milestones/batch/${batchId}/publish`);
 export const createMilestone = (data) => API.post("/milestones", data);
 export const updateMilestone = (id, data) => API.put(`/milestones/${id}`, data);
 export const deleteMilestone = (id) => API.delete(`/milestones/${id}`);
@@ -140,6 +142,19 @@ export const getStudentMilestoneProgress = (studentId) => API.get(`/milestones/p
 export const getStudentMilestoneProgressByCb = (cbNo) => API.get(`/milestones/progress/cb/${cbNo}`);
 export const getSupervisorMilestoneOverview = (email) => API.get(`/milestones/supervisor/${encodeURIComponent(email)}`);
 export const getAssessorMilestoneOverview = (email) => API.get(`/milestones/assessor/${encodeURIComponent(email)}`);
+
+// ===============================
+// RUBRIC EVALUATION & CONCURRENT MARKING
+// ===============================
+export const getMarkingWorkspace = (studentId, milestoneId, vivaScheduleId) =>
+    API.get(`/evaluations/workspace/${studentId}/${milestoneId}${vivaScheduleId ? `?vivaScheduleId=${vivaScheduleId}` : ''}`);
+export const saveEvaluationDraft = (data) => API.post("/evaluations/draft", data);
+export const submitEvaluation = (data) => API.post("/evaluations/submit", data);
+export const proposeAgreedMark = (data) => API.post("/evaluations/reconciliation/propose", data);
+export const confirmAgreedMark = (data) => API.post("/evaluations/reconciliation/confirm", data);
+export const checkReconciliationExpiry = () => API.post("/evaluations/reconciliation/check-expiry");
+export const getHeadReferralQueue = () => API.get("/evaluations/reconciliation/head-queue");
+export const assignThirdMarker = (data) => API.post("/evaluations/reconciliation/assign-third-marker", data);
 
 // ===============================
 // SUBMISSION REVIEW WORKSPACE

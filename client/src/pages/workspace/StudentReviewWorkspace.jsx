@@ -26,8 +26,10 @@ import {
   Settings,
   UserCheck,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  Award
 } from "lucide-react";
+import LiveMarkingPanel from "../../components/workspace/LiveMarkingPanel";
 import {
   getReviewWorkspace,
   uploadManualReviewCopy,
@@ -46,6 +48,10 @@ export default function StudentReviewWorkspace() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const searchParams = new URLSearchParams(location.search);
+  const milestoneIdParam = searchParams.get("milestoneId");
+  const vivaScheduleIdParam = searchParams.get("vivaScheduleId");
+
   // Selected stage: Proposal, Midpoint, Final
   const [selectedStage, setSelectedStage] = useState("Proposal");
   const [workspaceData, setWorkspaceData] = useState(null);
@@ -61,7 +67,9 @@ export default function StudentReviewWorkspace() {
   const [previewError, setPreviewError] = useState(null);
 
   // Notes & Viva questions state
-  const [activeRightTab, setActiveRightTab] = useState("notes"); // 'notes', 'questions', 'feedback'
+  const [activeRightTab, setActiveRightTab] = useState(
+    milestoneIdParam ? "marking" : "notes"
+  ); // 'notes', 'questions', 'feedback', 'marking'
   const [privateNotes, setPrivateNotes] = useState("");
   const [vivaQuestions, setVivaQuestions] = useState([]);
   const [newQuestionText, setNewQuestionText] = useState("");
@@ -893,6 +901,17 @@ export default function StudentReviewWorkspace() {
               >
                 Student Feedback
               </button>
+              <button
+                onClick={() => setActiveRightTab("marking")}
+                className={`pb-2.5 px-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1 ${
+                  activeRightTab === "marking"
+                    ? "border-navy-900 text-navy-950 font-black"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Award size={13} className="text-navy-800" />
+                Live Marking
+              </button>
             </div>
 
             {/* Save Status Indicator */}
@@ -1114,6 +1133,17 @@ export default function StudentReviewWorkspace() {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── TAB 4: LIVE CONCURRENT MARKING RUBRIC ── */}
+            {activeRightTab === "marking" && (
+              <div className="flex-1 -m-4">
+                <LiveMarkingPanel
+                  studentId={studentId}
+                  initialMilestoneId={milestoneIdParam}
+                  vivaScheduleId={vivaScheduleIdParam}
+                />
               </div>
             )}
           </div>

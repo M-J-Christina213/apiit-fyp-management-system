@@ -32,6 +32,7 @@ model batches {
   viva_period_batches viva_period_batches[]
   milestones          milestones[]
   lms_course_mappings lms_course_mappings[]
+  moderation_records  student_moderation_records[]
 }
 
 model notifications {
@@ -87,6 +88,9 @@ model students {
   student_submissions      student_submissions[]
   reviewer_notes           reviewer_notes[]
   lms_user_mapping         lms_user_mappings?
+  evaluations              assessment_evaluations[]
+  reconciliations          milestone_reconciliations[]
+  moderation_records       student_moderation_records[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -261,6 +265,7 @@ model viva_schedules {
   viva_notes           viva_notes[]
   viva_audit_logs      viva_audit_logs[]
   viva_outlook_events  viva_outlook_events[]
+  evaluations          assessment_evaluations[]
 
   @@index([viva_period_id, student_id])
 }
@@ -366,17 +371,37 @@ model viva_outlook_events {
 
 
 model milestones {
-  id          Int      @id @default(autoincrement())
-  batch_id    Int
-  name        String   @db.VarChar(255)
-  description String?
-  type        String   @db.VarChar(50) // "FORMATIVE" or "SUMMATIVE"
-  deadline    DateTime // Includes specific time
-  order_index Int      @default(0) // Order sequence
-  created_at  DateTime @default(now())
+  id                    Int       @id @default(autoincrement())
+  batch_id              Int
+  milestone_code        String?   @db.VarChar(50)
+  name                  String    @db.VarChar(255)
+  description           String?   @db.Text
+  type                  String    @db.VarChar(50) // "FORMATIVE" or "SUMMATIVE"
+  component             String?   @default("Report") @db.VarChar(50) // "Unmarked", "Proposal", "Report", "Viva Presentation"
+  max_marks             Decimal?  @default(0) @db.Decimal(5, 2)
+  rubric_key            String?   @db.VarChar(50)
+  semester              String?   @default("Semester 1") @db.VarChar(30) // "Preparation", "Semester 1", "Semester 2", "Semester 3"
+  opening_date          DateTime?
+  deadline              DateTime?
+  assessment_start_date DateTime?
+  assessment_end_date   DateTime?
+  is_date_tbc           Boolean   @default(false)
+  student_instructions  String?   @db.Text
+  lms_activity_url      String?   @db.Text
+  status                String    @default("PUBLISHED") @db.VarChar(20) // "DRAFT" or "PUBLISHED"
+  order_index           Int       @default(0)
+  created_by            String?   @db.VarChar(150)
+  updated_by            String?   @db.VarChar(150)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now()) @updatedAt
 
   batches                  batches                    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   student_milestone_status student_milestone_status[]
+  date_audit_logs          milestone_date_audit[]
+  evaluations              assessment_evaluations[]
+  reconciliations          milestone_reconciliations[]
+
+  @@unique([batch_id, milestone_code])
 }
 
 model student_milestone_status {
@@ -488,5 +513,112 @@ model lms_user_mappings {
   updated_at         DateTime  @default(now()) @updatedAt
 
   students           students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}
+
+model milestone_date_audit {
+  id           Int        @id @default(autoincrement())
+  milestone_id Int
+  changed_by   String     @db.VarChar(150)
+  field_name   String     @db.VarChar(50)
+  old_value    String?    @db.Text
+  new_value    String?    @db.Text
+  changed_at   DateTime   @default(now())
+
+  milestone    milestones @relation(fields: [milestone_id], references: [id], onDelete: Cascade)
+
+  @@index([milestone_id])
+}
+
+model assessment_evaluations {
+  id               Int             @id @default(autoincrement())
+  milestone_id     Int
+  student_id       Int
+  viva_schedule_id Int?
+  examiner_email   String          @db.VarChar(150)
+  examiner_role    String          @db.VarChar(30)
+  examiner_name    String?         @db.VarChar(150)
+  rubric_key       String          @db.VarChar(50)
+  rubric_version   Int             @default(1)
+  rubric_snapshot  Json?
+  criterion_scores Json
+  total_score      Decimal?        @db.Decimal(5, 2)
+  shared_rationale String?         @db.Text
+  private_notes    String?         @db.Text
+  status           String          @default("DRAFT") @db.VarChar(30)
+  version          Int             @default(1)
+  submitted_at     DateTime?
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @default(now()) @updatedAt
+
+  milestone        milestones      @relation(fields: [milestone_id], references: [id], onDelete: Restrict)
+  student          students        @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  viva_schedule    viva_schedules? @relation(fields: [viva_schedule_id], references: [id], onDelete: SetNull)
+
+  @@unique([milestone_id, student_id, examiner_email])
+  @@index([student_id, milestone_id])
+}
+
+model milestone_reconciliations {
+  id                       Int                   @id @default(autoincrement())
+  milestone_id             Int
+  student_id               Int
+  status                   String                @default("UNDER_RECONCILIATION") @db.VarChar(40)
+  reconciliation_deadline  DateTime?
+  clock_started_at         DateTime?
+  final_agreed_mark        Decimal?              @db.Decimal(5, 2)
+  third_marker_email       String?               @db.VarChar(150)
+  third_marker_name        String?               @db.VarChar(150)
+  third_marker_assigned_by String?               @db.VarChar(150)
+  third_marker_assigned_at DateTime?
+  created_at               DateTime              @default(now())
+  updated_at               DateTime              @default(now()) @updatedAt
+
+  milestone                milestones            @relation(fields: [milestone_id], references: [id], onDelete: Restrict)
+  student                  students              @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  proposals                agreement_proposals[]
+
+  @@unique([milestone_id, student_id])
+}
+
+model agreement_proposals {
+  id                   Int                       @id @default(autoincrement())
+  reconciliation_id    Int
+  version              Int                       @default(1)
+  proposed_by_email    String                    @db.VarChar(150)
+  proposed_by_role     String                    @db.VarChar(30)
+  proposed_mark        Decimal                   @db.Decimal(5, 2)
+  discussion_notes     String?                   @db.Text
+  supervisor_confirmed Boolean                   @default(false)
+  supervisor_conf_at   DateTime?
+  supervisor_conf_by   String?                   @db.VarChar(150)
+  assessor_confirmed   Boolean                   @default(false)
+  assessor_conf_at     DateTime?
+  assessor_conf_by     String?                   @db.VarChar(150)
+  created_at           DateTime                  @default(now())
+
+  reconciliation       milestone_reconciliations @relation(fields: [reconciliation_id], references: [id], onDelete: Restrict)
+
+  @@index([reconciliation_id, version])
+}
+
+model student_moderation_records {
+  id                    Int       @id @default(autoincrement())
+  student_id            Int
+  batch_id              Int
+  final_calculated_mark Decimal   @db.Decimal(5, 2)
+  moderation_band       String    @db.VarChar(30)
+  moderation_status     String    @default("PENDING") @db.VarChar(30)
+  justification_notes   String?   @db.Text
+  senior_examiner_1     String?   @db.VarChar(150)
+  senior_examiner_2     String?   @db.VarChar(150)
+  audited_by            String?   @db.VarChar(150)
+  audited_at            DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now()) @updatedAt
+
+  student               students  @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  batch                 batches   @relation(fields: [batch_id], references: [id], onDelete: Restrict)
+
+  @@unique([student_id, batch_id])
 }
 

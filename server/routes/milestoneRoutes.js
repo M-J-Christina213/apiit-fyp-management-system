@@ -3,25 +3,25 @@ const router = express.Router();
 const milestoneController = require("../controllers/milestoneController");
 
 // ======================================================
-// PM — Milestone CRUD (batch-scoped)
+// Batch Milestone Configuration (PM & Admin)
 // ======================================================
-// GET  /api/milestones/batch/:batchId
+
+// GET   /api/milestones/batch/:batchId
 router.get("/batch/:batchId", milestoneController.getMilestonesByBatch);
 
-// POST /api/milestones
+// POST  /api/milestones/batch/:batchId/apply-template
+router.post("/batch/:batchId/apply-template", milestoneController.applyApprovedTemplate);
+
+// PATCH /api/milestones/batch/:batchId/publish
+router.patch("/batch/:batchId/publish", milestoneController.publishBatchMilestones);
+
+// POST  /api/milestones
 router.post("/", milestoneController.createMilestone);
 
 // ======================================================
-// Status — Update a student's milestone status (PM / Supervisor)
-// IMPORTANT: must be registered BEFORE the generic /:id routes
+// Student Timeline & Progress
 // ======================================================
-// PUT  /api/milestones/status/update
-router.put("/status/update", milestoneController.updateStudentStatus);
 
-// ======================================================
-// Progress — Student view
-// Must be above /:id to avoid collision
-// ======================================================
 // GET  /api/milestones/progress/student/:studentId
 router.get("/progress/student/:studentId", milestoneController.getStudentProgress);
 
@@ -29,21 +29,20 @@ router.get("/progress/student/:studentId", milestoneController.getStudentProgres
 router.get("/progress/cb/:cbNo", milestoneController.getStudentProgressByCbNo);
 
 // ======================================================
-// Progress — Supervisor view
+// Staff Progress Views
 // ======================================================
+
 // GET  /api/milestones/supervisor/:email
 router.get("/supervisor/:email", milestoneController.getSupervisorMilestoneOverview);
 
-// ======================================================
-// Progress — Assessor view
-// ======================================================
 // GET  /api/milestones/assessor/:email
 router.get("/assessor/:email", milestoneController.getAssessorMilestoneOverview);
 
 // ======================================================
-// Generic /:id routes — MUST be last to avoid swallowing named paths
+// Individual Milestone Management
 // ======================================================
-// PUT  /api/milestones/:id
+
+// PUT    /api/milestones/:id
 router.put("/:id", milestoneController.updateMilestone);
 
 // DELETE /api/milestones/:id

@@ -78,6 +78,7 @@ const pmLinks = [
 
 const adminLinks = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/admin/milestones', label: 'Milestone Schedule', icon: Bell },
   { path: '/admin/users', label: 'Users', icon: Users },
   { path: '/admin/roles', label: 'Roles', icon: Shield },
   { path: '/admin/viva', label: 'Viva Management', icon: CalendarDays },
@@ -268,6 +269,7 @@ function App() {
             }
           >
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/milestones" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminDashboard />} />
             <Route path="/admin/roles" element={<AdminDashboard />} />
             <Route path="/admin/settings" element={<AdminDashboard />} />

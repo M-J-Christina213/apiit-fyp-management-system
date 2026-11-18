@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prisma:generate": "prisma generate",
+    "prestart": "npm run prisma:generate",
     "start": "nodemon server.js",
+    "predev": "npm run prisma:generate",
     "dev": "nodemon server.js"
   },
   "keywords": [],

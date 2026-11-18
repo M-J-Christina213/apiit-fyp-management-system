@@ -28,10 +28,12 @@ import {
   getUsers,
   getStats,
   createUser,
+  getBatches,
   getExternalSupervisorRequests,
   approveExternalSupervisor,
   rejectExternalSupervisor,
 } from "../../services/api";
+import PMMilestones from '../pm/PMMilestones';
 
 
 const AdminDashboard = () => {
@@ -43,6 +45,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({});
   const [students, setStudents] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [msStatus, setMsStatus] = useState(null);
 
   // Modal states
@@ -80,12 +83,14 @@ const AdminDashboard = () => {
           studentsRes,
           supervisorsRes,
           externalRequestsRes,
+          batchesRes,
           msRes
         ] = await Promise.all([
           getUsers(),
           getStudents(),
           getSupervisors(),
           getExternalSupervisorRequests(),
+          getBatches(),
           fetch("/api/viva/microsoft/status", {
             headers: {
               "x-user-email": currentUser.email || "",
@@ -103,6 +108,7 @@ const AdminDashboard = () => {
         setUsers(usersRes.data);
         setStudents(studentsRes.data);
         setSupervisors(supervisorsRes.data);
+        setBatches(batchesRes.data || []);
         setMsStatus(msRes);
 
         setStats({
@@ -783,6 +789,11 @@ const AdminDashboard = () => {
           </div>
         </div>
       );
+    }
+
+    // ---------------- MILESTONE SCHEDULE TAB ----------------
+    if (path === '/admin/milestones') {
+      return <PMMilestones batches={batches} />;
     }
 
     return null;
