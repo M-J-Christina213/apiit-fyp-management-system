@@ -793,7 +793,7 @@ const AdminDashboard = () => {
 
     // ---------------- MILESTONE SCHEDULE TAB ----------------
     if (path === '/admin/milestones') {
-      return <PMMilestones batches={batches} />;
+      return <PMMilestones />;
     }
 
     return null;

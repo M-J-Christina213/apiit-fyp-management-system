@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { API_BASE_URL } from '../../services/api';
 import {
   BookOpen,
   Users,
@@ -43,7 +44,7 @@ const Login = () => {
       // Clean up the URL to remove the code so it doesn't execute twice on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
 
-      fetch('http://localhost:5000/api/auth/azure/callback', {
+      fetch(`${API_BASE_URL}/auth/azure/callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: codeParam })
@@ -102,7 +103,7 @@ const Login = () => {
   const handleAzureLogin = () => {
     setIsLoading(true);
     setError('');
-    window.location.href = 'http://localhost:5000/api/auth/azure/login';
+    window.location.href = `${API_BASE_URL}/auth/azure/login`;
   };
 
   const handleSubmit = async (e) => {
@@ -111,7 +112,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

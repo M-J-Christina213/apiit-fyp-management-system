@@ -1,3 +1,5 @@
+const VivaPublicationController = require('./vivaPublicationController');
+const VivaPublicationService = require('../services/vivaPublicationService');
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const ExcelJS = require("exceljs");
@@ -236,13 +238,10 @@ exports.updateVivaPeriodStatus = async (req, res) => {
             });
         }
 
-        // If transitioning to CANCELLED and was FINALIZED, cleanup Outlook events if present
-        if (targetStatus === "CANCELLED" && currentStatus === "FINALIZED") {
-            for (const sch of period.viva_schedules) {
-                if (sch.outlook_event_id) {
-                    await MicrosoftGraphService.deleteCalendarEvent(sch.outlook_event_id);
-                }
-            }
+        if (targetStatus === 'PUBLISHED') return res.status(409).json({ error: 'Use the invitation publishing action; a status change alone cannot send invitations.' });
+        if (targetStatus === 'CANCELLED') {
+            const result = await VivaPublicationController.cancelPeriodMeetings(period.viva_schedules);
+            if (!result.success) return res.status(409).json({ error: result.error, results: result.results });
         }
 
         const updatedPeriod = await prisma.viva_periods.update({
@@ -268,19 +267,7 @@ exports.updateVivaPeriodStatus = async (req, res) => {
 // ======================================================
 // 7. ADMIN - DELETE VIVA PERIOD
 // ======================================================
-exports.deleteVivaPeriod = async (req, res) => {
-    const periodId = parseInt(req.params.id);
-    if (isNaN(periodId)) return res.status(400).json({ error: "Invalid Viva Period ID" });
-
-    try {
-        await prisma.viva_periods.delete({ where: { id: periodId } });
-        res.status(200).json({ message: "Viva Period deleted successfully" });
-    } catch (error) {
-        console.error("Delete Viva Period Error:", error);
-        res.status(500).json({ error: "Failed to delete Viva Period", details: error.message });
-    }
-};
-
+exports.deleteVivaPeriod = VivaPublicationController.deleteVivaPeriod;
 // ======================================================
 // 8. DASHBOARD STATISTICS
 // ======================================================
@@ -780,6 +767,7 @@ exports.getSchedules = async (req, res) => {
             orderBy: [{ date: "asc" }, { start_time: "asc" }]
         });
 
+        const publications = await VivaPublicationController.publicationSummaries(schedules);
         // Compute overall confirmation status for each schedule
         const enriched = schedules.map(sch => {
             const supConf = sch.viva_confirmations.find(c => c.role === "SUPERVISOR");
@@ -801,6 +789,7 @@ exports.getSchedules = async (req, res) => {
 
             return {
                 ...sch,
+                publication: publications.get(sch.id),
                 overallStatus,
                 supervisorConfirmation: supConf || null,
                 assessorConfirmation: assConf || null,
@@ -890,8 +879,16 @@ exports.updateSchedule = async (req, res) => {
 
         if (report_link !== undefined) updatedData.report_link = report_link;
         if (teams_join_url !== undefined) updatedData.teams_join_url = teams_join_url;
-        if (supervisor_id) updatedData.supervisor_id = parseInt(supervisor_id);
-        if (assessor_id) updatedData.assessor_id = parseInt(assessor_id);
+        if (supervisor_id) { updatedData.supervisor_id = parseInt(supervisor_id); hasTimeOrVenueChanged = true; }
+        if (assessor_id) { updatedData.assessor_id = parseInt(assessor_id); hasTimeOrVenueChanged = true; }
+        if (end_time) {
+            const endMins = VivaValidationService.timeToMinutes(end_time);
+            const startMins = VivaValidationService.timeToMinutes(time || start_time || existing.start_time);
+            if (endMins === null || startMins === null || endMins <= startMins) return res.status(400).json({ error: 'End time must follow start time in Sri Lanka time.' });
+            const dateStr = (updatedData.date || existing.date).toISOString().slice(0, 10);
+            updatedData.end_time = new Date(`${dateStr}T${VivaValidationService.minutesToTimeString(endMins)}:00Z`);
+            updatedData.duration_mins = endMins - startMins;
+        }
 
         // Transactionally update schedule and reset confirmations if time/mode/venue altered
         const updatedSchedule = await prisma.$transaction(async (tx) => {
@@ -921,23 +918,7 @@ exports.updateSchedule = async (req, res) => {
             return sch;
         });
 
-        // If finalized, update Outlook calendar event
-        if (updatedSchedule.status === "FINALIZED" && updatedSchedule.outlook_event_id) {
-            const syncResult = await MicrosoftGraphService.updateCalendarEvent(
-                updatedSchedule.outlook_event_id,
-                updatedSchedule,
-                updatedSchedule.viva_periods
-            );
-            if (!syncResult.success) {
-                await prisma.viva_schedules.update({
-                    where: { id: scheduleId },
-                    data: {
-                        outlook_sync_status: "FAILED",
-                        outlook_sync_error: syncResult.error || "Failed to update Outlook event."
-                    }
-                });
-            }
-        }
+        const publication = await VivaPublicationController.publicationAfterEdit(scheduleId);
 
         await VivaAuditService.log({
             viva_period_id: existing.viva_period_id,
@@ -951,6 +932,7 @@ exports.updateSchedule = async (req, res) => {
         res.status(200).json({
             message: "Schedule updated successfully.",
             schedule: updatedSchedule,
+            publication,
             confirmationReset: hasTimeOrVenueChanged
         });
     } catch (error) {
@@ -962,37 +944,7 @@ exports.updateSchedule = async (req, res) => {
 // ======================================================
 // 14. DELETE SCHEDULE
 // ======================================================
-exports.deleteSchedule = async (req, res) => {
-    const scheduleId = parseInt(req.params.scheduleId);
-    if (isNaN(scheduleId)) return res.status(400).json({ error: "Invalid Schedule ID" });
-
-    try {
-        const sch = await prisma.viva_schedules.findUnique({ where: { id: scheduleId } });
-        if (!sch) return res.status(404).json({ error: "Schedule not found" });
-
-        // Clean up Outlook event if exists
-        if (sch.outlook_event_id) {
-            await MicrosoftGraphService.deleteCalendarEvent(sch.outlook_event_id);
-        }
-
-        await prisma.viva_schedules.delete({ where: { id: scheduleId } });
-
-        await VivaAuditService.log({
-            viva_period_id: sch.viva_period_id,
-            viva_schedule_id: scheduleId,
-            action: "SCHEDULE_DELETED",
-            performed_by: req.headers["x-user-email"] || "Admin",
-            role: "ADMIN",
-            details: `Deleted schedule slot ID ${scheduleId}`
-        });
-
-        res.status(200).json({ message: "Schedule deleted successfully." });
-    } catch (error) {
-        console.error("Delete Schedule Error:", error);
-        res.status(500).json({ error: "Failed to delete schedule", details: error.message });
-    }
-};
-
+exports.deleteSchedule = VivaPublicationController.deleteSchedule;
 // ======================================================
 // 15. SUPERVISOR & ASSESSOR - GET ASSIGNED SCHEDULES
 // ======================================================
@@ -1528,7 +1480,8 @@ exports.resolveVivaSchedule = async (req, res) => {
             details: `Admin resolved schedule slot. Supervisor: ${supMode}, Assessor: ${assMode}, Rep: ${updatedSchedule.physical_rep_name || 'None'}`
         });
 
-        res.status(200).json({ message: "Viva schedule resolved successfully.", schedule: updatedSchedule });
+        const publication = await VivaPublicationController.publicationAfterEdit(scheduleId);
+        res.status(200).json({ message: "Local viva schedule saved.", schedule: updatedSchedule, publication });
     } catch (error) {
         console.error("Resolve Viva Schedule Error:", error);
         res.status(500).json({ error: "Failed to resolve Viva schedule", details: error.message });
@@ -1688,7 +1641,8 @@ exports.resolveChangeRequest = async (req, res) => {
                 );
             }
 
-            return res.status(200).json({ message: "Change request accepted and schedule updated." });
+            const publication = await VivaPublicationController.publicationAfterEdit(schedule.id);
+            return res.status(200).json({ message: "Change request accepted and local schedule updated.", publication });
         } else if (action.toUpperCase() === "REJECT") {
             await prisma.$transaction(async (tx) => {
                 await tx.viva_change_requests.update({
@@ -1897,199 +1851,11 @@ exports.getFinalizationChecklist = async (req, res) => {
 // ======================================================
 // 19. FINALIZATION WORKFLOW - FINALIZE VIVA PERIOD
 // ======================================================
-exports.finalizeVivaPeriod = async (req, res) => {
-    const periodId = parseInt(req.params.periodId);
-    if (isNaN(periodId)) return res.status(400).json({ error: "Invalid Viva Period ID" });
-
-    try {
-        const period = await prisma.viva_periods.findUnique({
-            where: { id: periodId },
-            include: {
-                viva_schedules: {
-                    include: {
-                        students: true,
-                        supervisors: true,
-                        assessors: true
-                    }
-                }
-            }
-        });
-        if (!period) return res.status(404).json({ error: "Viva Period not found" });
-
-        const finalizedAt = new Date();
-
-        // 1. Mark period and all schedules as FINALIZED
-        await prisma.$transaction([
-            prisma.viva_periods.update({
-                where: { id: periodId },
-                data: { status: "FINALIZED" }
-            }),
-            prisma.viva_schedules.updateMany({
-                where: { viva_period_id: periodId },
-                data: {
-                    status: "FINALIZED",
-                    finalized_at: finalizedAt
-                }
-            })
-        ]);
-
-        // 2. Microsoft Outlook & Teams synchronization per participant
-        let syncSuccessCount = 0;
-        let syncFailedCount = 0;
-
-        for (const sch of period.viva_schedules) {
-            try {
-                const studentUser = sch.students?.cb_no ? await prisma.users.findFirst({ where: { email: { contains: sch.students.cb_no, mode: "insensitive" } } }) : null;
-                const supUser = sch.supervisors?.email ? await prisma.users.findFirst({ where: { email: { equals: sch.supervisors.email, mode: "insensitive" } } }) : null;
-                const assUser = sch.assessors?.email ? await prisma.users.findFirst({ where: { email: { equals: sch.assessors.email, mode: "insensitive" } } }) : null;
-                const adminUser = req.headers["x-user-email"] ? await prisma.users.findFirst({ where: { email: { equals: req.headers["x-user-email"], mode: "insensitive" } } }) : null;
-
-                const targets = [
-                    { user: studentUser, role: "STUDENT" },
-                    { user: supUser, role: "SUPERVISOR" },
-                    { user: assUser, role: "ASSESSOR" },
-                    { user: adminUser, role: "ADMIN" }
-                ];
-
-                let schSyncSuccess = false;
-                for (const t of targets) {
-                    if (t.user?.id) {
-                        const syncRes = await MicrosoftGraphService.syncScheduleToUserCalendar(t.user.id, sch, period, t.role);
-                        if (syncRes.success) schSyncSuccess = true;
-                    }
-                }
-
-                if (schSyncSuccess) syncSuccessCount++;
-                else syncFailedCount++;
-
-                await prisma.viva_schedules.update({
-                    where: { id: sch.id },
-                    data: { outlook_sync_status: schSyncSuccess ? "SYNCED" : "NOT_SYNCED" }
-                });
-            } catch (syncErr) {
-                console.error(`Sync error for schedule ${sch.id}:`, syncErr.message);
-                syncFailedCount++;
-            }
-        }
-
-        // 3. Dispatch notifications to Students, Supervisors, Assessors, PM
-        for (const sch of period.viva_schedules) {
-            if (sch.student_id) {
-                await NotificationService.notifyStudent(
-                    sch.student_id,
-                    "Viva Schedule Finalized",
-                    `Your Viva Schedule has been finalized for ${sch.date ? new Date(sch.date).toLocaleDateString() : 'scheduled date'}. Venue: ${sch.venue || sch.attendance_mode}.`
-                );
-            }
-            if (sch.supervisor_id) {
-                await NotificationService.notifySupervisor(
-                    sch.supervisor_id,
-                    "Viva Sessions Finalized",
-                    `Finalized Viva schedule has been published for your student ${sch.students?.student_name} (${sch.students?.cb_no}).`
-                );
-            }
-            if (sch.assessor_id) {
-                await NotificationService.notifyAssessor(
-                    sch.assessor_id,
-                    "Viva Sessions Finalized",
-                    `Finalized Viva schedule has been published for student ${sch.students?.student_name} (${sch.students?.cb_no}).`
-                );
-            }
-        }
-
-        // Notify PM
-        await NotificationService.notifyRole(
-            "pm",
-            "Viva Schedule Finalized",
-            `Viva schedule for '${period.name || period.type}' has been finalized and published.`
-        );
-
-        await VivaAuditService.log({
-            viva_period_id: periodId,
-            action: "PERIOD_FINALIZED",
-            performed_by: req.headers["x-user-email"] || "Admin",
-            role: "ADMIN",
-            details: `Finalized Viva Period '${period.name}'. Total slots: ${period.viva_schedules.length}. Outlook sync: ${syncSuccessCount} synced, ${syncFailedCount} failed.`
-        });
-
-        res.status(200).json({
-            message: "Viva Period finalized successfully. Final schedules published and calendar events created.",
-            totalSchedules: period.viva_schedules.length,
-            syncSuccessCount,
-            syncFailedCount
-        });
-    } catch (error) {
-        console.error("Finalize Viva Period Error:", error);
-        res.status(500).json({ error: "Failed to finalize Viva Period", details: error.message });
-    }
-};
-
+exports.finalizeVivaPeriod = VivaPublicationController.finalizeVivaPeriod;
 // ======================================================
 // 20. OUTLOOK SYNC RETRY & TEAMS MANAGEMENT
 // ======================================================
-exports.retryOutlookSync = async (req, res) => {
-    const scheduleId = req.params.scheduleId ? parseInt(req.params.scheduleId) : null;
-    const periodId = req.query.periodId ? parseInt(req.query.periodId) : null;
-
-    try {
-        const where = {};
-        if (scheduleId) where.id = scheduleId;
-        if (periodId) where.viva_period_id = periodId;
-
-        const schedules = await prisma.viva_schedules.findMany({
-            where: { ...where, status: "FINALIZED" },
-            include: { students: true, supervisors: true, assessors: true, viva_periods: true }
-        });
-
-        if (schedules.length === 0) {
-            return res.status(404).json({ error: "No finalized schedules found to synchronize." });
-        }
-
-        const callerEmail = req.headers["x-user-email"];
-        const callerUser = callerEmail
-            ? await prisma.users.findFirst({ where: { email: { equals: callerEmail, mode: "insensitive" } } })
-            : null;
-
-        let successCount = 0;
-        let failCount = 0;
-
-        for (const sch of schedules) {
-            const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, sch.viva_periods, callerUser?.id);
-            if (syncRes.success) {
-                successCount++;
-                await prisma.viva_schedules.update({
-                    where: { id: sch.id },
-                    data: {
-                        outlook_event_id: syncRes.eventId,
-                        teams_meeting_id: syncRes.teamsMeetingId || sch.teams_meeting_id,
-                        teams_join_url: syncRes.teamsJoinUrl || sch.teams_join_url,
-                        outlook_sync_status: "SYNCED",
-                        outlook_sync_error: null
-                    }
-                });
-            } else {
-                failCount++;
-                await prisma.viva_schedules.update({
-                    where: { id: sch.id },
-                    data: {
-                        outlook_sync_status: "FAILED",
-                        outlook_sync_error: syncRes.error
-                    }
-                });
-            }
-        }
-
-        res.status(200).json({
-            message: `Synchronization complete. ${successCount} succeeded, ${failCount} failed.`,
-            successCount,
-            failCount
-        });
-    } catch (error) {
-        console.error("Retry Outlook Sync Error:", error);
-        res.status(500).json({ error: "Failed to retry Outlook sync", details: error.message });
-    }
-};
-
+exports.retryOutlookSync = VivaPublicationController.retryOutlookSync;
 // ======================================================
 // 21. MICROSOFT 365 INTEGRATION ENDPOINTS
 // ======================================================
@@ -2510,123 +2276,7 @@ exports.getPeriodAuditLogs = async (req, res) => {
 // ======================================================
 // 26. PUBLISH VIVA PERIOD (SEND FINAL SCHEDULE)
 // ======================================================
-exports.publishVivaPeriod = async (req, res) => {
-    const periodId = parseInt(req.params.id || req.params.periodId);
-    if (isNaN(periodId)) return res.status(400).json({ error: "Invalid Viva Period ID" });
-
-    try {
-        const period = await prisma.viva_periods.findUnique({
-            where: { id: periodId },
-            include: {
-                viva_schedules: {
-                    include: {
-                        students: true,
-                        supervisors: true,
-                        assessors: true,
-                        physical_rep_user: true
-                    }
-                }
-            }
-        });
-        if (!period) return res.status(404).json({ error: "Viva Period not found" });
-
-        // Update period and all schedules status to PUBLISHED
-        await prisma.$transaction([
-            prisma.viva_periods.update({
-                where: { id: periodId },
-                data: { status: "PUBLISHED" }
-            }),
-            prisma.viva_schedules.updateMany({
-                where: { viva_period_id: periodId },
-                data: { status: "PUBLISHED" }
-            })
-        ]);
-
-        // Trigger Microsoft Graph calendar sync
-        const callerEmail = req.headers["x-user-email"];
-        const callerUser = callerEmail
-            ? await prisma.users.findFirst({ where: { email: { equals: callerEmail, mode: "insensitive" } } })
-            : null;
-
-        let syncSuccessCount = 0;
-        let syncFailedCount = 0;
-
-        for (const sch of period.viva_schedules) {
-            try {
-                const syncRes = await MicrosoftGraphService.createCalendarEvent(sch, period, callerUser?.id);
-                if (syncRes.success) {
-                    syncSuccessCount++;
-                    await prisma.viva_schedules.update({
-                        where: { id: sch.id },
-                        data: {
-                            outlook_event_id: syncRes.eventId,
-                            outlook_sync_status: "SYNCED"
-                        }
-                    });
-                } else {
-                    syncFailedCount++;
-                    await prisma.viva_schedules.update({
-                        where: { id: sch.id },
-                        data: {
-                            outlook_sync_status: MicrosoftGraphService.isConfigured() ? "FAILED" : "NOT_CONFIGURED",
-                            outlook_sync_error: syncRes.error
-                        }
-                    });
-                }
-            } catch (err) {
-                syncFailedCount++;
-            }
-
-            // Dispatch Notifications
-            if (sch.student_id) {
-                await NotificationService.notifyStudent(
-                    sch.student_id,
-                    "Final Viva Schedule Published",
-                    `Your Viva Schedule has been published for ${sch.date ? new Date(sch.date).toLocaleDateString() : 'scheduled date'}. Venue: ${sch.venue || 'Physical'}.`
-                );
-            }
-            if (sch.supervisor_id) {
-                await NotificationService.notifySupervisor(
-                    sch.supervisor_id,
-                    "Final Viva Schedule Published",
-                    `Final Viva Schedule published for student ${sch.students?.student_name} (${sch.students?.cb_no}).`
-                );
-            }
-            if (sch.assessor_id) {
-                await NotificationService.notifyAssessor(
-                    sch.assessor_id,
-                    "Final Viva Schedule Published",
-                    `Final Viva Schedule published for student ${sch.students?.student_name} (${sch.students?.cb_no}).`
-                );
-            }
-        }
-
-        // Notify PM
-        await NotificationService.notifyRole(
-            "pm",
-            "Final Viva Schedule Published",
-            `Final Viva Schedule for period '${period.name || period.type}' has been published.`
-        );
-
-        await VivaAuditService.log({
-            viva_period_id: periodId,
-            action: "PERIOD_PUBLISHED",
-            performed_by: req.headers["x-user-email"] || "Admin",
-            role: "ADMIN",
-            details: `Published final Viva Schedule for period '${period.name}'. Total slots: ${period.viva_schedules.length}.`
-        });
-
-        res.status(200).json({
-            message: "Final Viva Schedule published successfully. Notifications sent to Students, Supervisors, Assessors, and PM.",
-            syncSuccessCount,
-            syncFailedCount
-        });
-    } catch (error) {
-        console.error("Publish Viva Period Error:", error);
-        res.status(500).json({ error: "Failed to publish final Viva Schedule", details: error.message });
-    }
-};
-exports.triggerAutoScheduling = async (req, res) => {
+exports.publishVivaPeriod = VivaPublicationController.publishVivaPeriod;exports.triggerAutoScheduling = async (req, res) => {
     const periodId = parseInt(req.params.periodId);
     try {
         const schedules = await schedulingService.generateSchedules(periodId);
@@ -2662,3 +2312,5 @@ exports.finalizeSchedule = async (req, res) => {
     });
     res.status(200).json({ message: "Finalized", schedule: updated });
 };
+
+exports.previewVivaInvitation = VivaPublicationController.previewVivaInvitation;

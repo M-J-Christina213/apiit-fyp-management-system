@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Trash } from 'lucide-react';
 import { getLoggedInUser } from '../../utils/auth';
+import { API_BASE_URL } from '../../services/api';
 
 const getRelativeTime = (dateString) => {
   if (!dateString) return '';
@@ -31,7 +32,7 @@ const NotificationDropdown = () => {
   const fetchNotifications = async () => {
     if (!userId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/${userId}`);
+      const res = await fetch(`${API_BASE_URL}/notifications/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
@@ -65,7 +66,7 @@ const NotificationDropdown = () => {
   const handleMarkAsRead = async (id, e) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/read/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/notifications/read/${id}`, {
         method: 'PUT'
       });
       if (res.ok) {
@@ -79,7 +80,7 @@ const NotificationDropdown = () => {
   const handleMarkAllAsRead = async () => {
     if (!userId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/read-all/${userId}`, {
+      const res = await fetch(`${API_BASE_URL}/notifications/read-all/${userId}`, {
         method: 'PUT'
       });
       if (res.ok) {
@@ -93,7 +94,7 @@ const NotificationDropdown = () => {
   const handleDelete = async (id, e) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/notifications/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) {

@@ -1,3 +1,4 @@
+import { formatVivaTime, formatVivaDate } from '../../../utils/vivaTime';
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
@@ -175,8 +176,8 @@ const VivaOverviewDashboard = () => {
                                                   <div className="text-gray-500 text-xs mt-1">ID: {sch.students?.cb_no || 'N/A'}</div>
                                               </td>
                                               <td className="px-6 py-4">
-                                                  <span className="font-medium text-gray-800">{new Date(sch.date).toLocaleDateString()}</span> <br/>
-                                                  <span className="text-gray-500">{new Date(sch.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(sch.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                  <span className="font-medium text-gray-800">{formatVivaDate(sch.date)}</span> <br/>
+                                                  <span className="text-gray-500">{formatVivaTime(sch.start_time)} - {formatVivaTime(sch.end_time)}</span>
                                               </td>
                                               <td className="px-6 py-4">
                                                   <span className="block font-medium text-gray-800">{sch.venue || 'TBD'}</span>

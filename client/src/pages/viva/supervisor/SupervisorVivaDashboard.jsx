@@ -1,3 +1,4 @@
+import { formatVivaTime, formatVivaDate } from '../../../utils/vivaTime';
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -183,12 +184,12 @@ export default function SupervisorVivaDashboard() {
               const isConfirmed = myConf?.status === "CONFIRMED";
               const isChangeRequested = myConf?.status === "CHANGE_REQUESTED";
 
-              const dateStr = sch.date ? new Date(sch.date).toLocaleDateString() : "Date TBA";
+              const dateStr = sch.date ? formatVivaDate(sch.date) : "Date TBA";
               const startTimeStr = sch.start_time
-                ? new Date(sch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                ? formatVivaTime(sch.start_time)
                 : "TBA";
               const endTimeStr = sch.end_time
-                ? new Date(sch.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                ? formatVivaTime(sch.end_time)
                 : "TBA";
               const mode = sch.attendance_mode || sch.mode || "PHYSICAL";
 
@@ -353,8 +354,8 @@ export default function SupervisorVivaDashboard() {
             </div>
 
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs mb-4 space-y-1">
-              <p><strong>Proposed Date:</strong> {selectedSchedule.date ? new Date(selectedSchedule.date).toLocaleDateString() : "TBA"}</p>
-              <p><strong>Proposed Time:</strong> {selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "TBA"}</p>
+              <p><strong>Proposed Date:</strong> {selectedSchedule.date ? formatVivaDate(selectedSchedule.date) : "TBA"}</p>
+              <p><strong>Proposed Time:</strong> {selectedSchedule.start_time ? formatVivaTime(selectedSchedule.start_time) : "TBA"}</p>
               <p><strong>Initial Mode:</strong> {selectedSchedule.attendance_mode || "Physical"}</p>
             </div>
 

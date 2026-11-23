@@ -1,0 +1,648 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model assessors {
+  id                  Int                   @id @default(autoincrement())
+  title               String?               @db.VarChar(20)
+  name                String                @db.VarChar(100)
+  email               String                @unique @db.VarChar(100)
+  expertise           String?
+  research_interests  String?
+  assigned_count      Int                   @default(0)
+  preferred_slots     Int                   @default(3)
+  student_fyp_records student_fyp_records[]
+  viva_availabilities viva_availabilities[]
+  viva_schedules      viva_schedules[]
+}
+
+model batches {
+  id                  Int                          @id @default(autoincrement())
+  batch_code          String                       @unique @db.VarChar(20)
+  batch_intake        String                       @db.VarChar(50)
+  start_fyp_date      DateTime                     @db.Date
+  stage               String?                      @default("Proposal") @db.VarChar(20)
+  created_at          DateTime?                    @default(now()) @db.Timestamp(6)
+  students            students[]
+  viva_period_batches viva_period_batches[]
+  milestones          milestones[]
+  lms_course_mappings lms_course_mappings[]
+  moderation_records  student_moderation_records[]
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  title      String?   @db.VarChar(255)
+  message    String?
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model proposal_requests {
+  id                Int       @id @default(autoincrement())
+  student_id        Int?
+  supervisor_id     Int?
+  proposed_topic    String?
+  proposal_pdf      String?
+  status            String?   @default("Pending")
+  rejection_reason  String?
+  submitted_at      DateTime? @default(now())
+  approved_at       DateTime?
+  student_confirmed Boolean   @default(false)
+
+  students    students?    @relation(fields: [student_id], references: [id])
+  supervisors supervisors? @relation(fields: [supervisor_id], references: [id])
+}
+
+model student_fyp_records {
+  id                             Int          @id @default(autoincrement())
+  student_id                     Int?
+  tentative_topic                String?
+  supervisor_id                  Int?
+  supervisor_confirmation_status String?      @default("Pending") @db.VarChar(30)
+  assessor_id                    Int?
+  assessors                      assessors?   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  students                       students?    @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  supervisors                    supervisors? @relation(fields: [supervisor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model students {
+  id                       Int                          @id @default(autoincrement())
+  batch_id                 Int?
+  student_name             String                       @db.VarChar(100)
+  cb_no                    String                       @unique @db.VarChar(20)
+  logsheets                logsheets[]
+  proposal_requests        proposal_requests[]
+  student_fyp_records      student_fyp_records[]
+  batches                  batches?                     @relation(fields: [batch_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  viva_availabilities      viva_availabilities[]
+  viva_schedules           viva_schedules[]
+  studentMilestoneStatuses student_milestone_status[]
+  student_submissions      student_submissions[]
+  reviewer_notes           reviewer_notes[]
+  lms_user_mapping         lms_user_mappings?
+  evaluations              assessment_evaluations[]
+  reconciliations          milestone_reconciliations[]
+  moderation_records       student_moderation_records[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model supervisors {
+  id                          Int                   @id @default(autoincrement())
+  title                       String?               @db.VarChar(20)
+  name                        String                @db.VarChar(100)
+  email                       String                @unique @db.VarChar(100)
+  expertise                   String?
+  research_interests          String?
+  additional_information      String?
+  preferred_supervision_slots Int                   @default(3)
+  signature_url               String?
+  logsheets                   logsheets[]
+  proposal_requests           proposal_requests[]
+  student_fyp_records         student_fyp_records[]
+  viva_availabilities         viva_availabilities[]
+  viva_schedules              viva_schedules[]
+}
+
+model templates {
+  id          Int      @id @default(autoincrement())
+  title       String
+  file_path   String
+  uploaded_at DateTime @default(now())
+  file_name   String
+  file_size   String
+  file_type   String
+  stage       String   @default("Proposal")
+}
+
+model users {
+  id                    Int                     @id @default(autoincrement())
+  name                  String?                 @db.VarChar(100)
+  email                 String                  @unique @db.VarChar(150)
+  password              String?                 @db.VarChar(255)
+  role                  String                  @db.VarChar(20)
+  is_active             Boolean?                @default(true)
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  notifications         notifications[]
+  microsoft_integration microsoft_integrations?
+  viva_outlook_events   viva_outlook_events[]
+  viva_physical_reps    viva_schedules[]        @relation("viva_physical_rep")
+}
+
+model logsheets {
+  id                Int          @id @default(autoincrement())
+  student_id        Int
+  supervisor_id     Int?
+  meeting_date      DateTime
+  venue             String?
+  file_name         String
+  file_path         String
+  file_type         String?
+  file_size         String?
+  status            String       @default("Pending Review")
+  semester          String
+  rejection_reason  String?
+  approved_at       DateTime?
+  rejected_at       DateTime?
+  signature_applied Boolean      @default(false)
+  signed_file_url   String?
+  created_at        DateTime     @default(now())
+  students          students     @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  supervisors       supervisors? @relation(fields: [supervisor_id], references: [id])
+}
+
+model external_supervisor_requests {
+  id                          Int       @id @default(autoincrement())
+  title                       String?   @db.VarChar(20)
+  name                        String    @db.VarChar(100)
+  email                       String    @unique @db.VarChar(100)
+  university                  String    @db.VarChar(150)
+  expertise                   String?
+  research_interests          String?
+  preferred_supervision_slots Int       @default(3)
+  status                      String    @default("Pending")
+  rejection_reason            String?
+  approved_at                 DateTime?
+  approved_by                 String?
+  created_at                  DateTime  @default(now())
+}
+
+model viva_periods {
+  id               Int       @id @default(autoincrement())
+  name             String?   @db.VarChar(150)
+  type             String    @db.VarChar(50)
+  intake           String?   @db.VarChar(50)
+  academic_year    String?   @db.VarChar(20)
+  semester         String?   @db.VarChar(20)
+  start_date       DateTime  @db.Date
+  end_date         DateTime  @db.Date
+  daily_start_time String?   @db.VarChar(10)
+  daily_end_time   String?   @db.VarChar(10)
+  slot_duration    Int       @default(30)
+  status           String    @default("DRAFT") @db.VarChar(30)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  viva_period_batches viva_period_batches[]
+  viva_availabilities viva_availabilities[]
+  viva_schedules      viva_schedules[]
+  viva_audit_logs     viva_audit_logs[]
+}
+
+model viva_period_batches {
+  viva_period_id Int
+  batch_id       Int
+
+  viva_periods viva_periods @relation(fields: [viva_period_id], references: [id], onDelete: Cascade)
+  batches      batches      @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  @@id([viva_period_id, batch_id])
+}
+
+model viva_availabilities {
+  id             Int       @id @default(autoincrement())
+  viva_period_id Int
+  supervisor_id  Int?
+  assessor_id    Int?
+  student_id     Int?
+  date           DateTime  @db.Date
+  start_time     DateTime  @db.Time(6)
+  end_time       DateTime  @db.Time(6)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+
+  viva_period viva_periods @relation(fields: [viva_period_id], references: [id], onDelete: Cascade)
+  supervisors supervisors? @relation(fields: [supervisor_id], references: [id], onDelete: Cascade)
+  assessors   assessors?   @relation(fields: [assessor_id], references: [id], onDelete: Cascade)
+  students    students?    @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@index([viva_period_id])
+  @@index([date])
+}
+
+model viva_schedules {
+  id                         Int       @id @default(autoincrement())
+  viva_period_id             Int
+  student_id                 Int
+  supervisor_id              Int?
+  assessor_id                Int?
+  batch_code                 String?   @db.VarChar(50)
+  date                       DateTime? @db.Date
+  start_time                 DateTime? @db.Time(6)
+  end_time                   DateTime? @db.Time(6)
+  duration_mins              Int       @default(30)
+  mode                       String?   @db.VarChar(20)
+  attendance_mode            String?   @default("PHYSICAL") @db.VarChar(20)
+  supervisor_attendance_mode String?   @default("PHYSICAL") @db.VarChar(20)
+  assessor_attendance_mode   String?   @default("PHYSICAL") @db.VarChar(20)
+  physical_rep_user_id       Int?
+  physical_rep_name          String?   @db.VarChar(100)
+  physical_rep_email         String?   @db.VarChar(100)
+  venue                      String?   @default("TBA") @db.VarChar(100)
+  report_link                String?   @db.Text
+  teams_meeting_id           String?   @db.VarChar(255)
+  teams_join_url             String?   @db.Text
+  outlook_event_id           String?   @db.VarChar(255)
+  outlook_sync_status        String?   @default("NOT_SYNCED") @db.VarChar(30)
+  outlook_sync_error         String?   @db.Text
+  status                     String    @default("DRAFT") @db.VarChar(30)
+  finalized_at               DateTime?
+  created_at                 DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime? @default(now()) @updatedAt
+
+  viva_periods         viva_periods               @relation(fields: [viva_period_id], references: [id], onDelete: Cascade)
+  students             students                   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  supervisors          supervisors?               @relation(fields: [supervisor_id], references: [id], onDelete: Cascade)
+  assessors            assessors?                 @relation(fields: [assessor_id], references: [id], onDelete: Cascade)
+  physical_rep_user    users?                     @relation("viva_physical_rep", fields: [physical_rep_user_id], references: [id], onDelete: SetNull)
+  viva_confirmations   viva_confirmations[]
+  viva_change_requests viva_change_requests[]
+  viva_notes           viva_notes[]
+  viva_audit_logs      viva_audit_logs[]
+  viva_outlook_events  viva_outlook_events[]
+  evaluations          assessment_evaluations[]
+  meeting_publication  viva_meeting_publications?
+
+  @@index([viva_period_id, student_id])
+}
+
+model viva_confirmations {
+  id               Int       @id @default(autoincrement())
+  viva_schedule_id Int
+  user_id          Int?
+  role             String    @db.VarChar(30)
+  status           String    @default("PENDING") @db.VarChar(30)
+  attendance_mode  String?   @db.VarChar(20)
+  comment          String?   @db.Text
+  confirmed_at     DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now()) @updatedAt
+
+  viva_schedules viva_schedules @relation(fields: [viva_schedule_id], references: [id], onDelete: Cascade)
+
+  @@index([viva_schedule_id])
+}
+
+model viva_change_requests {
+  id               Int       @id @default(autoincrement())
+  viva_schedule_id Int
+  requested_by     Int?
+  role             String    @db.VarChar(30)
+  original_date    DateTime? @db.Date
+  original_time    String?   @db.VarChar(20)
+  proposed_date    DateTime? @db.Date
+  proposed_time    String?   @db.VarChar(20)
+  attendance_mode  String?   @db.VarChar(20)
+  reason           String?   @db.Text
+  admin_response   String?   @db.Text
+  status           String    @default("PENDING") @db.VarChar(30)
+  created_at       DateTime  @default(now())
+  resolved_at      DateTime?
+
+  viva_schedules viva_schedules @relation(fields: [viva_schedule_id], references: [id], onDelete: Cascade)
+
+  @@index([viva_schedule_id])
+}
+
+model viva_notes {
+  id               Int      @id @default(autoincrement())
+  viva_schedule_id Int
+  user_id          Int?
+  student_id       Int?
+  role             String   @db.VarChar(30)
+  note             String   @db.Text
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now()) @updatedAt
+
+  viva_schedules viva_schedules @relation(fields: [viva_schedule_id], references: [id], onDelete: Cascade)
+
+  @@index([viva_schedule_id])
+}
+
+model viva_audit_logs {
+  id               Int      @id @default(autoincrement())
+  viva_period_id   Int?
+  viva_schedule_id Int?
+  action           String   @db.VarChar(100)
+  performed_by     String?  @db.VarChar(100)
+  role             String?  @db.VarChar(30)
+  details          String?  @db.Text
+  created_at       DateTime @default(now())
+
+  viva_periods   viva_periods?   @relation(fields: [viva_period_id], references: [id], onDelete: Cascade)
+  viva_schedules viva_schedules? @relation(fields: [viva_schedule_id], references: [id], onDelete: Cascade)
+}
+
+model microsoft_integrations {
+  id              Int       @id @default(autoincrement())
+  user_id         Int       @unique
+  microsoft_email String?   @db.VarChar(150)
+  access_token    String?   @db.Text
+  refresh_token   String?   @db.Text
+  token_expiry    DateTime?
+  calendar_id     String?   @db.VarChar(255)
+  calendar_name   String?   @db.VarChar(150)
+  is_connected    Boolean   @default(false)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model viva_outlook_events {
+  id               Int      @id @default(autoincrement())
+  viva_schedule_id Int
+  user_id          Int
+  outlook_event_id String   @db.VarChar(255)
+  sync_status      String   @default("SYNCED") @db.VarChar(30)
+  sync_error       String?  @db.Text
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now()) @updatedAt
+
+  viva_schedules viva_schedules @relation(fields: [viva_schedule_id], references: [id], onDelete: Cascade)
+  users          users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([viva_schedule_id, user_id])
+}
+
+// One organizer event per viva. Legacy per-user events are intentionally not adopted.
+model viva_meeting_publications {
+  viva_schedule_id       Int       @id
+  transaction_id         String    @unique @db.VarChar(64)
+  organizer_email        String?   @db.VarChar(254)
+  organizer_calendar_id  String?   @db.Text
+  auth_user_id           Int?
+  token_owner_email      String?   @db.VarChar(254)
+  graph_event_id         String?   @db.Text
+  teams_join_url         String?   @db.Text
+  status                 String    @default("NOT_PUBLISHED") @db.VarChar(30)
+  last_error             String?   @db.Text
+  content_hash           String?   @db.VarChar(64)
+  attendee_responses     Json?
+  creation_uncertain     Boolean   @default(false)
+  cancellation_requested Boolean   @default(false)
+  lease_owner            String?   @db.VarChar(64)
+  lease_expires_at       DateTime?
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @default(now()) @updatedAt
+
+  viva_schedules viva_schedules @relation(fields: [viva_schedule_id], references: [id], onDelete: Restrict)
+}
+
+model milestones {
+  id                    Int       @id @default(autoincrement())
+  batch_id              Int
+  milestone_code        String?   @db.VarChar(50)
+  name                  String    @db.VarChar(255)
+  description           String?   @db.Text
+  type                  String    @db.VarChar(50) // "FORMATIVE" or "SUMMATIVE"
+  component             String?   @default("Report") @db.VarChar(50) // "Unmarked", "Proposal", "Report", "Viva Presentation"
+  max_marks             Decimal?  @default(0) @db.Decimal(5, 2)
+  rubric_key            String?   @db.VarChar(50)
+  semester              String?   @default("Semester 1") @db.VarChar(30) // "Preparation", "Semester 1", "Semester 2", "Semester 3"
+  opening_date          DateTime?
+  deadline              DateTime?
+  assessment_start_date DateTime?
+  assessment_end_date   DateTime?
+  is_date_tbc           Boolean   @default(false)
+  student_instructions  String?   @db.Text
+  lms_activity_url      String?   @db.Text
+  status                String    @default("PUBLISHED") @db.VarChar(20) // "DRAFT" or "PUBLISHED"
+  order_index           Int       @default(0)
+  created_by            String?   @db.VarChar(150)
+  updated_by            String?   @db.VarChar(150)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now()) @updatedAt
+
+  batches                  batches                     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  student_milestone_status student_milestone_status[]
+  date_audit_logs          milestone_date_audit[]
+  evaluations              assessment_evaluations[]
+  reconciliations          milestone_reconciliations[]
+
+  @@unique([batch_id, milestone_code])
+}
+
+model student_milestone_status {
+  id           Int       @id @default(autoincrement())
+  student_id   Int
+  milestone_id Int
+  status       String    @default("Upcoming") @db.VarChar(50) // e.g. "Upcoming", "Submitted", "Overdue", "Graded"
+  submitted_at DateTime?
+  updated_at   DateTime  @default(now()) @updatedAt
+
+  students   students   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  milestones milestones @relation(fields: [milestone_id], references: [id], onDelete: Cascade)
+
+  @@unique([student_id, milestone_id])
+}
+
+model sent_reminders {
+  id            Int      @id @default(autoincrement())
+  student_id    Int
+  milestone_id  Int
+  reminder_type String   @db.VarChar(50) // e.g. "1_DAY", "4_WEEKS"
+  sent_at       DateTime @default(now())
+
+  @@unique([student_id, milestone_id, reminder_type])
+}
+
+model student_submissions {
+  id                Int       @id @default(autoincrement())
+  student_id        Int
+  batch_id          Int?
+  stage             String    @db.VarChar(30) // "Proposal", "Midpoint", "Final"
+  title             String?   @db.VarChar(255)
+  file_name         String    @db.VarChar(255)
+  file_path         String    @db.Text
+  file_size_bytes   Int?
+  file_type         String?   @db.VarChar(100) // MIME or extension
+  source            String    @default("MANUAL_REVIEW_COPY") @db.VarChar(40) // "MANUAL_REVIEW_COPY" or "LMS"
+  lms_activity_url  String?   @db.Text
+  lms_submission_id String?   @db.VarChar(100)
+  version_number    Int       @default(1)
+  attempt_number    Int?      @default(1)
+  submission_date   DateTime  @default(now())
+  last_synced_at    DateTime?
+  sync_status       String?   @default("NOT_SYNCED") @db.VarChar(30) // "NOT_SYNCED", "SYNCED", "SYNC_FAILED", "NO_SUBMISSION"
+  sync_error        String?   @db.Text
+  uploaded_by_email String?   @db.VarChar(150)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+
+  students       students         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  reviewer_notes reviewer_notes[]
+
+  @@index([student_id, stage])
+}
+
+model reviewer_notes {
+  id                   Int       @id @default(autoincrement())
+  student_id           Int
+  reviewer_email       String    @db.VarChar(150)
+  reviewer_role        String    @db.VarChar(30) // "SUPERVISOR", "ASSESSOR", "ADMIN"
+  stage                String    @db.VarChar(30) // "Proposal", "Midpoint", "Final"
+  submission_id        Int?
+  submission_version   Int?
+  page_reference       String?   @db.VarChar(50)
+  private_notes        String?   @db.Text
+  viva_questions       Json? // [{ id, question, is_asked, created_at }]
+  draft_feedback       String?   @db.Text
+  released_feedback    String?   @db.Text
+  feedback_released_at DateTime?
+  feedback_released_by String?   @db.VarChar(150)
+  version              Int       @default(1) // For optimistic concurrency check
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @default(now()) @updatedAt
+
+  students            students             @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  student_submissions student_submissions? @relation(fields: [submission_id], references: [id], onDelete: SetNull)
+
+  @@unique([student_id, reviewer_email, stage])
+  @@index([student_id, stage])
+}
+
+model lms_course_mappings {
+  id                Int      @id @default(autoincrement())
+  batch_id          Int
+  stage             String   @db.VarChar(30) // "Proposal", "Midpoint", "Final"
+  lms_course_id     String?  @db.VarChar(100)
+  lms_course_name   String?  @db.VarChar(255)
+  lms_activity_id   String?  @db.VarChar(100) // e.g., "248585"
+  lms_activity_type String?  @default("turnitintooltwo") @db.VarChar(50) // "turnitintooltwo", "assign"
+  lms_activity_url  String?  @db.Text
+  assignment_part   String?  @db.VarChar(50)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now()) @updatedAt
+
+  batches batches @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  @@unique([batch_id, stage])
+}
+
+model lms_user_mappings {
+  id                  Int       @id @default(autoincrement())
+  student_id          Int       @unique
+  institutional_id    String    @unique @db.VarChar(50) // cb_no
+  institutional_email String    @unique @db.VarChar(150)
+  lms_user_id         String?   @db.VarChar(100)
+  verification_status String    @default("UNVERIFIED") @db.VarChar(30) // "VERIFIED", "UNVERIFIED"
+  verified_at         DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @default(now()) @updatedAt
+
+  students students @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}
+
+model milestone_date_audit {
+  id           Int      @id @default(autoincrement())
+  milestone_id Int
+  changed_by   String   @db.VarChar(150)
+  field_name   String   @db.VarChar(50)
+  old_value    String?  @db.Text
+  new_value    String?  @db.Text
+  changed_at   DateTime @default(now())
+
+  milestone milestones @relation(fields: [milestone_id], references: [id], onDelete: Cascade)
+
+  @@index([milestone_id])
+}
+
+model assessment_evaluations {
+  id               Int       @id @default(autoincrement())
+  milestone_id     Int
+  student_id       Int
+  viva_schedule_id Int?
+  examiner_email   String    @db.VarChar(150)
+  examiner_role    String    @db.VarChar(30)
+  examiner_name    String?   @db.VarChar(150)
+  rubric_key       String    @db.VarChar(50)
+  rubric_version   Int       @default(1)
+  rubric_snapshot  Json?
+  criterion_scores Json
+  total_score      Decimal?  @db.Decimal(5, 2)
+  shared_rationale String?   @db.Text
+  private_notes    String?   @db.Text
+  status           String    @default("DRAFT") @db.VarChar(30)
+  version          Int       @default(1)
+  submitted_at     DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now()) @updatedAt
+
+  milestone     milestones      @relation(fields: [milestone_id], references: [id], onDelete: Restrict)
+  student       students        @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  viva_schedule viva_schedules? @relation(fields: [viva_schedule_id], references: [id], onDelete: SetNull)
+
+  @@unique([milestone_id, student_id, examiner_email])
+  @@index([student_id, milestone_id])
+}
+
+model milestone_reconciliations {
+  id                       Int       @id @default(autoincrement())
+  milestone_id             Int
+  student_id               Int
+  status                   String    @default("UNDER_RECONCILIATION") @db.VarChar(40)
+  reconciliation_deadline  DateTime?
+  clock_started_at         DateTime?
+  final_agreed_mark        Decimal?  @db.Decimal(5, 2)
+  third_marker_email       String?   @db.VarChar(150)
+  third_marker_name        String?   @db.VarChar(150)
+  third_marker_assigned_by String?   @db.VarChar(150)
+  third_marker_assigned_at DateTime?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @default(now()) @updatedAt
+
+  milestone milestones            @relation(fields: [milestone_id], references: [id], onDelete: Restrict)
+  student   students              @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  proposals agreement_proposals[]
+
+  @@unique([milestone_id, student_id])
+}
+
+model agreement_proposals {
+  id                   Int       @id @default(autoincrement())
+  reconciliation_id    Int
+  version              Int       @default(1)
+  proposed_by_email    String    @db.VarChar(150)
+  proposed_by_role     String    @db.VarChar(30)
+  proposed_mark        Decimal   @db.Decimal(5, 2)
+  discussion_notes     String?   @db.Text
+  supervisor_confirmed Boolean   @default(false)
+  supervisor_conf_at   DateTime?
+  supervisor_conf_by   String?   @db.VarChar(150)
+  assessor_confirmed   Boolean   @default(false)
+  assessor_conf_at     DateTime?
+  assessor_conf_by     String?   @db.VarChar(150)
+  created_at           DateTime  @default(now())
+
+  reconciliation milestone_reconciliations @relation(fields: [reconciliation_id], references: [id], onDelete: Restrict)
+
+  @@index([reconciliation_id, version])
+}
+
+model student_moderation_records {
+  id                    Int       @id @default(autoincrement())
+  student_id            Int
+  batch_id              Int
+  final_calculated_mark Decimal   @db.Decimal(5, 2)
+  moderation_band       String    @db.VarChar(30)
+  moderation_status     String    @default("PENDING") @db.VarChar(30)
+  justification_notes   String?   @db.Text
+  senior_examiner_1     String?   @db.VarChar(150)
+  senior_examiner_2     String?   @db.VarChar(150)
+  audited_by            String?   @db.VarChar(150)
+  audited_at            DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now()) @updatedAt
+
+  student students @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  batch   batches  @relation(fields: [batch_id], references: [id], onDelete: Restrict)
+
+  @@unique([student_id, batch_id])
+}

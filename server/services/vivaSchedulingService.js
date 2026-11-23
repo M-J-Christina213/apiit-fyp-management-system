@@ -52,10 +52,10 @@ async function generateSchedules(vivaPeriodId) {
             const slots = [];
             let currentStart = new Date(availability.date);
             // Combine date and time correctly for calculation
-            currentStart.setHours(availability.start_time.getHours(), availability.start_time.getMinutes(), 0, 0);
+            currentStart.setUTCHours(availability.start_time.getUTCHours(), availability.start_time.getUTCMinutes(), 0, 0);
             
             const endLimit = new Date(availability.date);
-            endLimit.setHours(availability.end_time.getHours(), availability.end_time.getMinutes(), 0, 0);
+            endLimit.setUTCHours(availability.end_time.getUTCHours(), availability.end_time.getUTCMinutes(), 0, 0);
 
             while (currentStart.getTime() + durationMs <= endLimit.getTime()) {
                 const slotEnd = new Date(currentStart.getTime() + durationMs);
@@ -72,9 +72,9 @@ async function generateSchedules(vivaPeriodId) {
         const hasSlotInAvailability = (availabilities, targetStart, targetEnd) => {
             return availabilities.some(a => {
                 const aStart = new Date(a.date);
-                aStart.setHours(a.start_time.getHours(), a.start_time.getMinutes(), 0, 0);
+                aStart.setUTCHours(a.start_time.getUTCHours(), a.start_time.getUTCMinutes(), 0, 0);
                 const aEnd = new Date(a.date);
-                aEnd.setHours(a.end_time.getHours(), a.end_time.getMinutes(), 0, 0);
+                aEnd.setUTCHours(a.end_time.getUTCHours(), a.end_time.getUTCMinutes(), 0, 0);
                 return aStart.getTime() <= targetStart.getTime() && aEnd.getTime() >= targetEnd.getTime();
             });
         };
@@ -151,9 +151,9 @@ async function generateSchedules(vivaPeriodId) {
                         for (const gConflict of globalConflicts) {
                             if (!gConflict.start_time || !gConflict.end_time) continue;
                             const existingStart = new Date(gConflict.date);
-                            existingStart.setHours(gConflict.start_time.getHours(), gConflict.start_time.getMinutes(), 0, 0);
+                            existingStart.setUTCHours(gConflict.start_time.getUTCHours(), gConflict.start_time.getUTCMinutes(), 0, 0);
                             const existingEnd = new Date(gConflict.date);
-                            existingEnd.setHours(gConflict.end_time.getHours(), gConflict.end_time.getMinutes(), 0, 0);
+                            existingEnd.setUTCHours(gConflict.end_time.getUTCHours(), gConflict.end_time.getUTCMinutes(), 0, 0);
                             
                             if (existingStart.getTime() < slot.end.getTime() && slot.start.getTime() < existingEnd.getTime()) {
                                 hasGlobalConflict = true;

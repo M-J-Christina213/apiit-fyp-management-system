@@ -1,3 +1,4 @@
+import { formatVivaTime, formatVivaDate } from '../../../utils/vivaTime';
 import React, { useEffect, useState, useMemo } from "react";
 import {
   CalendarDays, Search, Users, Clock, MapPin, Video,
@@ -300,10 +301,10 @@ export default function PMVivaDashboard() {
                         <td className="p-3">{sch.assessors?.name || "N/A"}</td>
                         <td className="p-3">
                           <p className="font-semibold text-slate-800">
-                            {sch.date ? new Date(sch.date).toLocaleDateString() : "TBA"}
+                            {sch.date ? formatVivaDate(sch.date) : "TBA"}
                           </p>
                           <p className="text-slate-500 text-[11px]">
-                            {sch.start_time ? new Date(sch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                            {sch.start_time ? formatVivaTime(sch.start_time) : ""}
                           </p>
                         </td>
                         <td className="p-3 font-semibold">

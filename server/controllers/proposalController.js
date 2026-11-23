@@ -65,8 +65,12 @@ const submitProposal = async (req, res) => {
 };
 
 const getStudentProposals = async (req, res) => {
+    if (!/^(?:[1-9]\d*|CB\d+)$/i.test(String(req.params.id || '').trim())) {
+        return res.status(400).json({ error: 'A valid student ID is required' });
+    }
     try {
         const studentDbId = await resolveStudentDbId(req.params.id);
+        if (!studentDbId) return res.status(404).json({ error: 'Student not found' });
 
         const proposals = await prisma.proposal_requests.findMany({
             where: {

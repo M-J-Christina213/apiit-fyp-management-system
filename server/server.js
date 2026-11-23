@@ -52,8 +52,15 @@ app.use("/api/milestones", milestoneRoutes);
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 
-const PORT = 5000;
+if (require.main === module) {
+    const PORT = Number(process.env.PORT || 5000);
+    const server = app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+    server.on('error', error => {
+        console.error(`Backend failed to listen on port ${PORT}: ${error.message}`);
+        process.exit(1);
+    });
+}
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;

@@ -1,3 +1,5 @@
+import { formatVivaTime, formatVivaDate } from '../../../utils/vivaTime';
+import VivaPublicationStatus from '../../../components/common/VivaPublicationStatus';
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   CalendarDays, Clock, Users, CheckCircle2, AlertCircle, AlertTriangle,
@@ -37,6 +39,7 @@ export default function VivaAdminDashboard() {
   const [periods, setPeriods] = useState([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [schedules, setSchedules] = useState([]);
+  const [invitationPreview, setInvitationPreview] = useState(null);
   const [batches, setBatches] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [assessors, setAssessors] = useState([]);
@@ -285,7 +288,7 @@ export default function VivaAdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Status transition failed.");
 
-      setMessage({ type: "success", text: data.message });
+      setMessage({ type: data.syncFailedCount ? "error" : "success", text: data.message });
       // Refresh
       const updatedPeriods = await fetch("/api/viva/periods", { headers: adminHeaders }).then(r => r.json());
       setPeriods(updatedPeriods);
@@ -564,8 +567,8 @@ export default function VivaAdminDashboard() {
       if (!res.ok) throw new Error(data.error || "Finalization failed.");
 
       setMessage({
-        type: "success",
-        text: `${data.message} (${data.syncSuccessCount} Outlook calendar events synced, ${data.syncFailedCount} failed)`
+        type: data.syncFailedCount ? "error" : "success",
+        text: data.message
       });
       setShowFinalizeModal(false);
       loadPeriodDetails(selectedPeriodId);
@@ -576,6 +579,15 @@ export default function VivaAdminDashboard() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleInvitationPreview = async scheduleId => {
+    try {
+      const response = await fetch(`/api/viva/schedules/${scheduleId}/invitation-preview`, { headers: adminHeaders });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Preview failed");
+      setInvitationPreview(data);
+    } catch (error) { setMessage({ type: "error", text: error.message }); }
   };
 
   // Retry Outlook Sync
@@ -1211,9 +1223,9 @@ export default function VivaAdminDashboard() {
                   ) : (
                     filteredSchedules.map((sch) => {
                       const confBadge = CONFIRMATION_BADGES[sch.overallStatus] || CONFIRMATION_BADGES.PENDING;
-                      const dateStr = sch.date ? new Date(sch.date).toLocaleDateString() : "TBA";
-                      const startTimeStr = sch.start_time ? new Date(sch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-                      const endTimeStr = sch.end_time ? new Date(sch.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+                      const dateStr = sch.date ? formatVivaDate(sch.date) : "TBA";
+                      const startTimeStr = sch.start_time ? formatVivaTime(sch.start_time) : "";
+                      const endTimeStr = sch.end_time ? formatVivaTime(sch.end_time) : "";
                       const mode = sch.attendance_mode || sch.mode || "PHYSICAL";
 
                       return (
@@ -1267,21 +1279,9 @@ export default function VivaAdminDashboard() {
                             ) : null}
                           </td>
                           <td className="p-3.5">
-                            {sch.outlook_sync_status === "SYNCED" ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                <Check className="w-3 h-3" /> Synced
-                              </span>
-                            ) : sch.outlook_sync_status === "FAILED" ? (
-                              <button
-                                onClick={() => handleRetrySync(sch.id)}
-                                title={sch.outlook_sync_error || "Sync Failed"}
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 hover:bg-rose-100"
-                              >
-                                <AlertTriangle className="w-3 h-3 text-rose-600" /> Retry
-                              </button>
-                            ) : (
-                              <span className="text-xs text-slate-400">Not Synced</span>
-                            )}
+                            <VivaPublicationStatus schedule={sch} />
+                            <button type="button" onClick={() => handleInvitationPreview(sch.id)} className="mt-2 underline text-indigo-700">Preview invitation</button>
+                            {["FINALIZED", "PUBLISHED"].includes(sch.status) && <button type="button" onClick={() => handleRetrySync(sch.id)} disabled={actionLoading || sch.publication?.status === "PUBLISHING"} className="ml-2 underline text-indigo-700">Publish / retry</button>}
                           </td>
                           <td className="p-3.5 text-right space-x-1">
                             <button
@@ -1364,7 +1364,7 @@ export default function VivaAdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {dateGroups[dateKey].map(sch => {
                         const timeStr = sch.start_time
-                          ? `${new Date(sch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${new Date(sch.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                          ? `${formatVivaTime(sch.start_time)} - ${formatVivaTime(sch.end_time)}`
                           : "Time TBA";
                         const isTBA = !sch.venue || sch.venue === "TBA";
                         const mode = sch.attendance_mode || sch.mode || "PHYSICAL";
@@ -1642,7 +1642,7 @@ export default function VivaAdminDashboard() {
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <div>
               <h3 className="text-lg font-bold text-slate-900">Finalized Viva Schedule & Outlook Sync Status</h3>
-              <p className="text-xs text-slate-500">View published Viva schedules, calendar synchronization status per participant, and meeting details.</p>
+              <p className="text-xs text-slate-500">View the canonical invitation, organizer and reported participant responses for each viva.</p>
             </div>
             <button
               onClick={() => handleRetrySync(null)}
@@ -1650,7 +1650,7 @@ export default function VivaAdminDashboard() {
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Retry Microsoft Sync</span>
+              <span>Publish / retry invitations</span>
             </button>
           </div>
 
@@ -1668,17 +1668,17 @@ export default function VivaAdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {schedules.filter(s => s.status === "FINALIZED" || s.overallStatus === "FINALIZED").length === 0 ? (
+                {schedules.filter(s => s.status === "FINALIZED" || s.status === "PUBLISHED" || s.overallStatus === "FINALIZED").length === 0 ? (
                   <tr>
                     <td colSpan="7" className="text-center py-8 text-slate-400">
                       No finalized Viva schedules yet. Use <strong>Review & Finalize Schedule</strong> when confirmations are complete.
                     </td>
                   </tr>
                 ) : (
-                  schedules.filter(s => s.status === "FINALIZED" || s.overallStatus === "FINALIZED").map(sch => {
-                    const dateStr = sch.date ? new Date(sch.date).toLocaleDateString() : "TBA";
+                  schedules.filter(s => s.status === "FINALIZED" || s.status === "PUBLISHED" || s.overallStatus === "FINALIZED").map(sch => {
+                    const dateStr = sch.date ? formatVivaDate(sch.date) : "TBA";
                     const timeStr = sch.start_time
-                      ? `${new Date(sch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${new Date(sch.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                      ? `${formatVivaTime(sch.start_time)} - ${formatVivaTime(sch.end_time)}`
                       : "Time TBA";
                     const mode = sch.attendance_mode || sch.mode || "PHYSICAL";
 
@@ -1705,15 +1705,12 @@ export default function VivaAdminDashboard() {
                           <p className="text-slate-500 font-mono text-[11px]">{sch.venue || "TBA"}</p>
                         </td>
                         <td className="p-3">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            <span>Synced to Outlook</span>
-                          </span>
+                          <VivaPublicationStatus schedule={sch} />
                         </td>
                         <td className="p-3">
-                          {sch.teams_link ? (
+                          {sch.teams_join_url ? (
                             <a
-                              href={sch.teams_link}
+                              href={sch.teams_join_url}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 underline"
@@ -1741,7 +1738,7 @@ export default function VivaAdminDashboard() {
           <div className="pb-4 border-b border-slate-100 mb-6">
             <h3 className="text-xl font-bold text-slate-900">Pre-Finalization Readiness Checklist</h3>
             <p className="text-xs text-slate-500 mt-1">
-              Verify all institutional requirements before locking the Viva Period. Finalization publishes the schedule, syncs Outlook events, and generates notifications.
+              Verify all institutional requirements before locking the Viva Period. Publishing uses one explicitly authorized organizer per viva. Missing authorization is reported without sending invitations.
             </p>
           </div>
 
@@ -2291,9 +2288,9 @@ export default function VivaAdminDashboard() {
                 You are about to finalize <strong>{selectedPeriod?.name}</strong> containing <strong>{schedules.length}</strong> Viva sessions.
               </p>
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1.5 font-medium">
-                <p>✓ Outlook Calendar Events will be created/synchronized for all assessors, supervisors, and students.</p>
-                <p>✓ Microsoft Teams meeting links will be attached to all online Viva sessions.</p>
-                <p>✓ Finalized schedules will become visible to students, supervisors, assessors, and PM.</p>
+                <p>✓ One organizer meeting will invite the assigned student, supervisor and assessor.</p>
+                <p>✓ Online participants share one Teams link. The admin is not automatically an organizer or attendee.</p>
+                <p>✓ A failed invitation leaves the local schedule intact with a useful error.</p>
                 <p>✓ Schedule will be locked against unauthorized modifications.</p>
               </div>
 
@@ -2321,12 +2318,18 @@ export default function VivaAdminDashboard() {
                 className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow flex items-center gap-1.5"
               >
                 {actionLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                <span>Finalize & Sync Outlook Now</span>
+                <span>Finalize & publish invitations</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {invitationPreview && <div className="fixed inset-0 z-50 bg-slate-900/50 p-4 flex items-center justify-center"><div role="dialog" aria-label="Invitation preview" className="bg-white rounded-xl p-4 w-full max-w-3xl">
+        <div className="flex justify-between gap-4"><h2 className="font-bold">{invitationPreview.subject}</h2><button onClick={() => setInvitationPreview(null)} className="underline">Close</button></div>
+        <p className="text-sm text-slate-600 my-2">Dry run only. No invitations sent. {invitationPreview.organizerError || "Organizer authorization is checked when publishing."}</p>
+        <iframe title="Viva invitation HTML preview" sandbox="" srcDoc={invitationPreview.html} className="w-full h-[65vh] border rounded" />
+      </div></div>}
 
       {/* MODAL: SUGGEST ALTERNATIVE DATE/TIME */}
       {showSuggestAltModal && activeChangeReq && (

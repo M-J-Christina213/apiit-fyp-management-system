@@ -1,3 +1,4 @@
+import { formatVivaTime, formatVivaDate } from '../../../utils/vivaTime';
 import React, { useEffect, useState } from "react";
 import {
   CalendarDays, Clock, MapPin, Video, CheckCircle2, AlertCircle,
@@ -120,9 +121,9 @@ export default function StudentVivaDashboard() {
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Scheduled Time</p>
                     <p className="text-lg font-bold text-slate-900 mt-0.5">
-                      {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "TBA"}
+                      {schedule.start_time ? formatVivaTime(schedule.start_time) : "TBA"}
                       {" - "}
-                      {schedule.end_time ? new Date(schedule.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "TBA"}
+                      {schedule.end_time ? formatVivaTime(schedule.end_time) : "TBA"}
                     </p>
                     <p className="text-[11px] text-slate-500">Duration: {schedule.duration_mins || 30} minutes</p>
                   </div>

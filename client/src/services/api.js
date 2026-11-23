@@ -1,7 +1,8 @@
 import axios from "axios";
 
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const API = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: API_BASE_URL,
 });
 
 // Attach authenticated user role and email to outgoing requests
@@ -31,8 +32,7 @@ export const createSupervisor = (data) =>
 export const getStudents = (params = {}) => API.get("/students", { params });
 export const allocateSupervisor = (id, data) => API.post(`/students/${id}/allocate-supervisor`, data);
 export const allocateAssessor = (id, data) => API.post(`/students/${id}/allocate-assessor`, data);
-export const getStudentProposals = (studentId) =>
-    API.get("/proposals/student", { studentId });
+export const getStudentProposals = (studentId) => getProposalRequests(studentId);
 
 export const submitProposal = (data) =>
     API.post("/proposals", data);
@@ -40,8 +40,14 @@ export const submitProposal = (data) =>
 export const createProposal = (proposalData) =>
     API.post("/proposals", proposalData);
 
-export const getProposalRequests = (studentId) =>
-    axios.get(`http://localhost:5000/api/proposals/student/${studentId}`);
+export const getProposalRequests = (studentId) => {
+    const id = String(studentId ?? '').trim();
+    if (!/^(?:[1-9]\d*|CB\d+)$/i.test(id)) {
+        return Promise.reject(new Error('A valid student ID is required to load proposals'));
+    }
+    return API.get(`/proposals/student/${encodeURIComponent(id)}`);
+};
+export const getAllProposals = () => API.get('/proposals/all');
 
 export const getBatches = () => API.get("/batches");
 
@@ -131,7 +137,7 @@ export const rejectExternalSupervisor = (id, data) =>
 // ===============================
 // MILESTONE TRACKER
 // ===============================
-export const getMilestonesByBatch = (batchId) => API.get(`/milestones/batch/${batchId}`);
+export const getMilestonesByBatch = (batchId, config) => API.get(`/milestones/batch/${batchId}`, config);
 export const applyApprovedMilestoneTemplate = (batchId) => API.post(`/milestones/batch/${batchId}/apply-template`);
 export const publishBatchMilestones = (batchId) => API.patch(`/milestones/batch/${batchId}/publish`);
 export const createMilestone = (data) => API.post("/milestones", data);

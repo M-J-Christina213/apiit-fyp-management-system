@@ -21,8 +21,8 @@ const AvailabilityCalendar = ({ period, userId, userRole, existingAvailabilities
         if (existingAvailabilities && existingAvailabilities.length > 0) {
             const formatted = existingAvailabilities.map(a => ({
                 date: new Date(a.date).toISOString().split('T')[0],
-                start_time: new Date(a.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}),
-                end_time: new Date(a.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}),
+                start_time: new Date(a.start_time).toISOString().slice(11, 16),
+                end_time: new Date(a.end_time).toISOString().slice(11, 16),
                 submitted: true
             }));
             setSelectedSlots(formatted);

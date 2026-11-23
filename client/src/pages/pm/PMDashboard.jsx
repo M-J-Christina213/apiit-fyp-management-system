@@ -31,7 +31,7 @@ import {
 import {
   getStudents,
   getSupervisors,
-  getProposalRequests,
+  getAllProposals,
   getBatches,
   createBatch,
   updateBatchStage,
@@ -448,7 +448,7 @@ const PMDashboard = () => {
           await Promise.all([
             getStudents(studentParams),
             getSupervisors(),
-            getProposalRequests(),
+            getAllProposals(),
             getBatches()
           ]);
 
@@ -852,9 +852,8 @@ const PMDashboard = () => {
 
   const fetchAssessors = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/assessors");
-      const data = await res.json();
-      setAssessors(data);
+      const res = await getAssessors();
+      setAssessors(res.data);
     } catch (err) {
       console.error("Failed to load assessors", err);
     }
@@ -1138,7 +1137,7 @@ const PMDashboard = () => {
 
     // ---------------- MILESTONES TAB ----------------
     if (path === '/pm/milestones') {
-      return <PMMilestones batches={batches} />;
+      return <PMMilestones />;
     }
 
     // ---------------- COMMON FILTERING LOGIC ----------------

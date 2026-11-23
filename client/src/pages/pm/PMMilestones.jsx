@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
+    getBatches,
     getMilestonesByBatch,
     applyApprovedMilestoneTemplate,
     publishBatchMilestones,
@@ -9,19 +10,26 @@ import {
 } from '../../services/api';
 import { formatColomboDate, toColomboInputString, colomboInputToUtcIso } from '../../utils/dateUtils';
 import { RUBRIC_CATALOG } from '../../services/rubricCatalog';
+import { filterBatches, getBatchLabels } from '../../utils/batchOptions';
 import {
     CalendarDays, Plus, Edit2, Trash2, Loader2, Target, CheckCircle2,
     AlertCircle, Sparkles, Send, Eye, Clock, History, ExternalLink,
     ChevronDown, ChevronUp, BookOpen, Layers, ShieldCheck
 } from 'lucide-react';
 
-const PMMilestones = ({ batches = [] }) => {
-    const [selectedBatchId, setSelectedBatchId] = useState(
-        batches.length > 0 ? String(batches[0].id) : ''
-    );
+const PMMilestones = () => {
+    const [batches, setBatches] = useState([]);
+    const [batchStatus, setBatchStatus] = useState('loading');
+    const [search, setSearch] = useState('');
+    const [stageFilter, setStageFilter] = useState('All stages');
+    const [selectedBatchId, setSelectedBatchId] = useState('');
     const [milestones, setMilestones] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [schedule, setSchedule] = useState({ batchId: '', status: 'idle' });
+    const batchRequest = useRef(0);
+    const scheduleRequest = useRef(0);
+    const currentBatchId = useRef('');
     const [actionLoading, setActionLoading] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -54,35 +62,75 @@ const PMMilestones = ({ batches = [] }) => {
     const currentUser = JSON.parse(localStorage.getItem('fyp_current_user') || '{}');
     const isStaff = ['pm', 'admin'].includes(currentUser?.role?.toLowerCase());
 
-    useEffect(() => {
-        if (batches.length > 0 && !selectedBatchId) {
-            setSelectedBatchId(String(batches[0].id));
+    const loadBatches = useCallback(async () => {
+        const request = ++batchRequest.current;
+        setBatchStatus('loading');
+        try {
+            const res = await getBatches();
+            if (!Array.isArray(res.data)) throw new Error('Invalid batches response');
+            if (request !== batchRequest.current) return;
+            setBatches(res.data);
+            setBatchStatus('success');
+        } catch {
+            if (request === batchRequest.current) setBatchStatus('error');
         }
-    }, [batches]);
+    }, []);
 
     useEffect(() => {
-        if (selectedBatchId) {
-            fetchMilestones();
+        loadBatches();
+        return () => { batchRequest.current++; };
+    }, [loadBatches]);
+
+    const visibleBatches = filterBatches(batches, search, stageFilter);
+    const batchLabels = getBatchLabels(batches);
+    const selectedBatch = visibleBatches.find(batch => String(batch.id) === selectedBatchId);
+    const scheduleReady = batchStatus === 'success' && Boolean(selectedBatch) &&
+        schedule.batchId === selectedBatchId && schedule.status === 'success';
+
+    const selectBatch = useCallback(id => {
+        currentBatchId.current = id;
+        scheduleRequest.current++;
+        setSelectedBatchId(id);
+        setMilestones([]);
+        setSchedule({ batchId: id, status: id ? 'loading' : 'idle' });
+        setShowModal(false);
+        setEditingMilestone(null);
+        setShowPreviewModal(false);
+        setSelectedAuditLogs(null);
+    }, []);
+
+    useEffect(() => {
+        if (selectedBatchId && !selectedBatch) selectBatch('');
+    }, [selectedBatchId, selectedBatch, selectBatch]);
+
+    const fetchMilestones = useCallback(async signal => {
+        const batchId = selectedBatchId;
+        if (!batchId || currentBatchId.current !== batchId) return;
+        const request = ++scheduleRequest.current;
+        setSchedule({ batchId, status: 'loading' });
+        setMilestones([]);
+        try {
+            const res = await getMilestonesByBatch(batchId, { signal });
+            if (!Array.isArray(res.data)) throw new Error('Invalid milestone response');
+            if (request !== scheduleRequest.current || currentBatchId.current !== batchId) return;
+            setMilestones(res.data);
+            setSchedule({ batchId, status: 'success' });
+        } catch {
+            if (signal?.aborted || request !== scheduleRequest.current || currentBatchId.current !== batchId) return;
+            setMilestones([]);
+            setSchedule({ batchId, status: 'error' });
         }
     }, [selectedBatchId]);
 
-    const fetchMilestones = async () => {
-        if (!selectedBatchId) return;
-        setLoading(true);
-        try {
-            const res = await getMilestonesByBatch(selectedBatchId);
-            setMilestones(res.data || []);
-        } catch (error) {
-            console.error("Failed to load milestones:", error);
-            setMilestones([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        const controller = new AbortController();
+        fetchMilestones(controller.signal);
+        return () => { controller.abort(); scheduleRequest.current++; };
+    }, [fetchMilestones]);
 
     // Apply Approved FYP Template
     const handleApplyTemplate = async () => {
-        if (!selectedBatchId) return;
+        if (!scheduleReady || actionLoading) return;
         const confirmMsg = "Apply the approved 8-Milestone FYP Template to this batch?\n\n• Missing milestones will be created in DRAFT state.\n• Any existing milestones and previously configured dates will be strictly preserved.\n• Students will not see drafts until you click 'Publish'.";
         if (!window.confirm(confirmMsg)) return;
 
@@ -101,7 +149,7 @@ const PMMilestones = ({ batches = [] }) => {
 
     // Publish all drafts to batch
     const handlePublishAll = async () => {
-        if (!selectedBatchId) return;
+        if (!scheduleReady || actionLoading) return;
         const draftCount = milestones.filter(m => m.status === 'DRAFT').length;
         if (draftCount === 0) {
             alert("All milestones for this batch are already published.");
@@ -126,6 +174,8 @@ const PMMilestones = ({ batches = [] }) => {
     };
 
     const handleOpenModal = (m = null) => {
+        if (!scheduleReady || actionLoading) return;
+        setSaveError('');
         if (m) {
             setEditingMilestone(m);
             setFormCode(m.milestone_code || '');
@@ -168,6 +218,9 @@ const PMMilestones = ({ batches = [] }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!scheduleReady || actionLoading) return;
+        setActionLoading(true);
+        setSaveError('');
         try {
             const payload = {
                 batch_id: selectedBatchId,
@@ -185,7 +238,7 @@ const PMMilestones = ({ batches = [] }) => {
                 assessment_end_date: formIsTbc ? null : formAssessEnd,
                 student_instructions: formInstructions,
                 lms_activity_url: formLmsUrl,
-                status: formStatus,
+                status: editingMilestone ? formStatus : 'DRAFT',
                 order_index: formOrderIndex
             };
 
@@ -195,14 +248,17 @@ const PMMilestones = ({ batches = [] }) => {
                 await createMilestone(payload);
             }
             setShowModal(false);
-            fetchMilestones();
+            await fetchMilestones();
         } catch (error) {
             console.error("Failed to save milestone:", error);
-            alert(error.response?.data?.error || "Failed to save milestone.");
+            setSaveError(error.response?.data?.error || 'Could not save milestone. Your details have been kept; try again.');
+        } finally {
+            setActionLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
+        if (!scheduleReady || actionLoading) return;
         if (!window.confirm("Are you sure you want to delete this milestone?")) return;
         try {
             await deleteMilestone(id);
@@ -243,13 +299,13 @@ const PMMilestones = ({ batches = [] }) => {
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={() => setShowPreviewModal(true)}
-                        disabled={milestones.length === 0}
+                        disabled={!scheduleReady || milestones.length === 0 || actionLoading}
                         className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs transition-colors border border-slate-300 disabled:opacity-50"
                     >
                         <Eye className="h-4 w-4" /> Preview Student View
                     </button>
 
-                    <button
+                    {scheduleReady && milestones.length > 0 && <button
                         onClick={handleApplyTemplate}
                         disabled={!selectedBatchId || actionLoading}
                         className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-bold text-xs transition-colors disabled:opacity-50"
@@ -257,9 +313,9 @@ const PMMilestones = ({ batches = [] }) => {
                     >
                         {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                         Apply Approved FYP Template
-                    </button>
+                    </button>}
 
-                    {draftCount > 0 && (
+                    {scheduleReady && draftCount > 0 && (
                         <button
                             onClick={handlePublishAll}
                             disabled={actionLoading}
@@ -271,7 +327,7 @@ const PMMilestones = ({ batches = [] }) => {
 
                     <button
                         onClick={() => handleOpenModal()}
-                        disabled={!selectedBatchId}
+                        disabled={!scheduleReady || actionLoading}
                         className="flex items-center gap-1.5 px-4 py-2 bg-navy-900 hover:bg-navy-950 text-white rounded-lg font-bold text-xs shadow-sm transition-all disabled:opacity-50"
                     >
                         <Plus className="h-4 w-4" /> Add Milestone
@@ -281,30 +337,46 @@ const PMMilestones = ({ batches = [] }) => {
 
             {/* Batch Selector & Status Bar */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Active Batch:</label>
+                <div className="flex flex-wrap items-center gap-3">
+                    <label htmlFor="milestone-batch-search" className="text-xs font-semibold text-slate-600">Search batches</label>
+                    <input id="milestone-batch-search" type="search" placeholder="Intake year, batch code or intake"
+                        value={search} onChange={e => setSearch(e.target.value)} disabled={batchStatus !== 'success' || actionLoading}
+                        className="border border-slate-300 rounded-lg px-3 py-2 text-xs" />
+                    <label htmlFor="milestone-stage" className="text-xs font-semibold text-slate-600">FYP stage</label>
+                    <select id="milestone-stage" value={stageFilter} onChange={e => setStageFilter(e.target.value)}
+                        disabled={batchStatus !== 'success' || actionLoading} className="border border-slate-300 rounded-lg px-3 py-2 text-xs">
+                        {['All stages', 'Proposal', 'Midpoint', 'Final'].map(stage => <option key={stage}>{stage}</option>)}
+                    </select>
+                    <label htmlFor="milestone-batch" className="text-xs font-bold text-slate-600">Select batch</label>
                     <select
-                        value={selectedBatchId}
-                        onChange={(e) => setSelectedBatchId(e.target.value)}
+                        id="milestone-batch"
+                        value={selectedBatch ? selectedBatchId : ''}
+                        disabled={batchStatus !== 'success' || actionLoading || visibleBatches.length === 0}
+                        onChange={(e) => selectBatch(e.target.value)}
                         className="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-navy-900"
                     >
-                        {batches.map((b) => (
+                        <option value="">Choose a batch</option>
+                        {visibleBatches.map((b) => (
                             <option key={b.id} value={b.id}>
-                                {b.batch_code} ({b.batch_intake || 'Intake'})
+                                {batchLabels.get(String(b.id))}
                             </option>
                         ))}
                     </select>
+                    {batchStatus === 'loading' && <p role="status" className="text-sm text-slate-500">Loading batches…</p>}
+                    {batchStatus === 'error' && <p role="alert" className="text-sm text-red-700">Couldn’t load batches — <button type="button" onClick={loadBatches} className="underline font-semibold">Retry</button></p>}
+                    {batchStatus === 'success' && visibleBatches.length === 0 && <p role="status" className="text-sm text-slate-500">{batches.length ? 'No batches match your search' : 'No batches available'}</p>}
+                    {selectedBatch && <p className="w-full text-xs font-semibold text-slate-600">Selected: {batchLabels.get(selectedBatchId)}{!selectedBatch.stage?.trim() ? ' · Stage not recorded' : ''}</p>}
                 </div>
 
                 <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                    <span className="flex items-center gap-1.5">
+                    {scheduleReady && <><span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                         Published: <strong>{publishedCount}</strong>
                     </span>
                     <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                         Draft: <strong>{draftCount}</strong>
-                    </span>
+                    </span></>}
                     <span className="flex items-center gap-1.5 text-slate-400">
                         <Clock className="w-3.5 h-3.5" /> All times: Sri Lanka Time (UTC+05:30)
                     </span>
@@ -312,7 +384,14 @@ const PMMilestones = ({ batches = [] }) => {
             </div>
 
             {/* Milestone List Grouped by 3 Semesters */}
-            {loading ? (
+            {batchStatus !== 'success' ? null : !selectedBatch ? (
+                <p className="bg-white rounded-xl border border-slate-200 p-12 text-center text-sm text-slate-500">Choose a batch to view its milestones</p>
+            ) : schedule.batchId === selectedBatchId && schedule.status === 'error' ? (
+                <div role="alert" className="bg-white rounded-xl border border-red-200 p-12 text-center text-sm text-red-700">
+                    <p>Couldn’t load milestones for {batchLabels.get(selectedBatchId)}.</p>
+                    <button type="button" onClick={() => fetchMilestones()} className="mt-3 underline font-semibold">Retry</button>
+                </div>
+            ) : !scheduleReady ? (
                 <div className="flex items-center justify-center py-16 text-slate-400">
                     <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading milestone schedule...
                 </div>
@@ -322,9 +401,9 @@ const PMMilestones = ({ batches = [] }) => {
                         <Sparkles className="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-slate-800">No Milestones Configured Yet</h3>
+                        <h3 className="text-sm font-bold text-slate-800">No milestones yet for {selectedBatch.batchCode || `batch ${selectedBatch.id}`}</h3>
                         <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                            This batch does not have a milestone schedule. Click below to automatically initialize the approved 8-Milestone academic structure.
+                            Use Add Milestone to create your first draft. Standard template setup is optional; publish separately when ready.
                         </p>
                     </div>
                     <button
@@ -465,10 +544,13 @@ const PMMilestones = ({ batches = [] }) => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                            <p className="text-slate-600">Batch: <strong>{batchLabels.get(selectedBatchId)}</strong></p>
+                            {saveError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{saveError}</p>}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block font-bold text-slate-700 mb-1">Milestone Name *</label>
+                                    <label htmlFor="milestone-name" className="block font-bold text-slate-700 mb-1">Milestone Name *</label>
                                     <input
+                                        id="milestone-name"
                                         type="text"
                                         required
                                         value={formName}
@@ -548,8 +630,9 @@ const PMMilestones = ({ batches = [] }) => {
                                 <div className="space-y-3 p-3 bg-slate-50/70 border border-slate-200 rounded-lg">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block font-bold text-slate-700 mb-1">Opening Date (Colombo)</label>
+                                            <label htmlFor="milestone-opening" className="block font-bold text-slate-700 mb-1">Opening Date (Colombo)</label>
                                             <input
+                                                id="milestone-opening"
                                                 type="datetime-local"
                                                 value={formOpeningDate}
                                                 onChange={(e) => setFormOpeningDate(e.target.value)}
@@ -557,9 +640,11 @@ const PMMilestones = ({ batches = [] }) => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-slate-700 mb-1">Submission Deadline (Colombo) *</label>
+                                            <label htmlFor="milestone-deadline" className="block font-bold text-slate-700 mb-1">Submission Deadline (Colombo) *</label>
                                             <input
+                                                id="milestone-deadline"
                                                 type="datetime-local"
+                                                required
                                                 value={formDeadline}
                                                 onChange={(e) => setFormDeadline(e.target.value)}
                                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-900"
@@ -615,14 +700,8 @@ const PMMilestones = ({ batches = [] }) => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">Publication State</label>
-                                    <select
-                                        value={formStatus}
-                                        onChange={(e) => setFormStatus(e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg font-bold focus:outline-none focus:ring-2 focus:ring-navy-900"
-                                    >
-                                        <option value="DRAFT">Draft (Staff Only)</option>
-                                        <option value="PUBLISHED">Published (Visible to Students)</option>
-                                    </select>
+                                    <p className="py-2 font-semibold text-slate-600">{editingMilestone && formStatus === 'PUBLISHED' ? 'Published' : 'Draft (Staff Only)'}</p>
+                                    <p className="text-slate-500">Publish drafts separately from the schedule.</p>
                                 </div>
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">Display Order</label>
@@ -645,9 +724,10 @@ const PMMilestones = ({ batches = [] }) => {
                                 </button>
                                 <button
                                     type="submit"
+                                    disabled={actionLoading || !scheduleReady}
                                     className="px-5 py-2 bg-navy-900 text-white rounded-lg hover:bg-navy-950 font-bold shadow"
                                 >
-                                    {editingMilestone ? 'Save Changes' : 'Create Milestone'}
+                                    {actionLoading ? 'Saving…' : editingMilestone ? 'Save Changes' : 'Save Draft'}
                                 </button>
                             </div>
                         </form>

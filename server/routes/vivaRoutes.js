@@ -60,6 +60,7 @@ router.get("/periods/:periodId/finalization-checklist", verifyRole("admin"), viv
 router.post("/periods/:periodId/finalize", verifyRole("admin"), vivaController.finalizeVivaPeriod);
 router.post("/periods/:periodId/publish", verifyRole("admin"), vivaController.publishVivaPeriod);
 router.post("/schedules/:scheduleId/retry-sync", verifyRole("admin"), vivaController.retryOutlookSync);
+router.get("/schedules/:scheduleId/invitation-preview", verifyRole(["admin", "pm"]), vivaController.previewVivaInvitation);
 router.post("/periods/:periodId/retry-sync", verifyRole("admin"), vivaController.retryOutlookSync);
 
 // ==========================================

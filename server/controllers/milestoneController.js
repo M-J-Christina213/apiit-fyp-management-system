@@ -53,13 +53,15 @@ function formatMilestoneRecord(m) {
 // 1. GET ALL MILESTONES BY BATCH (PM & Admin Dashboard)
 // ======================================================
 exports.getMilestonesByBatch = async (req, res) => {
-    const batchId = parseInt(req.params.batchId);
-    if (isNaN(batchId)) return res.status(400).json({ error: "Invalid Batch ID" });
+    const batchId = Number(req.params.batchId);
+    if (!Number.isSafeInteger(batchId) || batchId <= 0) return res.status(400).json({ error: "Invalid Batch ID" });
 
     const userRole = (req.headers["x-user-role"] || "").trim().toUpperCase();
     const isStaff = ["PM", "ADMIN"].includes(userRole);
 
     try {
+        const batch = await prisma.batches.findUnique({ where: { id: batchId }, select: { id: true } });
+        if (!batch) return res.status(404).json({ error: 'Batch not found' });
         const whereClause = { batch_id: batchId };
         if (!isStaff) {
             // Non-staff only see published milestones
@@ -210,7 +212,8 @@ exports.createMilestone = async (req, res) => {
         order_index
     } = req.body;
 
-    if (!batch_id || !name || !type) {
+    const batchId = Number(batch_id);
+    if (!Number.isSafeInteger(batchId) || batchId <= 0 || typeof name !== 'string' || !name.trim() || !type) {
         return res.status(400).json({ error: "Missing required fields: batch_id, name, type" });
     }
     if (!["FORMATIVE", "SUMMATIVE"].includes(type)) {
@@ -225,47 +228,60 @@ exports.createMilestone = async (req, res) => {
     }
 
     try {
+        const batch = await prisma.batches.findUnique({ where: { id: batchId }, select: { id: true } });
+        if (!batch) return res.status(404).json({ error: 'Batch not found' });
         const parsedOpening = is_date_tbc ? null : parseColomboDate(opening_date);
         const parsedDeadline = is_date_tbc ? null : parseColomboDate(deadline);
         const parsedAssessStart = is_date_tbc ? null : parseColomboDate(assessment_start_date);
         const parsedAssessEnd = is_date_tbc ? null : parseColomboDate(assessment_end_date);
 
-        const milestone = await prisma.milestones.create({
-            data: {
-                batch_id: parseInt(batch_id),
-                milestone_code: milestone_code ? milestone_code.trim().toUpperCase() : null,
-                name: name.trim(),
-                description: description ? description.trim() : null,
-                type,
-                component: component || "Report",
-                max_marks: max_marks !== undefined ? parseFloat(max_marks) : 0,
-                rubric_key: rubric_key || null,
-                semester: semester || "Semester 1",
-                opening_date: parsedOpening,
-                deadline: parsedDeadline,
-                assessment_start_date: parsedAssessStart,
-                assessment_end_date: parsedAssessEnd,
-                is_date_tbc: Boolean(is_date_tbc || !parsedDeadline),
-                student_instructions: student_instructions ? student_instructions.trim() : null,
-                lms_activity_url: lms_activity_url ? lms_activity_url.trim() : null,
-                status: status || "DRAFT",
-                order_index: order_index !== undefined ? parseInt(order_index) : 0,
-                created_by: userEmail
-            }
-        });
-
-        // Seed student status for all students in the batch
-        const students = await prisma.students.findMany({ where: { batch_id: parseInt(batch_id) } });
-        if (students.length > 0) {
-            await prisma.student_milestone_status.createMany({
-                data: students.map(s => ({
-                    student_id: s.id,
-                    milestone_id: milestone.id,
-                    status: "Upcoming"
-                })),
-                skipDuplicates: true
-            });
+        if (!is_date_tbc && !parsedDeadline) {
+            return res.status(400).json({ error: 'Enter a valid submission deadline or mark dates as to be confirmed.' });
         }
+        if (!is_date_tbc && [[opening_date, parsedOpening], [assessment_start_date, parsedAssessStart], [assessment_end_date, parsedAssessEnd]].some(([input, parsed]) => input && !parsed)) {
+            return res.status(400).json({ error: 'One or more milestone dates are invalid.' });
+        }
+
+        // A failed progress insert must roll back the milestone, allowing a safe retry.
+        const milestone = await prisma.$transaction(async tx => {
+            const created = await tx.milestones.create({
+                data: {
+                    batch_id: batchId,
+                    milestone_code: milestone_code ? milestone_code.trim().toUpperCase() : null,
+                    name: name.trim(),
+                    description: description ? description.trim() : null,
+                    type,
+                    component: component || "Report",
+                    max_marks: max_marks !== undefined ? parseFloat(max_marks) : 0,
+                    rubric_key: rubric_key || null,
+                    semester: semester || "Semester 1",
+                    opening_date: parsedOpening,
+                    deadline: parsedDeadline,
+                    assessment_start_date: parsedAssessStart,
+                    assessment_end_date: parsedAssessEnd,
+                    is_date_tbc: Boolean(is_date_tbc || !parsedDeadline),
+                    student_instructions: student_instructions ? student_instructions.trim() : null,
+                    lms_activity_url: lms_activity_url ? lms_activity_url.trim() : null,
+                    status: "DRAFT",
+                    order_index: order_index !== undefined ? parseInt(order_index) : 0,
+                    created_by: userEmail
+                }
+            });
+
+            // Seed student status for all students in the batch
+            const students = await tx.students.findMany({ where: { batch_id: batchId } });
+            if (students.length > 0) {
+                await tx.student_milestone_status.createMany({
+                    data: students.map(s => ({
+                        student_id: s.id,
+                        milestone_id: created.id,
+                        status: "Upcoming"
+                    })),
+                    skipDuplicates: true
+                });
+            }
+            return created;
+        });
 
         res.status(201).json({ message: "Milestone created successfully", milestone: formatMilestoneRecord(milestone) });
     } catch (error) {

@@ -266,6 +266,7 @@ model viva_schedules {
   viva_audit_logs      viva_audit_logs[]
   viva_outlook_events  viva_outlook_events[]
   evaluations          assessment_evaluations[]
+  meeting_publication  viva_meeting_publications?
 
   @@index([viva_period_id, student_id])
 }
@@ -367,6 +368,30 @@ model viva_outlook_events {
   users          users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([viva_schedule_id, user_id])
+}
+
+// One organizer event per viva. Legacy per-user events are intentionally not adopted.
+model viva_meeting_publications {
+  viva_schedule_id       Int       @id
+  transaction_id         String    @unique @db.VarChar(64)
+  organizer_email        String?   @db.VarChar(254)
+  organizer_calendar_id  String?   @db.Text
+  auth_user_id           Int?
+  token_owner_email      String?   @db.VarChar(254)
+  graph_event_id         String?   @db.Text
+  teams_join_url         String?   @db.Text
+  status                 String    @default("NOT_PUBLISHED") @db.VarChar(30)
+  last_error             String?   @db.Text
+  content_hash           String?   @db.VarChar(64)
+  attendee_responses     Json?
+  creation_uncertain     Boolean   @default(false)
+  cancellation_requested Boolean   @default(false)
+  lease_owner            String?   @db.VarChar(64)
+  lease_expires_at       DateTime?
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @default(now()) @updatedAt
+
+  viva_schedules viva_schedules @relation(fields: [viva_schedule_id], references: [id], onDelete: Restrict)
 }
 
 
